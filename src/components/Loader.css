@@ -1,0 +1,63 @@
+/* src/components/Loader.css */
+
+.loader-wrapper {
+    width: 350px;
+    height: 150px;
+    position: relative;
+    background: transparent; 
+}
+
+.loader-wrapper svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.static-base {
+    font-family: 'Arial Black', 'Impact', sans-serif;
+    font-size: 110px;
+    font-weight: 900;
+    fill: #1a1a1a; 
+    stroke: #ffffff; 
+    stroke-width: 1px;
+    stroke-opacity: 0.3;
+}
+
+.running-line {
+    font-family: 'Arial Black', 'Impact', sans-serif;
+    font-size: 110px;
+    font-weight: 900;
+    fill: transparent;
+    stroke-width: 3px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 70 450; 
+    animation: borderRun 2s linear infinite;
+}
+
+.color-blue {
+    stroke: #00ffff;
+    filter: drop-shadow(0 0 8px #00ffff);
+    animation-delay: 0s;
+}
+
+.color-pink {
+    stroke: #ff00cc;
+    filter: drop-shadow(0 0 8px #ff00cc);
+    animation-delay: -0.66s;
+}
+
+.color-gold {
+    stroke: #ffcc00;
+    filter: drop-shadow(0 0 8px #ffcc00);
+    animation-delay: -1.32s;
+}
+
+@keyframes borderRun {
+    0% {
+        stroke-dashoffset: 520;
+    }
+    100% {
+        stroke-dashoffset: 0;
+    }
+}

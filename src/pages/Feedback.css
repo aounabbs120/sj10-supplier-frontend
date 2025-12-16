@@ -1,0 +1,93 @@
+/* src/pages/Feedback.css */
+
+.feedback-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.feedback-form textarea {
+    width: 100%;
+    padding: 15px;
+    background-color: #1f2937;
+    border: 1px solid #4b5563;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1rem;
+    line-height: 1.6;
+    resize: vertical;
+}
+
+.file-attachment-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.file-upload-btn {
+    background-color: #374151;
+    padding: 10px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: center;
+    transition: background-color 0.2s;
+}
+
+.file-upload-btn:hover {
+    background-color: #4b5563;
+}
+
+#file-upload {
+    display: none;
+}
+
+.file-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.file-tag {
+    background-color: #4f46e5;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+}
+
+.btn-primary {
+    padding: 12px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Success Animation */
+.feedback-success {
+    text-align: center;
+    padding: 40px 20px;
+    animation: fadeIn 0.5s;
+}
+
+.success-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: #10b981;
+    color: #fff;
+    font-size: 3rem;
+    line-height: 80px;
+    margin: 0 auto 20px auto;
+    animation: popIn 0.4s ease-out;
+}
+
+@keyframes popIn {
+    from { transform: scale(0.5); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}

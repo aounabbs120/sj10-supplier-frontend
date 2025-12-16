@@ -1,0 +1,260 @@
+/* src/pages/ChatPage.css */
+
+.chat-page-container {
+    display: flex;
+    height: calc(100vh - 80px); /* Adjust based on your nav/header height */
+    background-color: #f9fafb;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* --- Sidebar (Conversation List) --- */
+.chat-sidebar {
+    width: 320px;
+    border-right: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    background-color: #fff;
+}
+.sidebar-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+.sidebar-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+.chat-list {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+.chat-list-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    cursor: pointer;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background-color 0.2s ease;
+}
+.chat-list-item:hover {
+    background-color: #f9fafb;
+}
+.chat-list-item.active {
+    background-color: #eef2ff;
+}
+.chat-item-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: #6366f1;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    font-size: 1.2rem;
+    margin-right: 1rem;
+    flex-shrink: 0;
+}
+.chat-item-details { overflow: hidden; }
+.chat-item-name {
+    margin: 0;
+    font-weight: 600;
+    color: #1f2937;
+}
+.chat-item-preview {
+    margin: 0;
+    color: #6b7280;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* --- Main Chat Window --- */
+.chat-main {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+.chat-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    background-color: #fff;
+    display: flex;
+    align-items: center;
+}
+.chat-header-info { display: flex; align-items: center; }
+.chat-header h3 { margin: 0; font-size: 1.2rem; }
+.header-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+    margin-right: 0.8rem;
+}
+.message-area {
+    flex-grow: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+.message-bubble {
+    max-width: 70%;
+    padding: 0.8rem 1.2rem;
+    border-radius: 18px;
+    line-height: 1.5;
+    position: relative; /* Needed for the ticks */
+}
+.message-bubble p { margin: 0; padding-right: 30px; /* Space for ticks */ }
+.message-bubble.sent {
+    background-color: #4f46e5;
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+}
+.message-bubble.received {
+    background-color: #e5e7eb;
+    color: #1f2937;
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+}
+.message-input-area {
+    display: flex;
+    padding: 1rem;
+    border-top: 1px solid #e5e7eb;
+    background-color: #fff;
+}
+.message-input-area input {
+    flex-grow: 1;
+    border: 1px solid #d1d5db;
+    padding: 0.8rem 1rem;
+    border-radius: 25px;
+    font-size: 1rem;
+    outline: none;
+}
+.message-input-area button {
+    background-color: #4f46e5;
+    color: white;
+    border: none;
+    padding: 0 1.5rem;
+    border-radius: 25px;
+    margin-left: 1rem;
+    cursor: pointer;
+}
+.no-chat-selected {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #9ca3af;
+    font-size: 1.2rem;
+}
+.message-loader {
+    text-align: center;
+    padding: 2rem;
+    color: #9ca3af;
+}
+
+/* --- NEW STYLES FOR MESSAGE TICKS --- */
+.message-ticks {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-size: 0.9rem;
+    color: #a7a2f5; /* Light purple for grey ticks */
+}
+.message-ticks.seen {
+    color: #4ade80; /* Bright green/blue for seen ticks */
+}
+
+/* --- RESPONSIVE DESIGN --- */
+@media (max-width: 768px) {
+    /* ... (Your existing responsive styles) ... */
+}
+
+/* --- RESPONSIVE DESIGN FOR MOBILE --- */
+@media (max-width: 768px) {
+    .chat-sidebar {
+        width: 100%;
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 10;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease-in-out;
+    }
+
+    .chat-page-container.sidebar-visible .chat-sidebar {
+        transform: translateX(0);
+    }
+    
+    .chat-main {
+        width: 100%;
+    }
+}
+
+
+/* --- NEW STYLES for Conversation-First View --- */
+
+/* By default, when only the conversation list should be visible */
+.chat-page-container.conversation-view-active .chat-sidebar {
+    width: 100%; /* The sidebar takes the full screen width */
+    border-right: none; /* No border is needed when it's full-width */
+}
+
+.chat-page-container.conversation-view-active .chat-main {
+    display: none; /* The entire main chat window is hidden */
+}
+
+/* When a chat IS active, the default styles will take over,
+   making the sidebar 320px and the main chat area flex-grow: 1,
+   so we don't need extra CSS for the 'chat-view-active' state on desktop. */
+
+
+/* --- NEW STYLES for the Back Button --- */
+.back-to-conversations-btn {
+    background: none;
+    border: none;
+    font-size: 1.8rem; /* Make it easily clickable */
+    line-height: 1;
+    font-weight: bold;
+    cursor: pointer;
+    margin-right: 1rem;
+    color: #4f46e5;
+    padding: 0 0.5rem;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.back-to-conversations-btn:hover {
+    background-color: #eef2ff;
+}
+
+
+/* --- ADJUSTMENTS for Mobile View --- */
+/* We can now simplify the mobile view to use this same logic,
+   making the experience consistent across all devices. */
+@media (max-width: 768px) {
+    /* Remove the old transform logic */
+    .chat-sidebar {
+        width: 100%;
+        position: static;
+        transform: none;
+        height: 100%;
+        z-index: auto;
+    }
+
+    /* When a chat is active on mobile, hide the sidebar completely */
+    .chat-page-container.chat-view-active .chat-sidebar {
+       display: none;
+    }
+
+    /* Make the chat window take up the full screen when active */
+    .chat-page-container.chat-view-active .chat-main {
+        width: 100%;
+        height: 100%;
+    }
+}

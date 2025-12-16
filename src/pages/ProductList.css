@@ -1,0 +1,77 @@
+.product-list-container { display: flex; flex-direction: column; height: 100%; padding: 15px; }
+.product-list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+.product-list-header h1 { font-size: 28px; font-weight: bold; color: #111827; }
+
+/* --- NEW: Header Action Buttons --- */
+.header-actions { display: flex; align-items: center; gap: 10px; }
+.btn-secondary { background-color: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background-color 0.2s; }
+.btn-secondary:hover { background-color: #e5e7eb; }
+.btn-add-product { background-color: #4f46e5; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 24px; cursor: pointer; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4); transition: transform 0.2s; display: flex; align-items: center; justify-content: center;}
+.btn-add-product:hover { transform: scale(1.1); }
+
+/* --- ENHANCED: Animated Glassmorphism Search Bar --- */
+.search-bar-container { position: relative; margin-bottom: 20px; }
+.search-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 18px; }
+.search-input {
+    width: 100%; padding: 14px 20px 14px 50px; border-radius: 12px; border: 1px solid transparent;
+    font-size: 16px; color: #111827; /* Dark text for visibility */
+    background-color: rgba(243, 244, 246, 0.7); /* Slightly transparent light grey */
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+}
+.search-input::placeholder { color: #9ca3af; }
+.search-input:focus {
+    outline: none; border-color: #a5b4fc;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+    background-color: #ffffff; /* Fully opaque on focus */
+}
+
+.products-scroll-area { flex-grow: 1; overflow-y: auto; scroll-behavior: smooth; }
+@keyframes card-fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.product-card { display: flex; align-items: center; gap: 15px; background-color: #ffffff; border-radius: 12px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); animation: card-fade-in 0.5s ease-out forwards; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+.product-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08); }
+
+/* --- NEW: Shimmer Image Loading Styles --- */
+.product-image-container { position: relative; width: 80px; height: 80px; min-width: 80px; background-color: #f3f4f6; border-radius: 8px; overflow: hidden; }
+.image-loader-spinner { display: none; } /* Hide the old spinner */
+@keyframes shimmer { 100% { transform: translateX(100%); } }
+.product-image-container::before {
+    content: ''; position: absolute; inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(90deg, rgba(255,255,255,0) 0, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+    animation: shimmer 1.5s infinite;
+}
+.product-image.loading + .product-image-container::before { display: block; } /* Show shimmer only while loading */
+.product-image { width: 100%; height: 100%; object-fit: cover; transition: opacity 0.4s ease; }
+.product-image.loading { opacity: 0; }
+.product-image.loaded { opacity: 1; }
+.product-image.loaded + .product-image-container::before { display: none; } /* Hide shimmer when loaded */
+
+.product-details { flex-grow: 1; min-width: 0; }
+.product-title { font-size: 16px; font-weight: 600; color: #1f2937; margin: 0 0 5px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.product-id-container { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.product-id { font-size: 12px; color: #6b7280; margin: 0; }
+.copy-id-btn { background: none; border: none; cursor: pointer; color: #4f46e5; font-size: 12px; font-weight: 500; padding: 2px 4px; border-radius: 4px; transition: background-color 0.2s; }
+.copy-id-btn:hover { background-color: #eef2ff; }
+.product-meta { display: flex; flex-wrap: wrap; gap: 15px; font-size: 14px; color: #374151; align-items: center; }
+.product-price { font-weight: 600; }
+.product-stock, .product-views { display: flex; align-items: center; gap: 5px; color: #6b7280; font-size: 13px; }
+
+/* Redesigned Buttons */
+.product-actions { display: flex; align-items: center; gap: 10px; }
+.btn-edit { background-color: #eef2ff; color: #4f46e5; border: none; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background-color 0.3s; }
+.btn-edit:hover { background-color: #c7d2fe; }
+.btn-delete { background-color: #fee2e2; color: #ef4444; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 14px; cursor: pointer; transition: background-color 0.3s; display: flex; align-items: center; justify-content: center; }
+.btn-delete:hover { background-color: #fca5a5; }
+
+.no-products-message { text-align: center; padding: 50px 20px; color: #6b7280; }
+/* Skeleton Loader Styles */
+@keyframes pulse { 0% { background-color: #f3f4f6; } 50% { background-color: #e5e7eb; } 100% { background-color: #f3f4f6; } }
+.product-card-skeleton { display: flex; align-items: center; background-color: #ffffff; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
+.skeleton-image { width: 80px; height: 80px; border-radius: 8px; margin-right: 15px; animation: pulse 1.5s infinite ease-in-out; }
+.skeleton-details { flex-grow: 1; }
+.skeleton-line { height: 1em; border-radius: 4px; animation: pulse 1.5s infinite ease-in-out; margin-bottom: 10px; }
+.skeleton-line.title { width: 70%; height: 1.2em; }
+.skeleton-line.text { width: 50%; }
+.skeleton-line.short { width: 30%; }
+@media (max-width: 480px) { .product-list-header h1 { font-size: 24px; } .product-card { flex-wrap: wrap; } .product-image-container { width: 60px; height: 60px; min-width: 60px; } .product-details { width: calc(100% - 75px); } .product-actions { width: 100%; justify-content: flex-end; margin-top: 10px; } .product-title { font-size: 15px; } .product-meta { gap: 10px; } }

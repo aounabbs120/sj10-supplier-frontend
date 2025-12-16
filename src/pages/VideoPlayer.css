@@ -1,0 +1,58 @@
+/* src/pages/VideoPlayer.css */
+.video-player-page {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: #fff;
+}
+.player-header {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #e0e0e0;
+}
+.header-title { flex-grow: 1; text-align: center; margin: 0; font-size: 1.2rem; }
+.header-icons { display: flex; gap: 1rem; }
+.icon { font-size: 1.2rem; }
+
+.player-container {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%; /* 16:9 Aspect Ratio */
+    background-color: #000;
+}
+.player-container iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.video-info-container { padding: 1rem; }
+.player-video-title { font-size: 1.2rem; margin: 0 0 0.5rem; }
+.video-stats { color: #616161; font-size: 0.9rem; margin-bottom: 1rem; }
+
+.channel-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.channel-identity { display: flex; align-items: center; gap: 0.8rem; }
+.channel-avatar { width: 40px; height: 40px; border-radius: 50%; }
+.channel-name { font-weight: bold; }
+.subscribe-button { background-color: #000; color: #fff; border: none; padding: 0.6rem 1rem; border-radius: 20px; font-weight: 500; cursor: pointer; }
+
+.action-buttons {
+    display: flex;
+    justify-content: space-around;
+    padding: 0.5rem 0;
+    border-top: 1px solid #f0f0f0;
+    border-bottom: 1px solid #f0f0f0;
+    margin-bottom: 1rem;
+}
+.action-buttons button { background: none; border: none; font-size: 0.9rem; color: #616161; cursor: pointer; }
+
+.comments-placeholder { padding: 1rem; background-color: #f5f5f5; border-radius: 8px; text-align: center; color: #757575; }
+
+.related-videos-container { padding: 1rem; }
+.related-video-item { display: flex; gap: 1rem; margin-bottom: 1rem; cursor: pointer; }
+.related-thumbnail { width: 140px; height: 78px; flex-shrink: 0; }
+.related-thumbnail img { width: 100%; height: 100%; object-fit: cover; }
+.related-info { display: flex; flex-direction: column; }
+.related-title { margin: 0 0 0.3rem; font-weight: 500; font-size: 1rem; }
+.related-channel { margin: 0; color: #757575; font-size: 0.85rem; }

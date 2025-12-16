@@ -1,0 +1,130 @@
+/* src/pages/Tools.css */
+
+.tools-container {
+    padding: 15px; /* Less padding on mobile */
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.tools-header {
+    font-size: 24px; /* Slightly smaller font for mobile */
+    font-weight: bold;
+    text-align: center;
+    color: #111827;
+    margin-bottom: 25px;
+}
+
+.tool-card {
+    background-color: #ffffff;
+    border-radius: 18px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+.tool-card-header {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 20px 0;
+}
+
+.tool-card-content {
+    display: grid;
+    /* This creates a responsive grid that fits as many items as possible */
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 15px; /* Smaller gap for mobile */
+}
+
+.tool-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: #374151;
+    text-align: center;
+}
+
+.tool-icon-wrapper {
+    position: relative;
+    width: 60px; /* Slightly smaller icons for mobile */
+    height: 60px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    transition: transform 0.3s ease, box-shadow 0.2s ease;
+}
+
+.tool-icon-wrapper:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
+}
+
+.tool-icon-wrapper svg {
+    width: 30px;
+    height: 30px;
+}
+
+/* Icon Colors */
+.tool-icon-wrapper.purple { background-color: #f5f3ff; color: #7c3aed; }
+.tool-icon-wrapper.orange { background-color: #fff7ed; color: #f97316; }
+.tool-icon-wrapper.blue { background-color: #eff6ff; color: #3b82f6; }
+.tool-icon-wrapper.green { background-color: #f0fdf4; color: #22c55e; }
+
+.tool-title {
+    font-size: 13px; /* Smaller text for mobile for better fit */
+    font-weight: 500;
+}
+
+.new-badge {
+    position: absolute;
+    top: -5px;
+    right: -10px;
+    background-color: #ef4444;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 3px 6px;
+    border-radius: 12px;
+}
+
+
+/* --- RESPONSIVE DESIGN --- */
+/* For tablets and larger screens (768px and up) */
+@media (min-width: 768px) {
+    .tools-container {
+        padding: 30px; /* More padding on larger screens */
+    }
+
+    .tools-header {
+        font-size: 32px; /* Larger header text */
+        margin-bottom: 40px;
+    }
+    
+    .tool-card {
+        padding: 25px;
+    }
+
+    .tool-card-header {
+        font-size: 18px;
+    }
+
+    .tool-card-content {
+        gap: 25px; /* More space between items */
+    }
+
+    .tool-icon-wrapper {
+        width: 70px; /* Slightly larger icons */
+        height: 70px;
+    }
+
+    .tool-icon-wrapper svg {
+        width: 35px;
+        height: 35px;
+    }
+    
+    .tool-title {
+        font-size: 14px; /* Standard font size */
+    }
+}
