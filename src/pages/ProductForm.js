@@ -7,9 +7,6 @@ import Modal from '../components/Modal';
 import { categoryAttributes, colorFamilies } from '../data/attributes';
 import './ProductForm.css';
 
-// --- All components like initialProductState, safeParseJSON, AttributeField, AttributesModal, VariantsModal remain the same ---
-// (Keeping them here for file completeness)
-
 const initialProductState = {
     title: '', description: '', price: '', discounted_price: '',
     quantity: '', status: 'In Stock', category_id: '', main_category_id: '',
@@ -18,14 +15,19 @@ const initialProductState = {
     custom_season: '', pkg_length: '', pkg_width: '', pkg_height: '',
     pkg_unit: 'cm', pkg_weight: '', pkg_weight_unit: 'g'
 };
+
 const safeParseJSON = (jsonString, defaultValue) => {
     if (typeof jsonString === 'object' && jsonString !== null) return jsonString;
     if (typeof jsonString !== 'string') return defaultValue;
     try {
         const parsed = JSON.parse(jsonString);
         return parsed === null ? defaultValue : parsed;
-    } catch (e) { console.error("Failed to parse JSON string:", jsonString); return defaultValue; }
+    } catch (e) {
+        console.error("Failed to parse JSON string:", jsonString);
+        return defaultValue;
+    }
 };
+
 const AttributeField = ({ attr, value, onChange }) => {
     const [isCustom, setIsCustom] = useState(false);
     useEffect(() => {
@@ -48,6 +50,7 @@ const AttributeField = ({ attr, value, onChange }) => {
             return <input type="text" value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder={attr.options}/>;
     }
 };
+
 const AttributesModal = ({ isOpen, onClose, onSave, subCategoryId, existingAttributes, attributeData }) => {
     const [attributes, setAttributes] = useState({});
     const [customAttributes, setCustomAttributes] = useState([]);
@@ -78,6 +81,7 @@ const AttributesModal = ({ isOpen, onClose, onSave, subCategoryId, existingAttri
     const attributesForCategory = subCategoryId && attributeData ? (attributeData[String(subCategoryId)] || []) : [];
     return (<Modal isOpen={isOpen} onClose={onClose} title="Manage Attributes"><div className="attributes-form">{attributesForCategory.length > 0 ? (attributesForCategory.map(attr => (<div key={attr.name} className="form-group"><label>{attr.name}</label><AttributeField attr={attr} value={attributes[attr.name]} onChange={(value) => handleAttrChange(attr.name, value)} /></div>))) : <p>No predefined attributes. Add custom ones below.</p>}</div><div className="custom-attributes-section"><h4>Custom Attributes</h4>{customAttributes.map((attr, index) => (<div key={index} className="custom-attribute-pair"><input type="text" placeholder="Attribute Name" value={attr.key} onChange={(e) => updateCustomAttribute(index, 'key', e.target.value)} /><input type="text" placeholder="Value" value={attr.value} onChange={(e) => updateCustomAttribute(index, 'value', e.target.value)} /><button type="button" className="btn-delete-small" onClick={() => removeCustomAttribute(index)}>×</button></div>))}<button type="button" className="btn-secondary" onClick={addCustomAttribute}>+ Add Custom Attribute</button></div><div className="modal-actions"><button type="button" className="btn-secondary" onClick={onClose}>Cancel</button><button type="button" className="btn-primary" onClick={handleSave}>Save Attributes</button></div></Modal>);
 };
+
 const VariantsModal = ({ isOpen, onClose, onSave, existingVariants, colorData }) => {
     const [variants, setVariants] = useState([]);
     const [currentVariant, setCurrentVariant] = useState({ color: '', size: 'S', price: '', stock: '' });
@@ -105,7 +109,6 @@ const VariantsModal = ({ isOpen, onClose, onSave, existingVariants, colorData })
     return (<Modal isOpen={isOpen} onClose={onClose} title="Manage Variants" size="xlarge"><div className="variant-layout"><div className="variant-inputs"><h4>Add New Variant</h4><div className="form-group"><label>Color</label><input type="text" placeholder="Search colors..." value={colorSearch} onChange={e => setColorSearch(e.target.value)} /><div className="color-grid">{filteredColors.map(c => (<div key={c.name} className={`color-item ${currentVariant.color === c.name ? 'selected' : ''}`} onClick={() => setCurrentVariant(p => ({...p, color: c.name}))}><div className="color-circle" style={{ background: c.hex }}></div><span>{c.name}</span></div>))}</div></div><div className="form-group"><label>Size Type</label><select value={sizeType} onChange={e => setSizeType(e.target.value)}><option value="stitched">Stitched</option><option value="number">Number</option><option value="dims">Dimensions</option><option value="custom">Custom</option></select></div><div className="form-group"><label>Size</label>{renderSizeInput()}</div><div className="form-grid"><div className="form-group"><label>Price *</label><input type="number" value={currentVariant.price} onChange={e => setCurrentVariant(p => ({...p, price: e.target.value}))} /></div><div className="form-group"><label>Stock *</label><input type="number" value={currentVariant.stock} onChange={e => setCurrentVariant(p => ({...p, stock: e.target.value}))} /></div></div><button type="button" className="btn-primary" onClick={handleAddVariant} style={{width: '100%', marginTop: '10px'}}>+ Add to List</button></div><div className="variant-list"><h4>Current Variants ({variants.length})</h4><div className="table-wrapper">{variants.length > 0 ? (<table><thead><tr><th>Color</th><th>Size</th><th>Price</th><th>Stock</th><th>Action</th></tr></thead><tbody>{variants.map((v, i) => (<tr key={i}><td>{v.color}</td><td>{v.size}</td><td>{v.price}</td><td>{v.stock}</td><td><button type="button" className="btn-delete-small" onClick={() => removeVariant(i)}>×</button></td></tr>))}</tbody></table>) : <p>No variants have been added yet.</p>}</div></div></div><div className="modal-actions"><button type="button" className="btn-secondary" onClick={onClose}>Cancel</button><button type="button" className="btn-primary" onClick={handleSave}>Done</button></div></Modal>);
 };
 
-
 const ProductForm = ({ setIsLoading }) => {
     const { productId } = useParams();
     const navigate = useNavigate();
@@ -129,8 +132,8 @@ const ProductForm = ({ setIsLoading }) => {
             if (isEditMode) {
                 const productToEdit = await supplierService.getProductById(productId);
                 if (productToEdit) {
-                    // --- FIX IS HERE --- Changed '==' to '==='
-                    const parentCategory = fetchedCategories.find(c => c.id === productToEdit.category_id)?.parent_id || '';
+                    // --- FIX IS HERE: Reverted to '==' to handle string/number mismatch ---
+                    const parentCategory = fetchedCategories.find(c => c.id == productToEdit.category_id)?.parent_id || '';
                     setProduct({ ...initialProductState, ...productToEdit, main_category_id: parentCategory,
                         attributes: safeParseJSON(productToEdit.attributes, {}),
                         variants: safeParseJSON(productToEdit.variants, []),
@@ -139,7 +142,9 @@ const ProductForm = ({ setIsLoading }) => {
                 } else { setError('Product not found.'); }
             }
         } catch (err) { setError('Failed to load necessary data.'); } 
-        finally { setLoading(false); }
+        finally { 
+            setLoading(false);
+        }
     }, [isEditMode, productId]);
 
     useEffect(() => { fetchData(); }, [fetchData]);
@@ -241,8 +246,8 @@ const ProductForm = ({ setIsLoading }) => {
     };
     
     const parentCategories = categories.filter(c => !c.parent_id);
-    // --- FIX IS HERE --- Changed '==' to '==='
-    const subCategories = product.main_category_id ? categories.filter(c => c.parent_id === product.main_category_id) : [];
+    // --- FIX IS HERE: Reverted to '==' to handle string/number mismatch ---
+    const subCategories = product.main_category_id ? categories.filter(c => c.parent_id == product.main_category_id) : [];
 
     if (loading) return <div className="loader">Loading...</div>;
 
@@ -254,7 +259,7 @@ const ProductForm = ({ setIsLoading }) => {
             <form onSubmit={handleSubmit} className="product-form">
                 <div className="form-card"><h3>Basic Information</h3><div className="form-group full-width"><label>Product Title <span className="required-star">*</span></label><input type="text" name="title" value={product.title} onChange={handleChange} placeholder="e.g., Men Cotton Casual Shirt" required /></div><div className="form-group full-width"><label>Product Description</label><textarea name="description" rows="5" value={product.description} onChange={handleChange} placeholder="Full product explanation..."></textarea></div></div>
                 <div className="form-card"><h3>Pricing & Inventory</h3><div className="form-grid"><div className="form-group"><label>Base Price (PKR) <span className="required-star">*</span></label><input type="number" name="price" value={product.price} onChange={handleChange} placeholder="e.g., 2499" required /></div><div className="form-group"><label>Discounted Price</label><input type="number" name="discounted_price" value={product.discounted_price} onChange={handleChange} placeholder="e.g., 1999" /></div><div className="form-group"><label>Total Quantity / Stock <span className="required-star">*</span></label><input type="number" name="quantity" value={product.quantity} onChange={handleChange} placeholder="e.g., 50" required /></div><div className="form-group"><label>Status</label><select name="status" value={product.status} onChange={handleChange}><option>In Stock</option><option>Out of Stock</option></select></div></div></div>
-                <div className="form-card"><h3>Category & Specifications</h3><div className="form-grid"><div className="form-group"><label>Main Category <span className="required-star">*</span></label><select name="main_category_id" value={product.main_category_id || ''} onChange={handleChange} required><option value="">Select...</option>{parentCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}</select></div></div>{subCategories.length > 0 && (<div className="form-group full-width" style={{marginTop: '20px'}}><label>Sub-Category <span className="required-star">*</span></label><div className="radio-grid">{subCategories.map(cat => (<label key={cat.id} className={`radio-label ${product.category_id === cat.id ? 'selected' : ''}`}><input type="radio" name="category_id" value={cat.id} checked={product.category_id === cat.id} onChange={handleChange} />{cat.name}</label>))}</div></div>)}<div className="form-grid" style={{marginTop: '20px'}}><div className="form-group"><label>Product Attributes <span className="required-star">*</span></label><p className="form-hint">At least 2 required.</p><button type="button" className="btn-secondary" onClick={() => setIsAttributesModalOpen(true)} disabled={!product.category_id}>{Object.keys(product.attributes).length > 0 ? `${Object.keys(product.attributes).length} Attributes Added` : 'Add Attributes'}</button></div><div className="form-group"><label>Product Variants</label><p className="form-hint">For different colors/sizes.</p><button type="button" className="btn-secondary" onClick={() => setIsVariantsModalOpen(true)}>{product.variants.length > 0 ? `${product.variants.length} Variants Added` : 'Manage Variants'}</button></div></div></div>
+                <div className="form-card"><h3>Category & Specifications</h3><div className="form-grid"><div className="form-group"><label>Main Category <span className="required-star">*</span></label><select name="main_category_id" value={product.main_category_id || ''} onChange={handleChange} required><option value="">Select...</option>{parentCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}</select></div></div>{subCategories.length > 0 && (<div className="form-group full-width" style={{marginTop: '20px'}}><label>Sub-Category <span className="required-star">*</span></label><div className="radio-grid">{subCategories.map(cat => (<label key={cat.id} className={`radio-label ${product.category_id == cat.id ? 'selected' : ''}`}><input type="radio" name="category_id" value={cat.id} checked={product.category_id == cat.id} onChange={handleChange} />{cat.name}</label>))}</div></div>)}<div className="form-grid" style={{marginTop: '20px'}}><div className="form-group"><label>Product Attributes <span className="required-star">*</span></label><p className="form-hint">At least 2 required.</p><button type="button" className="btn-secondary" onClick={() => setIsAttributesModalOpen(true)} disabled={!product.category_id}>{Object.keys(product.attributes).length > 0 ? `${Object.keys(product.attributes).length} Attributes Added` : 'Add Attributes'}</button></div><div className="form-group"><label>Product Variants</label><p className="form-hint">For different colors/sizes.</p><button type="button" className="btn-secondary" onClick={() => setIsVariantsModalOpen(true)}>{product.variants.length > 0 ? `${product.variants.length} Variants Added` : 'Manage Variants'}</button></div></div></div>
                 <div className="form-card"><h3>Shipping, Season & Media</h3><div className="form-grid"><div className="form-group"><label>Shipping Type</label><select name="shipping_details" value={product.shipping_details} onChange={handleChange}><option>Standard</option><option>Express</option><option>Overnight</option></select></div><div className="form-group"><label>Season</label><select name="season" value={product.season} onChange={handleChange}><option>No Season</option><option>All Seasons</option><option>Summer</option><option>Winter</option><option>Spring</option><option>Autumn</option><option>Custom</option></select></div>{product.season === 'Custom' && <div className="form-group full-width"><label>Custom Season Name</label><input type="text" name="custom_season" value={product.custom_season} onChange={handleChange} /></div>}</div><div className="form-grid" style={{marginTop: '20px'}}><div className="form-group"><label>Package Dimensions</label><div className="input-group"><input type="number" name="pkg_length" placeholder="L" value={product.pkg_length} onChange={handleChange} /><input type="number" name="pkg_width" placeholder="W" value={product.pkg_width} onChange={handleChange} /><input type="number" name="pkg_height" placeholder="H" value={product.pkg_height} onChange={handleChange} /><select name="pkg_unit" value={product.pkg_unit} onChange={handleChange}><option>cm</option><option>in</option></select></div></div><div className="form-group"><label>Package Weight</label><div className="input-group"><input type="number" name="pkg_weight" placeholder="Weight" value={product.pkg_weight} onChange={handleChange} /><select name="pkg_weight_unit" value={product.pkg_weight_unit} onChange={handleChange}><option>g</option><option>kg</option></select></div></div></div></div>
                 <div className="form-card"><h3>Media Uploads</h3><div className="form-group full-width"><label>Product Images (Max 8)</label><div className="image-upload-area"><div className="image-previews">{(product.image_urls || []).map((url, i) => (<div key={url+i} className="preview-image-container"><img src={url} alt="Existing" className="preview-image" /><button type="button" className="delete-preview-btn" onClick={() => removeExistingImage(url)}>×</button></div>))}{newImages.map((file, index) => (<div key={index} className="preview-image-container"><img src={URL.createObjectURL(file)} alt="New" className="preview-image" /><button type="button" className="delete-preview-btn" onClick={() => removeNewImage(index)}>×</button></div>))}</div><label htmlFor="image-upload" className="upload-btn-label"><input id="image-upload" type="file" multiple accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} /><span>+ Add Images</span></label></div></div><div className="form-group full-width"><label>Product Video (Max 60MB)</label>{product.video_url || newVideo ? (<div className="video-preview-container"><video src={newVideo ? URL.createObjectURL(newVideo) : product.video_url} controls /><button type="button" className="delete-preview-btn" onClick={removeVideo}>×</button></div>) : (<label htmlFor="video-upload" className="upload-btn-label"><span>+ Add Video</span></label>)}<input id="video-upload" type="file" accept="video/mp4,video/mov" onChange={handleVideoChange} style={{display: 'none'}} /></div></div>
                 <div className="form-actions"><button type="button" className="btn-secondary" onClick={() => navigate('/products')}>Cancel</button><button type="submit" className="btn-primary" disabled={isSaving}>{isSaving ? <div className="spinner-small"></div> : (isEditMode ? 'Update Product' : 'Save Product')}</button></div>
