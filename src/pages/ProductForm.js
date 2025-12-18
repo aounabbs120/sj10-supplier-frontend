@@ -7,6 +7,7 @@ import Modal from '../components/Modal';
 import { categoryAttributes, colorFamilies } from '../data/attributes';
 import './ProductForm.css';
 
+// --- No changes to helper components or initial state ---
 const initialProductState = {
     title: '', description: '', price: '', discounted_price: '',
     quantity: '', status: 'In Stock', category_id: '', main_category_id: '',
@@ -15,7 +16,6 @@ const initialProductState = {
     custom_season: '', pkg_length: '', pkg_width: '', pkg_height: '',
     pkg_unit: 'cm', pkg_weight: '', pkg_weight_unit: 'g'
 };
-
 const safeParseJSON = (jsonString, defaultValue) => {
     if (typeof jsonString === 'object' && jsonString !== null) return jsonString;
     if (typeof jsonString !== 'string') return defaultValue;
@@ -27,7 +27,7 @@ const safeParseJSON = (jsonString, defaultValue) => {
         return defaultValue;
     }
 };
-
+// ... All other helper components (AttributeField, AttributesModal, VariantsModal) are unchanged ...
 const AttributeField = ({ attr, value, onChange }) => {
     const [isCustom, setIsCustom] = useState(false);
     useEffect(() => {
@@ -50,7 +50,6 @@ const AttributeField = ({ attr, value, onChange }) => {
             return <input type="text" value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder={attr.options}/>;
     }
 };
-
 const AttributesModal = ({ isOpen, onClose, onSave, subCategoryId, existingAttributes, attributeData }) => {
     const [attributes, setAttributes] = useState({});
     const [customAttributes, setCustomAttributes] = useState([]);
@@ -81,7 +80,6 @@ const AttributesModal = ({ isOpen, onClose, onSave, subCategoryId, existingAttri
     const attributesForCategory = subCategoryId && attributeData ? (attributeData[String(subCategoryId)] || []) : [];
     return (<Modal isOpen={isOpen} onClose={onClose} title="Manage Attributes"><div className="attributes-form">{attributesForCategory.length > 0 ? (attributesForCategory.map(attr => (<div key={attr.name} className="form-group"><label>{attr.name}</label><AttributeField attr={attr} value={attributes[attr.name]} onChange={(value) => handleAttrChange(attr.name, value)} /></div>))) : <p>No predefined attributes. Add custom ones below.</p>}</div><div className="custom-attributes-section"><h4>Custom Attributes</h4>{customAttributes.map((attr, index) => (<div key={index} className="custom-attribute-pair"><input type="text" placeholder="Attribute Name" value={attr.key} onChange={(e) => updateCustomAttribute(index, 'key', e.target.value)} /><input type="text" placeholder="Value" value={attr.value} onChange={(e) => updateCustomAttribute(index, 'value', e.target.value)} /><button type="button" className="btn-delete-small" onClick={() => removeCustomAttribute(index)}>×</button></div>))}<button type="button" className="btn-secondary" onClick={addCustomAttribute}>+ Add Custom Attribute</button></div><div className="modal-actions"><button type="button" className="btn-secondary" onClick={onClose}>Cancel</button><button type="button" className="btn-primary" onClick={handleSave}>Save Attributes</button></div></Modal>);
 };
-
 const VariantsModal = ({ isOpen, onClose, onSave, existingVariants, colorData }) => {
     const [variants, setVariants] = useState([]);
     const [currentVariant, setCurrentVariant] = useState({ color: '', size: 'S', price: '', stock: '' });
@@ -132,8 +130,8 @@ const ProductForm = ({ setIsLoading }) => {
             if (isEditMode) {
                 const productToEdit = await supplierService.getProductById(productId);
                 if (productToEdit) {
-                    // --- FIX IS HERE: Reverted to '==' to handle string/number mismatch ---
-                    const parentCategory = fetchedCategories.find(c => c.id == productToEdit.category_id)?.parent_id || '';
+                    // --- LINTER FIX #1 --- Convert types before strict comparison
+                    const parentCategory = fetchedCategories.find(c => String(c.id) === String(productToEdit.category_id))?.parent_id || '';
                     setProduct({ ...initialProductState, ...productToEdit, main_category_id: parentCategory,
                         attributes: safeParseJSON(productToEdit.attributes, {}),
                         variants: safeParseJSON(productToEdit.variants, []),
@@ -160,6 +158,7 @@ const ProductForm = ({ setIsLoading }) => {
         else if (product.quantity !== '' && Number(product.quantity) > 0) { setProduct(prev => ({ ...prev, status: 'In Stock' })); }
     }, [product.quantity]);
     
+    // ... No changes to handleImageChange, removeNewImage, removeExistingImage, etc. ...
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files);
         if ((product.image_urls.length + newImages.length + files.length) > 8) { alert('Maximum 8 images.'); return; }
@@ -167,7 +166,6 @@ const ProductForm = ({ setIsLoading }) => {
     };
     const removeNewImage = (index) => setNewImages(prev => prev.filter((_, i) => i !== index));
     const removeExistingImage = (url) => setProduct(prev => ({ ...prev, image_urls: prev.image_urls.filter(imgUrl => imgUrl !== url) }));
-    
     const handleVideoChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -176,10 +174,10 @@ const ProductForm = ({ setIsLoading }) => {
         setProduct(prev => ({ ...prev, video_url: '' }));
     };
     const removeVideo = () => { setNewVideo(null); setProduct(prev => ({ ...prev, video_url: '' })); };
-    
     const handleSaveAttributes = (newAttributes) => setProduct(prev => ({ ...prev, attributes: newAttributes }));
     const handleSaveVariants = (newVariants) => setProduct(prev => ({ ...prev, variants: newVariants }));
     
+    // --- No changes to handleSubmit logic ---
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!product.title || product.title.length < 3) return setError('Title must be at least 3 characters.');
@@ -187,11 +185,9 @@ const ProductForm = ({ setIsLoading }) => {
         if (product.quantity === '' || product.quantity < 0) return setError('Quantity is required.');
         if (!product.category_id) return setError('A Sub-Category must be selected.');
         if (Object.keys(product.attributes).length < 2) return setError('At least 2 attributes are required.');
-        
         setIsSaving(true);
         setIsLoading(true);
         setError('');
-
         try {
             let uploadedImageUrls = [];
             let uploadedVideoUrl = product.video_url;
@@ -205,37 +201,27 @@ const ProductForm = ({ setIsLoading }) => {
             }
             const finalImageUrls = [...product.image_urls, ...uploadedImageUrls];
             const pkgInfo = `${product.pkg_length||'L'}x${product.pkg_width||'W'}x${product.pkg_height||'H'} ${product.pkg_unit}, ${product.pkg_weight||'W'}${product.pkg_weight_unit}`;
-            
             const mainProductPayload = {
-                title: product.title, description: product.description,
-                price: parseFloat(product.price),
+                title: product.title, description: product.description, price: parseFloat(product.price),
                 discounted_price: product.discounted_price ? parseFloat(product.discounted_price) : null,
-                quantity: parseInt(product.quantity, 10),
-                status: product.status,
-                category_id: product.category_id, 
-                attributes: product.attributes,
-                image_urls: finalImageUrls,
-                video_url: uploadedVideoUrl || null,
+                quantity: parseInt(product.quantity, 10), status: product.status, category_id: product.category_id, 
+                attributes: product.attributes, image_urls: finalImageUrls, video_url: uploadedVideoUrl || null,
                 shipping_details: product.shipping_details, package_information: pkgInfo,
                 season: product.season === 'Custom' ? product.custom_season : product.season,
             };
-
             if (isEditMode) {
                 await supplierService.updateProduct(productId, mainProductPayload);
             } else {
                 const newProduct = await supplierService.createProduct(mainProductPayload);
                 if (product.variants && product.variants.length > 0) {
                     const variantsPayload = product.variants.map(variant => ({
-                        custom_color: variant.color,
-                        custom_size: variant.size,
-                        price: parseFloat(variant.price),
-                        stock: parseInt(variant.stock, 10),
+                        custom_color: variant.color, custom_size: variant.size,
+                        price: parseFloat(variant.price), stock: parseInt(variant.stock, 10),
                     }));
                     await supplierService.addVariantsInBatch(newProduct.id, variantsPayload);
                 }
             }
             navigate('/products');
-
         } catch (err) {
             setError(err.response?.data?.message || 'An error occurred while saving the product.');
             console.error(err);
@@ -246,8 +232,8 @@ const ProductForm = ({ setIsLoading }) => {
     };
     
     const parentCategories = categories.filter(c => !c.parent_id);
-    // --- FIX IS HERE: Reverted to '==' to handle string/number mismatch ---
-    const subCategories = product.main_category_id ? categories.filter(c => c.parent_id == product.main_category_id) : [];
+    // --- LINTER FIX #2 --- Convert types before strict comparison
+    const subCategories = product.main_category_id ? categories.filter(c => String(c.parent_id) === String(product.main_category_id)) : [];
 
     if (loading) return <div className="loader">Loading...</div>;
 
@@ -259,7 +245,13 @@ const ProductForm = ({ setIsLoading }) => {
             <form onSubmit={handleSubmit} className="product-form">
                 <div className="form-card"><h3>Basic Information</h3><div className="form-group full-width"><label>Product Title <span className="required-star">*</span></label><input type="text" name="title" value={product.title} onChange={handleChange} placeholder="e.g., Men Cotton Casual Shirt" required /></div><div className="form-group full-width"><label>Product Description</label><textarea name="description" rows="5" value={product.description} onChange={handleChange} placeholder="Full product explanation..."></textarea></div></div>
                 <div className="form-card"><h3>Pricing & Inventory</h3><div className="form-grid"><div className="form-group"><label>Base Price (PKR) <span className="required-star">*</span></label><input type="number" name="price" value={product.price} onChange={handleChange} placeholder="e.g., 2499" required /></div><div className="form-group"><label>Discounted Price</label><input type="number" name="discounted_price" value={product.discounted_price} onChange={handleChange} placeholder="e.g., 1999" /></div><div className="form-group"><label>Total Quantity / Stock <span className="required-star">*</span></label><input type="number" name="quantity" value={product.quantity} onChange={handleChange} placeholder="e.g., 50" required /></div><div className="form-group"><label>Status</label><select name="status" value={product.status} onChange={handleChange}><option>In Stock</option><option>Out of Stock</option></select></div></div></div>
-                <div className="form-card"><h3>Category & Specifications</h3><div className="form-grid"><div className="form-group"><label>Main Category <span className="required-star">*</span></label><select name="main_category_id" value={product.main_category_id || ''} onChange={handleChange} required><option value="">Select...</option>{parentCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}</select></div></div>{subCategories.length > 0 && (<div className="form-group full-width" style={{marginTop: '20px'}}><label>Sub-Category <span className="required-star">*</span></label><div className="radio-grid">{subCategories.map(cat => (<label key={cat.id} className={`radio-label ${product.category_id == cat.id ? 'selected' : ''}`}><input type="radio" name="category_id" value={cat.id} checked={product.category_id == cat.id} onChange={handleChange} />{cat.name}</label>))}</div></div>)}<div className="form-grid" style={{marginTop: '20px'}}><div className="form-group"><label>Product Attributes <span className="required-star">*</span></label><p className="form-hint">At least 2 required.</p><button type="button" className="btn-secondary" onClick={() => setIsAttributesModalOpen(true)} disabled={!product.category_id}>{Object.keys(product.attributes).length > 0 ? `${Object.keys(product.attributes).length} Attributes Added` : 'Add Attributes'}</button></div><div className="form-group"><label>Product Variants</label><p className="form-hint">For different colors/sizes.</p><button type="button" className="btn-secondary" onClick={() => setIsVariantsModalOpen(true)}>{product.variants.length > 0 ? `${product.variants.length} Variants Added` : 'Manage Variants'}</button></div></div></div>
+                <div className="form-card"><h3>Category & Specifications</h3><div className="form-grid"><div className="form-group"><label>Main Category <span className="required-star">*</span></label><select name="main_category_id" value={product.main_category_id || ''} onChange={handleChange} required><option value="">Select...</option>{parentCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}</select></div></div>{subCategories.length > 0 && (<div className="form-group full-width" style={{marginTop: '20px'}}><label>Sub-Category <span className="required-star">*</span></label><div className="radio-grid">{subCategories.map(cat => (
+                    // --- LINTER FIX #3 & #4 --- Convert types before strict comparison
+                    <label key={cat.id} className={`radio-label ${String(product.category_id) === String(cat.id) ? 'selected' : ''}`}>
+                        <input type="radio" name="category_id" value={cat.id} checked={String(product.category_id) === String(cat.id)} onChange={handleChange} />
+                        {cat.name}
+                    </label>
+                ))}</div></div>)}<div className="form-grid" style={{marginTop: '20px'}}><div className="form-group"><label>Product Attributes <span className="required-star">*</span></label><p className="form-hint">At least 2 required.</p><button type="button" className="btn-secondary" onClick={() => setIsAttributesModalOpen(true)} disabled={!product.category_id}>{Object.keys(product.attributes).length > 0 ? `${Object.keys(product.attributes).length} Attributes Added` : 'Add Attributes'}</button></div><div className="form-group"><label>Product Variants</label><p className="form-hint">For different colors/sizes.</p><button type="button" className="btn-secondary" onClick={() => setIsVariantsModalOpen(true)}>{product.variants.length > 0 ? `${product.variants.length} Variants Added` : 'Manage Variants'}</button></div></div></div>
                 <div className="form-card"><h3>Shipping, Season & Media</h3><div className="form-grid"><div className="form-group"><label>Shipping Type</label><select name="shipping_details" value={product.shipping_details} onChange={handleChange}><option>Standard</option><option>Express</option><option>Overnight</option></select></div><div className="form-group"><label>Season</label><select name="season" value={product.season} onChange={handleChange}><option>No Season</option><option>All Seasons</option><option>Summer</option><option>Winter</option><option>Spring</option><option>Autumn</option><option>Custom</option></select></div>{product.season === 'Custom' && <div className="form-group full-width"><label>Custom Season Name</label><input type="text" name="custom_season" value={product.custom_season} onChange={handleChange} /></div>}</div><div className="form-grid" style={{marginTop: '20px'}}><div className="form-group"><label>Package Dimensions</label><div className="input-group"><input type="number" name="pkg_length" placeholder="L" value={product.pkg_length} onChange={handleChange} /><input type="number" name="pkg_width" placeholder="W" value={product.pkg_width} onChange={handleChange} /><input type="number" name="pkg_height" placeholder="H" value={product.pkg_height} onChange={handleChange} /><select name="pkg_unit" value={product.pkg_unit} onChange={handleChange}><option>cm</option><option>in</option></select></div></div><div className="form-group"><label>Package Weight</label><div className="input-group"><input type="number" name="pkg_weight" placeholder="Weight" value={product.pkg_weight} onChange={handleChange} /><select name="pkg_weight_unit" value={product.pkg_weight_unit} onChange={handleChange}><option>g</option><option>kg</option></select></div></div></div></div>
                 <div className="form-card"><h3>Media Uploads</h3><div className="form-group full-width"><label>Product Images (Max 8)</label><div className="image-upload-area"><div className="image-previews">{(product.image_urls || []).map((url, i) => (<div key={url+i} className="preview-image-container"><img src={url} alt="Existing" className="preview-image" /><button type="button" className="delete-preview-btn" onClick={() => removeExistingImage(url)}>×</button></div>))}{newImages.map((file, index) => (<div key={index} className="preview-image-container"><img src={URL.createObjectURL(file)} alt="New" className="preview-image" /><button type="button" className="delete-preview-btn" onClick={() => removeNewImage(index)}>×</button></div>))}</div><label htmlFor="image-upload" className="upload-btn-label"><input id="image-upload" type="file" multiple accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} /><span>+ Add Images</span></label></div></div><div className="form-group full-width"><label>Product Video (Max 60MB)</label>{product.video_url || newVideo ? (<div className="video-preview-container"><video src={newVideo ? URL.createObjectURL(newVideo) : product.video_url} controls /><button type="button" className="delete-preview-btn" onClick={removeVideo}>×</button></div>) : (<label htmlFor="video-upload" className="upload-btn-label"><span>+ Add Video</span></label>)}<input id="video-upload" type="file" accept="video/mp4,video/mov" onChange={handleVideoChange} style={{display: 'none'}} /></div></div>
                 <div className="form-actions"><button type="button" className="btn-secondary" onClick={() => navigate('/products')}>Cancel</button><button type="submit" className="btn-primary" disabled={isSaving}>{isSaving ? <div className="spinner-small"></div> : (isEditMode ? 'Update Product' : 'Save Product')}</button></div>
