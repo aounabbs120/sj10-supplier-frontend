@@ -4,29 +4,38 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './VideoPlayer.css';
 
+// --- Place the hardcoded list OUTSIDE the component ---
+// This ensures it is a constant and doesn't trigger re-renders.
+const allVideoLinks = [
+    'https://www.youtube.com/watch?v=c-I5S_zTwf8',
+    'https://www.youtube.com/watch?v=W6NZfCO5eZE',
+    'https://www.youtube.com/watch?v=k32voqQhODc',
+    'https://www.youtube.com/watch?v=8dWL3wF_OMw',
+];
+
+// Helper function to extract ID from URL (can also be outside)
+const getYouTubeIdFromUrl = (url) => {
+    try {
+        const urlObj = new URL(url);
+        return urlObj.hostname === 'youtu.be' ? urlObj.pathname.slice(1) : urlObj.searchParams.get('v');
+    } catch (e) { return null; }
+};
+
+
 const VideoPlayer = () => {
     const { videoId } = useParams();
     const navigate = useNavigate();
     const [videoData, setVideoData] = useState(null);
-    const [relatedVideos, setRelatedVideos] = useState([]); // State for related videos
-
-    // A hardcoded list of potential related videos to pull from
-    const allVideoLinks = [
-        'https://www.youtube.com/watch?v=c-I5S_zTwf8',
-        'https://www.youtube.com/watch?v=W6NZfCO5eZE',
-        'https://www.youtube.com/watch?v=k32voqQhODc',
-        'https://www.youtube.com/watch?v=8dWL3wF_OMw',
-    ];
+    const [relatedVideos, setRelatedVideos] = useState([]);
 
     useEffect(() => {
         if (!videoId) return;
         
         const fetchDetails = async () => {
-            // Fetch main video details
             const mainVideoPromise = fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`).then(res => res.json());
             
-            // Fetch related videos details (excluding the current one)
-            const relatedLinks = allVideoLinks.filter(link => !link.includes(videoId)).slice(0, 3); // Get 3 other videos
+            // --- THIS LOGIC WAS CAUSING THE WARNING ---
+            const relatedLinks = allVideoLinks.filter(link => !link.includes(videoId)).slice(0, 3);
             const relatedVideosPromises = relatedLinks.map(link =>
                 fetch(`https://noembed.com/embed?url=${link}`).then(res => res.json())
             );
@@ -38,6 +47,9 @@ const VideoPlayer = () => {
         };
 
         fetchDetails();
+        // --- THIS IS THE FIX ---
+        // We add 'videoId' because the effect re-runs when the videoId changes.
+        // 'allVideoLinks' is now a constant outside the component, so it doesn't need to be a dependency.
     }, [videoId]);
 
     if (!videoData) return <div className="player-loading">Loading...</div>;
@@ -65,7 +77,7 @@ const VideoPlayer = () => {
 
             <div className="video-info-container">
                 <h2 className="player-video-title">{videoData.title}</h2>
-                <p className="video-stats">{/* Stats like views are not available via this simple API */}</p>
+                <p className="video-stats">{/* Stats not available */}</p>
                 
                 <div className="channel-bar">
                     <div className="channel-identity">
@@ -104,14 +116,5 @@ const VideoPlayer = () => {
         </div>
     );
 };
-
-// Helper function to extract ID from URL
-const getYouTubeIdFromUrl = (url) => {
-    try {
-        const urlObj = new URL(url);
-        return urlObj.hostname === 'youtu.be' ? urlObj.pathname.slice(1) : urlObj.searchParams.get('v');
-    } catch (e) { return null; }
-};
-
 
 export default VideoPlayer;
