@@ -5,7 +5,7 @@ import authService from './authService';
 
 // The base URL for your protected supplier APIs
 // NOTE: We change the API_URL here for the verification endpoint.
-const API_URL = 'http://129.154.42.80/api';
+const API_URL = 'http://localhost:4000/api';
 
 // Create a single, centralized Axios instance.
 const api = axios.create({

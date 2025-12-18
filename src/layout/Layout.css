@@ -1,16 +1,20 @@
+/* src/layout/Layout.css */
+
 .main-layout {
     display: flex;
-    flex-direction: column; /* Stack content on top of nav bar */
+    flex-direction: column;
     min-height: 100vh;
-    background-color: #f4f7fa;
+    background-color: #f3f4f6; /* Global background color */
 }
 
 .content-area {
-    flex-grow: 1; /* Takes up all available space */
+    flex-grow: 1;
     padding: 20px;
-    overflow-y: auto;
-    /* VERY IMPORTANT: Add padding at the bottom equal to the nav bar's height */
+    /* IMPORTANT: Add top padding equal to Header height (70px) + some space */
+    padding-top: 90px; 
+    /* IMPORTANT: Add bottom padding equal to Bottom Nav height (70px) + some space */
     padding-bottom: 90px;
+    overflow-y: auto;
 }
 
 .bottom-nav {
@@ -28,13 +32,14 @@
     z-index: 1000;
 }
 
+/* ... keep existing nav-link styles ... */
 .nav-link {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-decoration: none;
-    color: #6b7280; /* Default color: grey */
+    color: #6b7280;
     flex-grow: 1;
     padding: 8px 0;
     transition: color 0.3s ease;
@@ -42,31 +47,14 @@
 
 .nav-icon {
     font-size: 24px;
+    margin-bottom: 2px;
 }
 
 .nav-text {
-    font-size: 12px;
-    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 500;
 }
 
-/* Style for the active link */
 .nav-link.active {
-    color: #4f46e5; /* Active color: purple */
-}
-
-/* --- NEW: Style for the logout button on the Account page --- */
-.logout-btn-page {
-    background-color: #ef4444; /* Red color */
-    color: white;
-    border: none;
-    padding: 12px 25px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-    font-size: 16px;
-    transition: background-color 0.3s;
-}
-
-.logout-btn-page:hover {
-    background-color: #dc2626; /* Darker red on hover */
+    color: #4f46e5;
 }

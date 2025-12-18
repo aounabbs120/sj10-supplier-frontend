@@ -1,5 +1,10 @@
+// src/components/ProductCard.js
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+// NOTE: This component is restored to its original horizontal list layout.
+// The ONLY change is the price display logic.
 
 const ProductCard = ({ product, cartCount = 0, onDelete }) => {
     const navigate = useNavigate();
@@ -20,6 +25,7 @@ const ProductCard = ({ product, cartCount = 0, onDelete }) => {
     return (
         <div className="product-card">
             <div className="product-image-container">
+                {/* This shimmer logic is from your original file */}
                 {!isImageLoading && <div className="shimmer-wrapper"></div>}
                 <img src={imageUrl} alt={product.title} className={`product-image ${isImageLoading ? 'loading' : 'loaded'}`} onLoad={() => setIsImageLoading(false)} />
             </div>
@@ -32,7 +38,17 @@ const ProductCard = ({ product, cartCount = 0, onDelete }) => {
                     </button>
                 </div>
                 <div className="product-meta">
-                    <span className="product-price">PKR {product.price.toLocaleString()}</span>
+                    {/* --- THIS IS THE ONLY MODIFIED PART --- */}
+                    {product.discounted_price && product.discounted_price > 0 ? (
+                        <>
+                            <span className="product-price-discounted">PKR {product.discounted_price.toLocaleString()}</span>
+                            <s className="product-price-original">PKR {product.price.toLocaleString()}</s>
+                        </>
+                    ) : (
+                        <span className="product-price">PKR {product.price.toLocaleString()}</span>
+                    )}
+                    {/* --- END OF MODIFICATION --- */}
+                    
                     <span className="product-stock">Stock: {product.quantity}</span>
                     <span className="product-views">👁️ {product.views || 0}</span>
                     <span className="product-carts">🛒 {cartCount}</span>

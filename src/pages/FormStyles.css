@@ -1,259 +1,238 @@
-/* Apply a dark background to the whole page to complement the Vanta animation */
-body {
-    background-color: #111827; /* Dark navy blue */
+/* src/pages/FormStyles.css - Final Premium Version */
+
+/* --- Universal Reset & Font Import --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-/* Page Load Animation */
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+html, body {
+    font-family: 'Inter', sans-serif;
 }
 
-/* General Styling for the Form Container */
-.form-container {
+/* --- NEW: Hyper-Animated Particle Background --- */
+.auth-layout {
     position: relative;
-    z-index: 2;
-    max-width: 420px;
-    margin: 5vh auto; /* Use viewport height for better vertical centering */
-    padding: 25px;
-    background-color: rgba(22, 28, 45, 0.8); /* Darker semi-transparent glass */
-    backdrop-filter: blur(12px) saturate(150%);
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    text-align: center;
-    color: #f9fafb; /* Light text for dark background */
-    animation: fadeInUp 0.7s ease-out forwards;
-}
-
-.form-container h2 {
-    font-size: 26px;
-    margin-bottom: 10px;
-}
-
-.form-container p {
-    color: #d1d5db; /* Lighter grey for paragraph text */
-    margin-bottom: 25px;
-}
-
-/* Image Placeholder Styling */
-.form-image-placeholder {
-    width: 100%;
-    aspect-ratio: 16 / 10; /* Use aspect ratio for responsiveness */
-    background-color: rgba(0, 0, 0, 0.2);
-    border-radius: 12px;
-    margin-bottom: 25px;
     overflow: hidden;
+    background-color: #0c0a18;
+    min-height: 100vh;
 }
 
-.form-image {
+/* This is the container for the animated particles */
+.particle-container {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    overflow: hidden;
+    z-index: 0;
 }
 
-/* Input Fields, Selects, and Textareas */
-input, select {
-    background-color: rgba(55, 65, 81, 0.5); /* Semi-transparent dark input */
-    color: #f9fafb;
+/* Each particle is a span. We create multiple spans and animate them. */
+.particle {
+    position: absolute;
+    background-color: #fff;
+    border-radius: 50%;
+    opacity: 0;
+    animation: rise 15s infinite linear;
+}
+
+/* We create varied sizes and animation delays for a random effect */
+.particle:nth-child(1) { width: 5px; height: 5px; left: 10%; animation-delay: 1s; animation-duration: 12s; }
+.particle:nth-child(2) { width: 7px; height: 7px; left: 20%; animation-delay: 3s; animation-duration: 18s; }
+.particle:nth-child(3) { width: 4px; height: 4px; left: 30%; animation-delay: 5s; animation-duration: 14s; }
+.particle:nth-child(4) { width: 6px; height: 6px; left: 40%; animation-delay: 0s; animation-duration: 20s; }
+.particle:nth-child(5) { width: 5px; height: 5px; left: 50%; animation-delay: 8s; animation-duration: 15s; }
+.particle:nth-child(6) { width: 8px; height: 8px; left: 60%; animation-delay: 6s; animation-duration: 12s; }
+.particle:nth-child(7) { width: 4px; height: 4px; left: 70%; animation-delay: 2s; animation-duration: 19s; }
+.particle:nth-child(8) { width: 7px; height: 7px; left: 80%; animation-delay: 10s; animation-duration: 16s; }
+.particle:nth-child(9) { width: 5px; height: 5px; left: 90%; animation-delay: 4s; animation-duration: 13s; }
+.particle:nth-child(10) { width: 6px; height: 6px; left: 5%; animation-delay: 7s; animation-duration: 17s; }
+
+@keyframes rise {
+    0% {
+        transform: translateY(100vh);
+        opacity: 0;
+    }
+    10% {
+        opacity: 0.8;
+    }
+    90% {
+        opacity: 0.8;
+    }
+    100% {
+        transform: translateY(-10vh);
+        opacity: 0;
+    }
+}
+
+
+/* --- Main Layout --- */
+.auth-layout { display: flex; flex-direction: column; }
+.branding-panel, .form-panel { position: relative; z-index: 1; }
+.branding-panel { padding: 40px 25px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; color: #fff; }
+.branding-logo { width: 100px; height: 100px; border-radius: 50%; margin-bottom: 20px; border: 3px solid rgba(255, 255, 255, 0.5); }
+.branding-title { font-size: 2.5rem; font-weight: 800; margin: 0; text-shadow: 0 0 10px rgba(255, 255, 255, 0.2); }
+.branding-subtitle { color: #d1d5db; font-size: 1.1rem; max-width: 400px; margin-top: 10px; }
+.form-panel { display: flex; justify-content: center; align-items: center; flex-grow: 1; padding: 20px; }
+
+/* --- NEW: Glowing Edge Effect for Glass Form --- */
+.glass-form-container {
+    position: relative; /* Needed for the pseudo-element */
+    width: 100%;
+    max-width: 480px;
+    background: rgba(17, 24, 39, 0.7);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    padding: 30px;
+    color: #fff;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    width: 100%;
-    padding: 14px 20px;
-    margin: 8px 0;
-    border-radius: 30px;
-    box-sizing: border-box;
-    font-size: 16px;
-    transition: all 0.3s ease;
+    overflow: hidden; /* Hide the parts of the glow that are outside the border-radius */
 }
 
-input::placeholder {
-    color: #9ca3af;
-}
-
-input:focus, select:focus {
-    outline: none;
-    border-color: #818cf8;
-    box-shadow: 0 0 15px rgba(129, 140, 248, 0.3);
-}
-
-/* Password Visibility Toggle */
-.password-wrapper {
-    position: relative;
-    width: 100%;
-}
-.password-toggle-icon {
+/* This pseudo-element creates the animated gradient border */
+.glass-form-container::before {
+    content: '';
     position: absolute;
     top: 50%;
-    right: 20px;
-    transform: translateY(-50%);
-    cursor: pointer;
-    font-size: 20px;
+    left: 50%;
+    width: 200%; /* Make it large enough to spin around the container */
+    height: 200%;
+    z-index: -1;
+    background: conic-gradient(
+        transparent,
+        #8b5cf6,
+        #6366f1,
+        transparent 30%
+    );
+    animation: rotate-glow 5s linear infinite;
+    transform-origin: center center;
+    transform: translate(-50%, -50%);
 }
 
-/* Button Styling with Spinner */
-.submit-btn, .next-btn {
-    width: 100%;
-    background: linear-gradient(90deg, #4f46e5, #818cf8);
-    color: white;
-    padding: 14px 20px;
-    margin: 20px 0 10px 0;
-    border: none;
-    border-radius: 30px;
-    font-size: 18px;
-    font-weight: bold;
-    transition: all 0.3s ease;
+@keyframes rotate-glow {
+    from {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+
+.glass-form-container.register { max-width: 520px; }
+/* Add this to src/pages/FormStyles.css */
+
+/* Update the generic error message to be flexible */
+.error-message { 
+    padding: 15px; 
+    border-radius: 8px; 
+    font-size: 0.95rem; 
+    margin-top: 20px; 
+    line-height: 1.5;
+    text-align: left; /* Align left for longer messages */
     display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 53px; /* Ensure button height doesn't change with spinner */
+    align-items: flex-start; /* Align icon with top of text */
 }
 
-.submit-btn:hover, .next-btn:hover {
-    box-shadow: 0 0 20px rgba(129, 140, 248, 0.4);
+/* Red Style (Default Error / Banned) */
+.error-message.error {
+    color: #fca5a5; 
+    background-color: rgba(239, 68, 68, 0.15); 
+    border: 1px solid rgba(239, 68, 68, 0.5); 
 }
 
-.submit-btn:disabled, .next-btn:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
+/* Yellow Style (Pending / Under Review) */
+.error-message.warning {
+    color: #fcd34d; /* Amber-300 */
+    background-color: rgba(245, 158, 11, 0.15); /* Amber background */
+    border: 1px solid rgba(245, 158, 11, 0.5); /* Amber border */
+}
+/* --- Desktop Layout --- */
+@media (min-width: 900px) {
+    .auth-layout { flex-direction: row; }
+    .branding-panel { flex-basis: 45%; }
+    .form-panel { flex-basis: 55%; }
+    .glass-form-container { padding: 40px; }
 }
 
-.back-btn {
-    background-color: transparent;
-    color: #d1d5db;
-    padding: 12px 20px;
-    border: 1px solid #4b5563;
-    border-radius: 30px;
-    font-size: 16px;
-    margin-right: 10px;
-    transition: all 0.3s ease;
-}
-.back-btn:hover {
-    background-color: #4b5563;
-    color: white;
-}
+/* --- Form Elements --- */
+.form-header { text-align: center; margin-bottom: 25px; }
+.form-header h2 { font-size: 1.8rem; font-weight: 700; margin: 0 0 5px 0; }
+.form-header p { font-size: 1rem; color: #c7d2fe; margin: 0; }
 
-/* Spinner Animation */
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-.spinner {
-    border: 4px solid rgba(255, 255, 255, 0.3);
-    border-top-color: #fff;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    animation: spin 1s ease-in-out infinite;
-}
+.form-wrapper { position: relative; overflow: hidden; min-height: 420px; }
+.auth-form { padding: 0; margin: 0; display: flex; flex-direction: column; gap: 18px; }
 
-/* Progress Bar (for Register page) */
-.progress-bar {
-    width: 100%;
-    height: 8px;
-    background-color: #374151;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    overflow: hidden;
-}
-.progress-bar-inner {
-    height: 100%;
-    background: linear-gradient(90deg, #4f46e5, #818cf8);
-    border-radius: 8px;
-    transition: width 0.4s ease;
-}
+.input-group { display: flex; flex-direction: column; }
+.input-group label { font-size: 0.9rem; font-weight: 500; margin-bottom: 8px; color: #a5b4fc; }
+.input-group input, .input-group select { width: 100%; background: rgba(0, 0, 0, 0.25); border: 1px solid #4b5563; border-radius: 10px; padding: 14px; color: #fff; font-size: 1rem; transition: all 0.3s ease; }
+.input-group input:focus, .input-group select:focus { outline: none; border-color: #a5b4fc; box-shadow: 0 0 0 3px rgba(165, 180, 252, 0.3); }
 
-/* Redirect Link */
-.redirect-link {
-    margin-top: 20px;
-    font-size: 14px;
-}
-.redirect-link a {
-    color: #818cf8;
-    text-decoration: none;
-    font-weight: bold;
-}
-.redirect-link a:hover {
-    text-decoration: underline;
-}
+/* Custom Select/Dropdown Styles */
+.input-group.custom-select { position: relative; }
+.input-group.custom-select::after { content: '▼'; font-size: 0.8rem; color: #9ca3af; position: absolute; right: 15px; top: 45px; pointer-events: none; }
+.input-group select { appearance: none; -webkit-appearance: none; padding-right: 40px; }
+.input-group select option { background: #1f2937; color: #fff; }
 
-/* --- RESPONSIVENESS FOR ALL DEVICES --- */
+/* Password visibility toggle */
+.password-wrapper { position: relative; display: flex; align-items: center; }
+.password-wrapper input { width: 100%; padding-right: 45px; }
+.password-toggle-icon { position: absolute; right: 15px; cursor: pointer; user-select: none; font-size: 1.2rem; }
 
-/* For Small Phones (ensures content is visible) */
-@media (max-width: 480px) {
-    .form-container {
-        margin: 2vh auto; /* Smaller margin for small screens */
-        padding: 20px;
-        width: 90%; /* Use width percentage */
-    }
-    .form-container h2 {
-        font-size: 22px;
-    }
-}
+.form-options { text-align: right; margin: -10px 0 10px 0; }
+.form-options a { color: #a5b4fc; font-size: 0.9rem; text-decoration: none; }
+.form-options a:hover { text-decoration: underline; }
 
-/* For Tablets and Desktops */
-@media (min-width: 768px) {
-    .form-container {
-        max-width: 480px;
-        padding: 40px;
-    }
-    .form-container h2 {
-        font-size: 32px;
-    }
-}
-/* Ensure these exist in your FormStyles.css */
+/* Custom Radio Boxes */
+.radio-box-group { display: flex; gap: 10px; flex-wrap: wrap; }
+.radio-box { flex-grow: 1; text-align: center; padding: 12px; background: rgba(0, 0, 0, 0.25); border: 1px solid #4b5563; border-radius: 10px; cursor: pointer; transition: all 0.2s ease; font-weight: 500; }
+.radio-box:hover { background-color: rgba(0, 0, 0, 0.4); }
+.radio-box.selected { border-color: #a5b4fc; background-color: #4f46e5; color: #fff; font-weight: 600; box-shadow: 0 0 10px rgba(79, 70, 229, 0.5); }
 
-.form-container {
-    background: rgba(255, 255, 255, 0.1); /* Glassmorphism background */
-    backdrop-filter: blur(10px);
-    padding: 40px;
-    border-radius: 15px;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    width: 100%;
-    max-width: 400px;
-    margin: 50px auto;
-    color: white;
-}
+.error-message { padding: 12px; border-radius: 8px; text-align: center; font-size: 0.9rem; margin-top: 15px; color: #fca5a5; background-color: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.5); }
 
-.submit-btn {
-    width: 100%;
-    padding: 12px;
-    background: linear-gradient(90deg, #4f46e5, #7c3aed);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: transform 0.2s;
-}
+/* Buttons & Actions */
+.submit-btn, .next-btn, .back-btn { padding: 14px; border-radius: 10px; border: none; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; flex-grow: 1; display: flex; justify-content: center; align-items: center; }
+.submit-btn, .next-btn { background: linear-gradient(90deg, #6366f1, #8b5cf6); color: #fff; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); }
+.submit-btn:hover:not(:disabled), .next-btn:hover:not(:disabled) { transform: translateY(-3px) scale(1.02); box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4); }
+.submit-btn:active:not(:disabled), .next-btn:active:not(:disabled) { transform: translateY(-1px) scale(0.98); }
+.submit-btn:disabled, .next-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+.back-btn { background-color: transparent; border: 1px solid #4b5563; color: #e5e7eb; }
+.back-btn:hover { background-color: #374151; }
+.multi-step-actions { display: flex; justify-content: space-between; gap: 15px; margin-top: 20px; }
 
-.submit-btn:hover {
-    transform: scale(1.02);
-}
+.spinner { width: 24px; height: 24px; border: 3px solid rgba(255, 255, 255, 0.3); border-top-color: #fff; border-radius: 50%; animation: spin 1s linear infinite; }
+.redirect-link { text-align: center; margin-top: 25px; }
+.redirect-link p { color: #9ca3af; margin: 0; }
+.redirect-link a { color: #fff; font-weight: 600; text-decoration: none; transition: color 0.2s; }
+.redirect-link a:hover { color: #a5b4fc; }
+.form-hint { font-size: 0.9rem; color: #9ca3af; text-align: center; margin-top: 10px; }
 
-.error-message {
-    background-color: rgba(255, 0, 0, 0.2);
-    color: #ffcccc;
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 15px;
-    text-align: center;
-    border: 1px solid rgba(255, 0, 0, 0.3);
-}
+/* --- NEW: Upgraded Step Indicator --- */
+.step-indicator { display: flex; align-items: flex-start; margin-bottom: 30px; width: 100%; }
+.step { display: flex; flex-direction: column; align-items: center; position: relative; flex: 1; }
+.step-icon-wrapper { position: relative; }
+.step-icon { width: 40px; height: 40px; border-radius: 50%; background-color: #374151; color: #9ca3af; display: flex; justify-content: center; align-items: center; font-size: 1.2rem; transition: all 0.4s ease; border: 2px solid #4b5563; z-index: 1; }
+.step-label { color: #9ca3af; font-size: 0.8rem; margin-top: 8px; transition: all 0.4s ease; white-space: nowrap; }
+.step-line { position: absolute; top: 19px; left: calc(50% + 24px); width: calc(100% - 48px); height: 2px; background-color: #374151; z-index: -1; transition: background-color 0.4s ease .2s; }
+.step.active .step-icon { border-color: #a5b4fc; background: linear-gradient(135deg, #4f46e5, #8b5cf6); color: #fff; transform: scale(1.1); box-shadow: 0 0 15px rgba(139, 92, 246, 0.5); }
+.step.active .step-label { color: #fff; font-weight: 500; }
+.step-line.completed { background: linear-gradient(90deg, #4f46e5, #8b5cf6); }
+.step:last-child { flex-grow: 0; flex-shrink: 0; flex-basis: auto; }
 
-.input-group input {
-    width: 100%;
-    padding: 12px;
-    margin-bottom: 20px;
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.2);
-    background: rgba(0,0,0,0.2);
-    color: white;
-    outline: none;
-}
+/* --- Success Screen --- */
+.success-screen { text-align: center; padding: 40px 20px; color: #fff; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 480px; }
+.success-icon { width: 80px; height: 80px; border-radius: 50%; background-color: #10b981; font-size: 3rem; line-height: 80px; margin: 0 auto 20px auto; animation: popIn 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55) .2s both; }
+.success-screen h2 { font-size: 2rem; margin-bottom: 10px; }
+.success-screen p { max-width: 400px; margin: 0 auto 25px auto; color: #d1d5db; line-height: 1.6; }
+
+/* Animations */
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }

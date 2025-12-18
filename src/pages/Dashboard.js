@@ -18,30 +18,68 @@ import './Dashboard.css';
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler);
 
-// Re-integrated MiniChartSVG from your original dashboard to display in the stat cards
-const MiniChartSVG = () => (
+// --- 1. Helper Component: Animated Counter ---
+const CountUp = ({ end, duration = 2000 }) => {
+    const [count, setCount] = useState(0);
+
+    useEffect(() => {
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            setCount(Math.floor(progress * (end - 0) + 0));
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            }
+        };
+        window.requestAnimationFrame(step);
+    }, [end, duration]);
+
+    return <span>{count.toLocaleString()}</span>;
+};
+
+// --- 2. Helper Component: SVG Mini Chart ---
+const MiniChartSVG = ({ color = "#4ade80" }) => (
     <svg width="100%" height="100%" viewBox="0 0 100 40" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M0 30 L10 25 L20 30 L30 20 L40 25 L50 15 L60 20 L70 10 L80 15 L90 5 L100 10" 
-        fill="none" stroke="#4ade80" strokeWidth="3" strokeLinecap="round" />
+        <defs>
+            <linearGradient id={`grad-${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style={{ stopColor: color, stopOpacity: 0.5 }} />
+                <stop offset="100%" style={{ stopColor: color, stopOpacity: 0 }} />
+            </linearGradient>
+        </defs>
+        <path d="M0 35 L10 30 L20 32 L30 20 L40 25 L50 15 L60 18 L70 8 L80 12 L90 2 L100 8 V40 H0 Z" 
+              fill={`url(#grad-${color})`} stroke="none" />
+        <path d="M0 35 L10 30 L20 32 L30 20 L40 25 L50 15 L60 18 L70 8 L80 12 L90 2 L100 8" 
+              fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
 );
 
-const StatCard = ({ title, value, percentage, index, children }) => (
-    <div className="stat-card" style={{ animationDelay: `${index * 100}ms` }}>
-        <div className="stat-info">
-            <p className="stat-title">{title}</p>
-            <h3 className="stat-value">{value}</h3>
-            <span className={percentage.startsWith('+') ? 'stat-percentage positive' : 'stat-percentage negative'}>
-                {percentage}
-            </span>
+const StatCard = ({ title, value, percentage, index, icon, color }) => (
+    <div className="stat-card" style={{ animationDelay: `${index * 150}ms` }}>
+        <div className="stat-header">
+            <div className={`stat-icon-wrapper ${color}`}>
+                {icon}
+            </div>
+            {percentage && (
+                <span className={`stat-percentage ${percentage.startsWith('+') ? 'positive' : 'negative'}`}>
+                    {percentage}
+                </span>
+            )}
         </div>
-        <div className="mini-chart">
-            {children}
+        <div className="stat-content">
+            <h3 className="stat-value">
+                {/* Use raw number for counting if possible, else string */}
+                {typeof value === 'number' ? <CountUp end={value} /> : value}
+            </h3>
+            <p className="stat-title">{title}</p>
+        </div>
+        <div className="stat-chart-bg">
+            <MiniChartSVG color={percentage.startsWith('+') ? '#10b981' : '#f43f5e'} />
         </div>
     </div>
 );
 
-// --- THE FINAL, ROBUST DASHBOARD COMPONENT ---
+// --- MAIN DASHBOARD COMPONENT ---
 const Dashboard = ({ setIsLoading }) => {
     const [supplierInfo, setSupplierInfo] = useState(null);
     const [stats, setStats] = useState(null);
@@ -49,11 +87,14 @@ const Dashboard = ({ setIsLoading }) => {
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('YEAR');
     const [pageLoading, setPageLoading] = useState(true);
+    
+    // State to handle profile image fallback
+    const [imgError, setImgError] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
             if (!navigator.onLine) {
-                setError("Sorry, you don't have an internet connection.");
+                setError("No internet connection.");
                 setIsLoading(false); 
                 setPageLoading(false);
                 return;
@@ -72,7 +113,7 @@ const Dashboard = ({ setIsLoading }) => {
                 const statsData = dashboardApiResponse.stats || dashboardApiResponse;
                 setStats(statsData);
                 
-                // CRITICAL FIX: Use real chart data if available, otherwise use a safe placeholder to ensure the graph always renders.
+                // Use real data or fallback data for visual consistency
                 if (dashboardApiResponse.chartData && dashboardApiResponse.chartData.data.length > 0) {
                     setChartData(dashboardApiResponse.chartData);
                 } else {
@@ -83,7 +124,7 @@ const Dashboard = ({ setIsLoading }) => {
                 }
                 
             } catch (err) {
-                setError("Could not load your dashboard. Please try again later.");
+                setError("Could not load dashboard data.");
                 console.error("Dashboard fetch error:", err);
             } finally {
                 setIsLoading(false);
@@ -94,106 +135,156 @@ const Dashboard = ({ setIsLoading }) => {
         fetchData();
     }, [setIsLoading]);
 
-    // Render error state if there's an issue
     if (error) {
         return (
             <div className="full-screen-message-container">
                 <div className="message-box">
-                    <span className="sad-emoji">😔</span> <h1>Connection Error</h1> <p>{error}</p>
+                    <span className="sad-emoji">⚠️</span> 
+                    <h1>Oops!</h1> 
+                    <p>{error}</p>
                 </div>
             </div>
         );
     }
     
-    // While the page is loading, let the global loader handle it by returning null.
-    if (pageLoading) {
-        return null;
-    }
+    if (pageLoading) return null;
 
-    // --- Chart Configuration and Options ---
+    // Chart Options
     const salesChartConfig = {
         labels: chartData?.labels ?? [],
         datasets: [{
-            label: 'Total Sales',
+            label: 'Sales (PKR)',
             data: chartData?.data ?? [],
-            borderColor: '#4f46e5',
+            borderColor: '#6366f1',
+            borderWidth: 3,
             backgroundColor: (context) => {
                 const ctx = context.chart.ctx;
-                const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-                gradient.addColorStop(0, 'rgba(79, 70, 229, 0.4)');
-                gradient.addColorStop(1, 'rgba(79, 70, 229, 0)');
+                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                gradient.addColorStop(0, 'rgba(99, 102, 241, 0.5)');
+                gradient.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
                 return gradient;
             },
-            tension: 0.4, pointRadius: 0, pointHoverRadius: 8,
-            pointHoverBackgroundColor: '#4f46e5', pointHoverBorderColor: '#fff', fill: true,
+            tension: 0.4, 
+            pointRadius: 4, 
+            pointBackgroundColor: '#ffffff',
+            pointBorderColor: '#6366f1',
+            pointBorderWidth: 2,
+            pointHoverRadius: 8,
+            fill: true,
         }],
     };
     
     const salesChartOptions = {
-        responsive: true, maintainAspectRatio: false,
-        animation: { duration: 1500, easing: 'easeInOutQuint' },
-        plugins: { tooltip: { enabled: true, mode: 'index', intersect: false }, legend: { display: false } },
+        responsive: true, 
+        maintainAspectRatio: false,
+        animation: { duration: 2000, easing: 'easeOutQuart' },
+        plugins: { 
+            legend: { display: false },
+            tooltip: { 
+                backgroundColor: '#1f2937', 
+                titleColor: '#fff', 
+                bodyColor: '#fff',
+                padding: 10,
+                cornerRadius: 8,
+                displayColors: false,
+            } 
+        },
         scales: {
-            x: { grid: { display: false } },
+            x: { grid: { display: false }, ticks: { color: '#9ca3af' } },
             y: {
-                beginAtZero: false, // Allows graph to not start at 0 if data is high
-                ticks: { 
-                    callback: (value) => `${value / 1000}k` // Formats y-axis labels like 0.5k, 0.6k
-                }
+                grid: { borderDash: [5, 5], color: '#e5e7eb' },
+                ticks: { color: '#9ca3af', callback: (val) => `${val / 1000}k` }
             }
         },
     };
 
+    // Fallback Image Logic
+    const profileImageSrc = !imgError && supplierInfo?.profile_pic 
+        ? supplierInfo.profile_pic 
+        : `https://ui-avatars.com/api/?name=${encodeURIComponent(supplierInfo?.full_name || 'User')}&background=6366f1&color=fff&size=128`;
+
     return (
         <div className="dashboard-container">
-            <header className="dashboard-header">
-                <div className="header-title-container">
-                    <img src="/logo.gif" alt="SJ10 Logo" className="header-logo-gif" />
-                    <h2>Supplier Panel</h2>
+            {/* Header Section */}
+            <header className="dashboard-header fade-in-down">
+                <div className="header-text">
+                    <h1>Hello, {supplierInfo?.full_name?.split(' ')[0] || 'Supplier'}! 👋</h1>
+                    <p>Here's what's happening with your store today.</p>
                 </div>
-                <div className="profile-container">
-                    <img 
-                        src={supplierInfo?.profile_pic ?? '/images/default-profile.png'} 
-                        alt={supplierInfo?.full_name ?? 'Supplier'} 
-                        className="profile-picture" 
-                    />
+                <div className="header-actions">
+                    <div className="profile-container">
+                        <img 
+                            src={profileImageSrc} 
+                            alt="Profile" 
+                            className="profile-picture" 
+                            onError={() => setImgError(true)}
+                        />
+                        <div className="status-indicator"></div>
+                    </div>
                 </div>
             </header>
 
+            {/* Stats Grid */}
             {stats && (
               <div className="stats-grid">
-                  <StatCard title="Total Products" value={stats.totalProducts?.toLocaleString() ?? '0'} percentage="+2.5%" index={0}>
-                      <MiniChartSVG />
-                  </StatCard>
-                  <StatCard title="Pending Orders" value={stats.pendingOrders?.toLocaleString() ?? '0'} percentage="-1.8%" index={1}>
-                      <MiniChartSVG />
-                  </StatCard>
-                  <StatCard title="Delivered Orders" value={stats.totalDeliveredOrders?.toLocaleString() ?? '0'} percentage="+5.1%" index={2}>
-                      <MiniChartSVG />
-                  </StatCard>
-                  <StatCard title="New Reviews" value={stats.newReviews?.toLocaleString() ?? '0'} percentage="+12%" index={3}>
-                      <MiniChartSVG />
-                  </StatCard>
+                  <StatCard 
+                    title="Total Products" 
+                    value={stats.totalProducts ?? 0} 
+                    percentage="+2.5%" 
+                    index={0} 
+                    icon="📦"
+                    color="blue"
+                  />
+                  <StatCard 
+                    title="Pending Orders" 
+                    value={stats.pendingOrders ?? 0} 
+                    percentage="-1.8%" 
+                    index={1} 
+                    icon="⏳"
+                    color="orange"
+                  />
+                  <StatCard 
+                    title="Delivered" 
+                    value={stats.totalDeliveredOrders ?? 0} 
+                    percentage="+5.1%" 
+                    index={2} 
+                    icon="✅"
+                    color="green"
+                  />
+                  <StatCard 
+                    title="New Reviews" 
+                    value={stats.newReviews ?? 0} 
+                    percentage="+12%" 
+                    index={3} 
+                    icon="⭐"
+                    color="purple"
+                  />
               </div>
             )}
 
-            <div className="sales-chart-container">
+            {/* Chart Section */}
+            <div className="sales-chart-container fade-in-up">
                 <div className="chart-header">
-                    <h3>Sales Analytics</h3>
+                    <div className="chart-title">
+                        <h3>Sales Analytics</h3>
+                        <p>Revenue over time</p>
+                    </div>
                     <div className="chart-tabs">
-                        <button className={activeTab === 'WEEK' ? 'active' : ''} onClick={() => setActiveTab('WEEK')}>WEEK</button>
-                        <button className={activeTab === 'MONTH' ? 'active' : ''} onClick={() => setActiveTab('MONTH')}>MONTH</button>
-                        <button className={activeTab === 'YEAR' ? 'active' : ''} onClick={() => setActiveTab('YEAR')}>YEAR</button>
+                        {['WEEK', 'MONTH', 'YEAR'].map((tab) => (
+                            <button 
+                                key={tab}
+                                className={activeTab === tab ? 'active' : ''} 
+                                onClick={() => setActiveTab(tab)}
+                            >
+                                {tab}
+                            </button>
+                        ))}
                     </div>
                 </div>
                 <div className="chart-wrapper">
                     <Line options={salesChartOptions} data={salesChartConfig} />
                 </div>
             </div>
-            
-            <footer className="welcome-footer">
-                <p>Welcome, <strong>{supplierInfo?.full_name ?? 'Valued Supplier'}</strong>, to the SJ10 Supplier Panel!</p>
-            </footer>
         </div>
     );
 };

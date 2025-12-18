@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Ensure this matches your backend port (usually 4000)
-const API_URL = 'http://129.154.42.80/auth';
+const API_URL = 'http://localhost:4000/auth';
 
 const register = async (userData) => {
     const response = await axios.post(`${API_URL}/register`, userData);
