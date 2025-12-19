@@ -1,0 +1,131 @@
+/* src/components/NotificationBanner.css */
+
+/* Define the animation for the neon glow */
+@keyframes neon-glow {
+    0% {
+        box-shadow: 0 0 5px #3498db, 0 0 10px #3498db, 0 0 15px #3498db, 0 0 20px #5fa8d3;
+    }
+    50% {
+        box-shadow: 0 0 10px #3498db, 0 0 20px #5fa8d3, 0 0 30px #5fa8d3, 0 0 40px #2980b9;
+    }
+    100% {
+        box-shadow: 0 0 5px #3498db, 0 0 10px #3498db, 0 0 15px #3498db, 0 0 20px #5fa8d3;
+    }
+}
+
+.notification-banner {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 40px); /* Responsive: Full width with 20px padding on each side */
+    max-width: 800px;
+    background: linear-gradient(135deg, #2c3e50, #1a252f);
+    color: white;
+    padding: 15px 25px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Reduced gap for smaller screens */
+    z-index: 2000;
+    
+    /* --- NEW: Animated Neon Glow --- */
+    border: 1px solid #3498db;
+    animation: neon-glow 3s infinite linear;
+}
+
+.banner-icon {
+    flex-shrink: 0;
+    color: #3498db;
+}
+
+.banner-content {
+    flex-grow: 1;
+    text-align: left;
+}
+
+.banner-content strong {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.banner-content p {
+    font-size: 14px;
+    margin: 4px 0 0 0;
+    color: #bdc3c7;
+    line-height: 1.4; /* Improved readability */
+}
+
+.enable-button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    white-space: nowrap; /* Prevents button text from wrapping */
+}
+
+.enable-button:hover {
+    background-color: #2980b9;
+}
+
+.dismiss-button {
+    background: none;
+    border: none;
+    color: #7f8c8d;
+    cursor: pointer;
+    padding: 5px;
+    margin-left: auto; /* Pushes the button to the far right */
+}
+
+.dismiss-button:hover {
+    color: white;
+}
+
+/* =========================================== */
+/* === RESPONSIVE DESIGN FOR MOBILE PHONES === */
+/* =========================================== */
+@media (max-width: 600px) {
+    .notification-banner {
+        /* On mobile, it becomes a column layout */
+        flex-direction: column;
+        align-items: flex-start; /* Align items to the start */
+        padding: 20px;
+        gap: 12px;
+        top: 10px; /* Closer to the top on mobile */
+        width: calc(100% - 20px); /* Tighter padding */
+    }
+
+    .banner-content {
+        /* The text will now be centered on mobile */
+        text-align: center;
+        width: 100%;
+    }
+
+    .banner-content p {
+        font-size: 13px; /* Slightly smaller font for mobile */
+    }
+
+    .banner-icon {
+        /* Center the icon on mobile */
+        align-self: center;
+    }
+
+    .enable-button {
+        /* Make the button full-width for easy tapping */
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        margin-top: 10px;
+    }
+
+    .dismiss-button {
+        /* Position the 'X' button at the top-right corner */
+        position: absolute;
+        top: 5px;
+        right: 5px;
+    }
+}
