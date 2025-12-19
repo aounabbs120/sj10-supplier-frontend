@@ -40,7 +40,7 @@ import ResetPassword from './pages/ResetPassword';
 // Global CSS
 import './App.css';
 
-// VantaBackground component (Your existing code, unchanged)
+// VantaBackground component (unchanged)
 const VantaBackground = () => {
     const vantaRef = React.useRef(null);
     React.useEffect(() => {
@@ -50,7 +50,7 @@ const VantaBackground = () => {
     return <div ref={vantaRef} className="vanta-background"></div>;
 };
 
-// Main App component (Your existing code, unchanged)
+// Main App component (unchanged)
 function App() {
   const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
@@ -65,7 +65,7 @@ function App() {
 }
 
 // =========================================================================
-// === THE UPGRADED AppLayout COMPONENT WITH CORRECT NOTIFICATION LOGIC ===
+// === THE UPGRADED AppLayout COMPONENT WITH DETAILED DEBUGGING LOGIC ===
 // =========================================================================
 const AppLayout = ({ isLoading, setIsLoading }) => {
     const location = useLocation();
@@ -74,66 +74,79 @@ const AppLayout = ({ isLoading, setIsLoading }) => {
     const isAuthPage = ['/login', '/register', '/forgot-password', '/verify-email']
         .includes(location.pathname) || location.pathname.startsWith('/reset-password');
 
-    // This is the corrected logic that only runs for logged-in users.
+    // Logic to show the banner (unchanged, and correct)
     useEffect(() => {
         const checkNotificationPermission = () => {
             const isSupported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
             if (!isSupported) return;
-
             const hasBeenDismissed = sessionStorage.getItem('notificationBannerDismissed');
-            
             if (Notification.permission === 'default' && !hasBeenDismissed) {
-                const timer = setTimeout(() => setShowNotificationBanner(true), 5000); // 5-second delay
+                const timer = setTimeout(() => setShowNotificationBanner(true), 5000);
                 return () => clearTimeout(timer);
             }
         };
-
-        // THE FIX: Check for a login token AND make sure we are not on a public page.
         const token = localStorage.getItem('supplierToken');
         if (token && !isAuthPage) {
             checkNotificationPermission();
         } else {
-            // If the user is logged out or on a public page, never show the banner.
             setShowNotificationBanner(false);
         }
-    }, [isAuthPage, location.pathname]); // This logic re-runs every time the page URL changes.
+    }, [isAuthPage, location.pathname]);
 
     const handleDismissBanner = () => {
         sessionStorage.setItem('notificationBannerDismissed', 'true');
         setShowNotificationBanner(false);
     };
     
+    // ===================================================================
+    // === THIS IS THE CRITICAL FUNCTION WITH DETAILED LOGGING ADDED ===
+    // ===================================================================
     const handleEnableNotifications = async () => {
         setShowNotificationBanner(false);
         try {
+            console.log("Step 1: Starting notification process...");
+
             const permission = await Notification.requestPermission();
+            console.log("Step 2: Browser permission status:", permission);
             if (permission !== 'granted') {
-                alert('Notification permission was denied. You can enable it later in your browser settings.');
+                console.error("Process stopped: Permission was not granted.");
+                alert('Notification permission was denied.');
                 return;
             }
 
+            console.log("Step 3: Requesting VAPID public key from backend...");
             const vapidPublicKey = await supplierService.getVapidPublicKey();
+            console.log("Step 4: Successfully received VAPID key.");
+
+            console.log("Step 5: Accessing service worker...");
             const registration = await navigator.serviceWorker.ready;
+            console.log("Step 6: Service worker is ready.");
+
+            console.log("Step 7: Creating push subscription...");
             const subscription = await registration.pushManager.subscribe({
                 userVisibleOnly: true,
                 applicationServerKey: vapidPublicKey
             });
-            
-            // This now works because the user is guaranteed to be logged in.
+            console.log("Step 8: Subscription created successfully.");
+
+            console.log("Step 9: Sending subscription object to backend...");
             await supplierService.saveSubscription(subscription);
-            alert('✅ Notifications Enabled! You will now receive real-time alerts.');
+            console.log("Step 10: ✅ SUCCESS! Backend confirmed subscription was saved.");
+            
+            alert('✅ Notifications Enabled!');
+
         } catch (error) {
-            console.error('Failed to enable notifications:', error);
-            alert('Could not enable notifications. Please try again.');
+            console.error("🔴🔴🔴 NOTIFICATION SETUP FAILED 🔴🔴🔴");
+            console.error("The error occurred during one of the steps above. Check the browser's Network tab for failed API calls.", error);
+            alert('Could not enable notifications. Please check the browser console (F12) for detailed error messages.');
         }
     };
+    // ===================================================================
+
 
     return (
         <>
-            {isLoading && (
-              <div className="loader-overlay"><Loader /></div>
-            )}
-
+            {isLoading && (<div className="loader-overlay"><Loader /></div>)}
             {isAuthPage && <VantaBackground />}
             
             <AnimatePresence>
@@ -147,14 +160,13 @@ const AppLayout = ({ isLoading, setIsLoading }) => {
             
             <div className={isAuthPage ? "auth-content-wrapper" : "main-content-wrapper"}>
                 <Routes>
-                    {/* --- PUBLIC ROUTES (Your existing code, unchanged) --- */}
+                    {/* --- ALL YOUR ROUTES (UNCHANGED) --- */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/verify-email" element={<VerifyEmail />} />
                     <Route path="/reset-password/:token" element={<ResetPassword />} /> 
 
-                    {/* --- PROTECTED ROUTES (Your existing code, unchanged) --- */}
                     <Route element={<ProtectedRoute />}>
                         <Route element={<MainLayout />}>
                             <Route path="/dashboard" element={<Dashboard setIsLoading={setIsLoading} />} />
@@ -178,7 +190,6 @@ const AppLayout = ({ isLoading, setIsLoading }) => {
                         </Route>
                     </Route>
                     
-                    {/* Redirect any other path */}
                     <Route path="*" element={<Navigate to="/login" />} />
                 </Routes>
             </div>
