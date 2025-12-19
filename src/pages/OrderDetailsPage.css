@@ -1,0 +1,253 @@
+/* src/pages/OrderDetailsPage.css */
+
+/* --- LAYOUT --- */
+.order-details-page {
+    padding: 30px;
+    background-color: #f8fafc; /* Very light cool gray */
+    min-height: 100vh;
+    font-family: 'Inter', 'Helvetica Neue', sans-serif;
+    color: #1e293b;
+    animation: fadeInPage 0.5s ease-out;
+}
+
+@keyframes fadeInPage {
+    from { opacity: 0; } to { opacity: 1; }
+}
+
+/* --- HEADER --- */
+.od-header {
+    margin-bottom: 30px;
+}
+
+.back-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    color: #64748b;
+    font-weight: 500;
+    cursor: pointer;
+    margin-bottom: 15px;
+    transition: color 0.2s;
+}
+.back-btn:hover { color: #0f172a; }
+
+.od-title-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.od-title-group h1 {
+    font-size: 28px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+}
+
+.status-badge-lg {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+/* Status Colors */
+.status-processing { background: #fef9c3; color: #a16207; border: 1px solid #fde047; }
+.status-tracking_added, .status-in_transit { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+.status-delivered { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+.status-cancelled { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+
+.od-meta {
+    margin-top: 10px;
+    color: #64748b;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* --- GRID LAYOUT --- */
+.od-grid {
+    display: grid;
+    grid-template-columns: 1.8fr 1.2fr; /* Left wider than Right */
+    gap: 25px;
+}
+
+@media (max-width: 900px) {
+    .od-grid { grid-template-columns: 1fr; }
+}
+
+/* --- CARDS GENERAL --- */
+.od-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    padding: 24px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 25px;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    flex-grow: 1;
+}
+
+.icon-blue { color: #3b82f6; }
+.icon-purple { color: #8b5cf6; }
+.icon-green { color: #10b981; }
+
+/* --- PRODUCT LIST --- */
+.product-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.od-product-item {
+    display: flex;
+    gap: 15px;
+    padding: 10px;
+    border-radius: 8px;
+    background: #f8fafc;
+    transition: background 0.2s;
+}
+.od-product-item:hover { background: #f1f5f9; }
+
+.od-prod-img-box {
+    width: 70px;
+    height: 70px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+.od-prod-img-box img {
+    width: 100%; height: 100%; object-fit: cover;
+}
+
+.od-prod-info { flex-grow: 1; }
+.od-prod-info h4 { margin: 0 0 5px 0; font-size: 16px; font-weight: 600; }
+.od-prod-meta { display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: #64748b; }
+
+.od-prod-pricing { text-align: right; }
+.qty-badge { background: #e2e8f0; font-size: 12px; font-weight: bold; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 5px; }
+.price { display: block; font-weight: 700; color: #0f172a; }
+
+.od-summary {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px dashed #e2e8f0;
+}
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+.summary-row.total {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-top: 10px;
+}
+
+/* --- SHIPPING & COPY BUTTON --- */
+.copy-address-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #eff6ff;
+    color: #3b82f6;
+    border: 1px solid #dbeafe;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.copy-address-btn:hover { background: #3b82f6; color: white; border-color: #3b82f6; }
+.copy-address-btn.copied { background: #dcfce7; color: #16a34a; border-color: #86efac; }
+
+.customer-info-box { font-size: 14px; line-height: 1.6; }
+.info-line { margin-bottom: 10px; display: flex; align-items: flex-start; gap: 8px; }
+.info-line.address p { margin: 0; color: #475569; }
+.info-line .label { color: #64748b; min-width: 60px; font-weight: 500; }
+
+/* --- DISPATCH SECTION --- */
+.dispatch-form { display: flex; flex-direction: column; gap: 15px; }
+
+.form-input-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 6px;
+}
+.form-input-group input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border 0.3s, box-shadow 0.3s;
+}
+.form-input-group input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    outline: none;
+}
+
+.dispatch-submit-btn {
+    background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    box-shadow: 0 4px 6px rgba(15, 23, 42, 0.2);
+}
+
+.tracking-display {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    padding: 15px;
+}
+.tracking-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+.t-val.highlight { font-weight: 700; color: #166534; font-family: monospace; letter-spacing: 1px; }
+.dispatch-success-msg {
+    margin-top: 10px;
+    color: #15803d;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}

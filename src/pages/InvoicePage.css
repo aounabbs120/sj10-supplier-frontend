@@ -1,0 +1,125 @@
+/* src/pages/InvoicePage.css */
+
+.invoice-container {
+    background: white;
+    color: black;
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 40px;
+    font-family: Arial, Helvetica, sans-serif;
+    border: 1px solid #ddd;
+}
+
+.invoice-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 30px;
+    border-bottom: 3px solid #ddd;
+    padding-bottom: 10px;
+}
+
+.brand-logo-box {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #333;
+}
+
+.brand-sj10 { color: #000; background: #6366f1; color: white; padding: 2px 8px; }
+.brand-sc { color: #555; }
+
+.supplier-info-strip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f3f4f6;
+    padding: 10px 15px;
+    margin-top: 15px;
+    border-left: 5px solid #6366f1;
+    border-radius: 4px;
+}
+
+.supplier-text-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.supplier-invoice-img { 
+    width: 45px; 
+    height: 45px; 
+    border-radius: 50%; 
+    object-fit: cover; 
+    border: 1px solid #ddd;
+    background-color: white;
+}
+
+.supplier-name { 
+    font-weight: bold; 
+    font-size: 15px; 
+    color: #1f2937;
+    line-height: 1.2;
+}
+
+.supplier-code { 
+    font-family: 'Courier New', monospace; 
+    color: #6b7280; 
+    font-size: 13px;
+    margin-top: 2px;
+}
+
+.invoice-meta { text-align: right; font-size: 14px; }
+.meta-order-id { font-weight: bold; font-size: 18px; margin: 5px 0; }
+
+/* Tables */
+.address-table, .items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 30px;
+    font-size: 13px;
+}
+
+.address-table td {
+    padding: 8px;
+    border: 1px solid #ccc;
+    vertical-align: top;
+}
+
+.table-label { background: #f9fafb; font-weight: bold; width: 15%; }
+.table-val { width: 35%; }
+
+.items-table th {
+    background: #e5e7eb;
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #ccc;
+}
+.items-table td {
+    padding: 10px;
+    border: 1px solid #ccc;
+}
+
+.invoice-footer {
+    display: flex;
+    justify-content: flex-end;
+}
+.totals-box { width: 300px; }
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+}
+.total-final {
+    font-weight: bold;
+    font-size: 18px;
+    border-top: 2px solid #000;
+    margin-top: 5px;
+}
+
+@media print {
+    .no-print { display: none; }
+    .main-content-wrapper { margin: 0; padding: 0; } /* Reset dashboard styles */
+    .invoice-container { border: none; margin: 0; width: 100%; max-width: 100%; }
+}
