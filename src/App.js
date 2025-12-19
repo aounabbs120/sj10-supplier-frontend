@@ -6,10 +6,13 @@ import * as THREE from 'three';
 import Waves from 'vanta/dist/vanta.waves.min';
 import { AnimatePresence } from 'framer-motion';
 
-// --- SERVICE IMPORTS ---
+// --- SERVICE & COMPONENT IMPORTS ---
 import supplierService from './services/supplierService';
+import MainLayout from './layout/MainLayout';
+import ProtectedRoute from './components/ProtectedRoute';
+import NotificationBanner from './components/NotificationBanner';
 
-// --- PAGE AND COMPONENT IMPORTS ---
+// --- PAGE IMPORTS ---
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -33,14 +36,11 @@ import VerificationCenter from './pages/VerificationCenter';
 import ForgotPassword from './pages/ForgotPassword';
 import VerifyEmail from './pages/VerifyEmail';
 import ResetPassword from './pages/ResetPassword';
-import MainLayout from './layout/MainLayout';
-import ProtectedRoute from './components/ProtectedRoute';
-import NotificationBanner from './components/NotificationBanner'; // The beautiful banner
 
 // Global CSS
 import './App.css';
 
-// VantaBackground component (unchanged)
+// VantaBackground component (Your existing code, unchanged)
 const VantaBackground = () => {
     const vantaRef = React.useRef(null);
     React.useEffect(() => {
@@ -50,15 +50,13 @@ const VantaBackground = () => {
     return <div ref={vantaRef} className="vanta-background"></div>;
 };
 
-// The main root component (unchanged)
+// Main App component (Your existing code, unchanged)
 function App() {
   const [isLoading, setIsLoading] = useState(true);
-
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 2000);
     return () => clearTimeout(timer);
   }, []);
-
   return (
     <Router>
       <AppLayout isLoading={isLoading} setIsLoading={setIsLoading} />
@@ -67,7 +65,7 @@ function App() {
 }
 
 // =========================================================================
-// === THE LAYOUT COMPONENT WITH NEW NOTIFICATION LOGIC ===
+// === THE UPGRADED AppLayout COMPONENT WITH CORRECT NOTIFICATION LOGIC ===
 // =========================================================================
 const AppLayout = ({ isLoading, setIsLoading }) => {
     const location = useLocation();
@@ -76,29 +74,29 @@ const AppLayout = ({ isLoading, setIsLoading }) => {
     const isAuthPage = ['/login', '/register', '/forgot-password', '/verify-email']
         .includes(location.pathname) || location.pathname.startsWith('/reset-password');
 
-    // This logic runs once when the app layout loads.
+    // This is the corrected logic that only runs for logged-in users.
     useEffect(() => {
         const checkNotificationPermission = () => {
             const isSupported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
-            if (!isSupported) {
-                console.log("Push notifications not supported.");
-                return;
-            }
+            if (!isSupported) return;
 
             const hasBeenDismissed = sessionStorage.getItem('notificationBannerDismissed');
             
-            // Only show if permission is 'default' and it hasn't been dismissed this session.
             if (Notification.permission === 'default' && !hasBeenDismissed) {
                 const timer = setTimeout(() => setShowNotificationBanner(true), 5000); // 5-second delay
                 return () => clearTimeout(timer);
             }
         };
 
-        // We only check for permissions if the user is logged in (not on an auth page).
-        if (!isAuthPage) {
+        // THE FIX: Check for a login token AND make sure we are not on a public page.
+        const token = localStorage.getItem('supplierToken');
+        if (token && !isAuthPage) {
             checkNotificationPermission();
+        } else {
+            // If the user is logged out or on a public page, never show the banner.
+            setShowNotificationBanner(false);
         }
-    }, [isAuthPage, location.pathname]); // Re-check if the user navigates between auth/protected pages
+    }, [isAuthPage, location.pathname]); // This logic re-runs every time the page URL changes.
 
     const handleDismissBanner = () => {
         sessionStorage.setItem('notificationBannerDismissed', 'true');
@@ -110,7 +108,7 @@ const AppLayout = ({ isLoading, setIsLoading }) => {
         try {
             const permission = await Notification.requestPermission();
             if (permission !== 'granted') {
-                alert('Notification permission was denied. You can enable it in your browser settings later.');
+                alert('Notification permission was denied. You can enable it later in your browser settings.');
                 return;
             }
 
@@ -120,7 +118,8 @@ const AppLayout = ({ isLoading, setIsLoading }) => {
                 userVisibleOnly: true,
                 applicationServerKey: vapidPublicKey
             });
-
+            
+            // This now works because the user is guaranteed to be logged in.
             await supplierService.saveSubscription(subscription);
             alert('✅ Notifications Enabled! You will now receive real-time alerts.');
         } catch (error) {
@@ -136,8 +135,7 @@ const AppLayout = ({ isLoading, setIsLoading }) => {
             )}
 
             {isAuthPage && <VantaBackground />}
-
-            {/* --- NEW: The Notification Banner is placed here --- */}
+            
             <AnimatePresence>
                 {showNotificationBanner && (
                     <NotificationBanner 
@@ -149,14 +147,14 @@ const AppLayout = ({ isLoading, setIsLoading }) => {
             
             <div className={isAuthPage ? "auth-content-wrapper" : "main-content-wrapper"}>
                 <Routes>
-                    {/* --- PUBLIC ROUTES --- */}
+                    {/* --- PUBLIC ROUTES (Your existing code, unchanged) --- */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/verify-email" element={<VerifyEmail />} />
                     <Route path="/reset-password/:token" element={<ResetPassword />} /> 
 
-                    {/* --- PROTECTED ROUTES --- */}
+                    {/* --- PROTECTED ROUTES (Your existing code, unchanged) --- */}
                     <Route element={<ProtectedRoute />}>
                         <Route element={<MainLayout />}>
                             <Route path="/dashboard" element={<Dashboard setIsLoading={setIsLoading} />} />
