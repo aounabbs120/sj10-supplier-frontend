@@ -1,23 +1,35 @@
 // src/pages/ResetPassword.js
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import authService from '../services/authService';
-// We use the same CSS as Login/Register to keep it looking good
-import './FormStyles.css'; 
+import './ResetPassword.css'; // Make sure to import the CSS we created above
 
 const ResetPassword = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    
-    // Get the token from the URL (e.g. ?token=12345)
     const token = searchParams.get('token');
 
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
+    // Animation Variants
+    const containerVariants = {
+        hidden: { opacity: 0, y: 50, scale: 0.95 },
+        visible: { 
+            opacity: 1, 
+            y: 0, 
+            scale: 1,
+            transition: { duration: 0.6, ease: "easeOut" }
+        },
+        exit: { opacity: 0, scale: 0.9 }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -25,7 +37,7 @@ const ResetPassword = () => {
         setError('');
 
         if (!token) {
-            setError('Invalid or missing reset token. Please try the link from your email again.');
+            setError('Invalid or missing reset token.');
             return;
         }
 
@@ -35,22 +47,20 @@ const ResetPassword = () => {
         }
 
         if (password.length < 6) {
-            setError("Password must be at least 6 characters.");
+            setError("Password must be at least 6 characters long.");
             return;
         }
 
         setIsLoading(true);
 
         try {
-            // Call the service function we created earlier
             await authService.resetPassword(token, password);
+            setMessage("Password reset successful! Redirecting...");
             
-            setMessage("Success! Your password has been reset.");
-            
-            // Redirect to login after 3 seconds
+            // Wait 2.5 seconds so user can see the success animation
             setTimeout(() => {
                 navigate('/login');
-            }, 3000);
+            }, 2500);
 
         } catch (err) {
             console.error(err);
@@ -60,58 +70,130 @@ const ResetPassword = () => {
         }
     };
 
+    // If no token, show invalid link state
     if (!token) {
         return (
-            <div className="form-container" style={{textAlign: 'center', marginTop: '50px'}}>
-                <h2 style={{color: 'white'}}>Invalid Link</h2>
-                <p style={{color: '#ccc'}}>The password reset link is invalid or missing.</p>
-                <Link to="/login" className="back-btn">Return to Login</Link>
+            <div className="reset-container">
+                <motion.div 
+                    className="reset-glass-card"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                >
+                    <div className="icon-wrapper" style={{background: 'rgba(239, 68, 68, 0.2)'}}>
+                        <span className="lock-icon">⚠️</span>
+                    </div>
+                    <h2 className="reset-title">Invalid Link</h2>
+                    <p className="reset-subtitle">This password reset link is invalid or has expired.</p>
+                    <Link to="/login" className="reset-btn" style={{display: 'inline-block', textDecoration:'none', width:'auto', padding:'10px 30px'}}>
+                        Return to Login
+                    </Link>
+                </motion.div>
             </div>
         );
     }
 
     return (
-        <div className="form-container">
-            <div className="form-image-placeholder">
-                <img src="/login.gif" alt="Reset Password" className="form-image" />
-            </div>
+        <div className="reset-container">
+            <motion.div 
+                className="reset-glass-card"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+            >
+                {/* Animated Lock Icon */}
+                <motion.div 
+                    className="icon-wrapper"
+                    animate={{ y: [0, -10, 0] }}
+                    transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+                >
+                    <span className="lock-icon">🔐</span>
+                </motion.div>
 
-            <h2>Set New Password</h2>
-            <p>Please enter your new password below.</p>
+                <h2 className="reset-title">Reset Password</h2>
+                <p className="reset-subtitle">Create a strong, new password for your account.</p>
 
-            <form onSubmit={handleSubmit}>
-                {/* New Password Input */}
-                <div className="password-wrapper">
-                    <input
-                        type={isPasswordVisible ? 'text' : 'password'}
-                        placeholder="New Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
-                    <span onClick={() => setIsPasswordVisible(!isPasswordVisible)} className="password-toggle-icon">
-                        {isPasswordVisible ? '🙈' : '👁️'}
-                    </span>
-                </div>
+                <form onSubmit={handleSubmit}>
+                    
+                    {/* New Password Field */}
+                    <div className="input-group">
+                        <input
+                            type={showPassword ? 'text' : 'password'}
+                            className="input-field"
+                            placeholder="New Password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
+                        <span 
+                            className="password-toggle"
+                            onClick={() => setShowPassword(!showPassword)}
+                            title={showPassword ? "Hide Password" : "Show Password"}
+                        >
+                            {showPassword ? '🙈' : '👁️'}
+                        </span>
+                    </div>
 
-                {/* Confirm Password Input */}
-                <div className="password-wrapper" style={{marginTop: '15px'}}>
-                    <input
-                        type={isPasswordVisible ? 'text' : 'password'}
-                        placeholder="Confirm New Password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        required
-                    />
-                </div>
+                    {/* Confirm Password Field */}
+                    <div className="input-group">
+                        <input
+                            type={showConfirmPassword ? 'text' : 'password'}
+                            className="input-field"
+                            placeholder="Confirm New Password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            required
+                        />
+                        <span 
+                            className="password-toggle"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            title={showConfirmPassword ? "Hide Password" : "Show Password"}
+                        >
+                            {showConfirmPassword ? '🙈' : '👁️'}
+                        </span>
+                    </div>
 
-                {error && <p className="error-message">{error}</p>}
-                {message && <p className="success-message" style={{color: '#4ade80', marginTop: '10px'}}>{message}</p>}
+                    {/* Animations for Errors/Success */}
+                    <AnimatePresence>
+                        {error && (
+                            <motion.div 
+                                className="status-msg error"
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                            >
+                                <span>⚠️</span> {error}
+                            </motion.div>
+                        )}
 
-                <button type="submit" className="submit-btn" disabled={isLoading}>
-                    {isLoading ? <div className="spinner"></div> : 'Reset Password'}
-                </button>
-            </form>
+                        {message && (
+                            <motion.div 
+                                className="status-msg success"
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                            >
+                                <span>✅</span> {message}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    <motion.button 
+                        type="submit" 
+                        className="reset-btn"
+                        disabled={isLoading}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        {isLoading ? <div className="spinner-small"></div> : 'Update Password'}
+                    </motion.button>
+                </form>
+
+                <Link to="/login" className="back-link">
+                    ← Back to Login
+                </Link>
+
+            </motion.div>
         </div>
     );
 };
