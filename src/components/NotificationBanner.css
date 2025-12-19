@@ -1,37 +1,48 @@
 /* src/components/NotificationBanner.css */
 
-/* Define the animation for the neon glow */
-@keyframes neon-glow {
+/* --- NEW: Rainbow Neon Glow Animation --- */
+@keyframes rainbow-glow {
     0% {
-        box-shadow: 0 0 5px #3498db, 0 0 10px #3498db, 0 0 15px #3498db, 0 0 20px #5fa8d3;
+        box-shadow: 0 0 5px #3498db, 0 0 10px #3498db, 0 0 15px #9b59b6;
+    }
+    25% {
+        box-shadow: 0 0 10px #9b59b6, 0 0 20px #e74c3c, 0 0 30px #f1c40f;
     }
     50% {
-        box-shadow: 0 0 10px #3498db, 0 0 20px #5fa8d3, 0 0 30px #5fa8d3, 0 0 40px #2980b9;
+        box-shadow: 0 0 15px #f1c40f, 0 0 30px #2ecc71, 0 0 40px #1abc9c;
+    }
+    75% {
+        box-shadow: 0 0 10px #1abc9c, 0 0 20px #3498db, 0 0 30px #9b59b6;
     }
     100% {
-        box-shadow: 0 0 5px #3498db, 0 0 10px #3498db, 0 0 15px #3498db, 0 0 20px #5fa8d3;
+        box-shadow: 0 0 5px #3498db, 0 0 10px #3498db, 0 0 15px #9b59b6;
     }
 }
 
 .notification-banner {
     position: fixed;
-    top: 20px;
+    top: 10px; /* Closer to the top for all screens */
     left: 50%;
     transform: translateX(-50%);
-    width: calc(100% - 40px); /* Responsive: Full width with 20px padding on each side */
-    max-width: 800px;
+    
+    /* --- THE RESPONSIVE FIX --- */
+    width: calc(100% - 20px); /* Always fit screen with 10px margin */
+    max-width: 800px; /* But don't get too wide on desktops */
+
     background: linear-gradient(135deg, #2c3e50, #1a252f);
     color: white;
-    padding: 15px 25px;
+    padding: 20px;
     border-radius: 12px;
     display: flex;
-    align-items: center;
-    gap: 15px; /* Reduced gap for smaller screens */
+    flex-direction: column; /* Start with mobile-first column layout */
+    align-items: center;   /* Center items for mobile */
+    text-align: center;
+    gap: 15px;
     z-index: 2000;
     
-    /* --- NEW: Animated Neon Glow --- */
+    /* --- NEW: Rainbow Neon Glow --- */
     border: 1px solid #3498db;
-    animation: neon-glow 3s infinite linear;
+    animation: rainbow-glow 4s infinite linear;
 }
 
 .banner-icon {
@@ -41,31 +52,35 @@
 
 .banner-content {
     flex-grow: 1;
-    text-align: left;
 }
 
 .banner-content strong {
-    font-size: 16px;
+    font-size: 18px; /* Slightly larger for impact */
     font-weight: 600;
+    line-height: 1.3;
 }
 
 .banner-content p {
     font-size: 14px;
-    margin: 4px 0 0 0;
+    margin: 8px 0 0 0;
     color: #bdc3c7;
-    line-height: 1.4; /* Improved readability */
+    line-height: 1.5;
 }
 
 .enable-button {
     background-color: #3498db;
     color: white;
     border: none;
-    padding: 10px 20px;
+    padding: 12px 25px; /* Larger, easier to tap button */
     border-radius: 8px;
     font-weight: 600;
+    font-size: 16px;
     cursor: pointer;
     transition: background-color 0.2s;
-    white-space: nowrap; /* Prevents button text from wrapping */
+    white-space: nowrap;
+    width: 100%; /* Full width on mobile */
+    max-width: 300px; /* But not too wide */
+    margin-top: 5px;
 }
 
 .enable-button:hover {
@@ -73,59 +88,51 @@
 }
 
 .dismiss-button {
+    /* Positioned absolutely for precise control */
+    position: absolute;
+    top: 5px;
+    right: 5px;
     background: none;
     border: none;
     color: #7f8c8d;
     cursor: pointer;
-    padding: 5px;
-    margin-left: auto; /* Pushes the button to the far right */
+    padding: 10px; /* Larger tap area */
 }
 
 .dismiss-button:hover {
     color: white;
 }
 
-/* =========================================== */
-/* === RESPONSIVE DESIGN FOR MOBILE PHONES === */
-/* =========================================== */
-@media (max-width: 600px) {
+/* ================================================== */
+/* === DESKTOP VIEW (for screens larger than 600px) === */
+/* ================================================== */
+@media (min-width: 600px) {
     .notification-banner {
-        /* On mobile, it becomes a column layout */
-        flex-direction: column;
-        align-items: flex-start; /* Align items to the start */
-        padding: 20px;
-        gap: 12px;
-        top: 10px; /* Closer to the top on mobile */
-        width: calc(100% - 20px); /* Tighter padding */
-    }
-
-    .banner-content {
-        /* The text will now be centered on mobile */
-        text-align: center;
-        width: 100%;
-    }
-
-    .banner-content p {
-        font-size: 13px; /* Slightly smaller font for mobile */
+        /* Switch back to a row layout on larger screens */
+        flex-direction: row;
+        text-align: left;
+        padding: 15px 25px;
+        gap: 20px;
+        top: 20px;
     }
 
     .banner-icon {
-        /* Center the icon on mobile */
-        align-self: center;
+        align-self: center; /* No change needed, but good practice */
+    }
+
+    .banner-content {
+        text-align: left;
     }
 
     .enable-button {
-        /* Make the button full-width for easy tapping */
-        width: 100%;
-        padding: 12px;
-        font-size: 16px;
-        margin-top: 10px;
+        /* Button is no longer full-width */
+        width: auto;
+        margin-top: 0;
     }
 
     .dismiss-button {
-        /* Position the 'X' button at the top-right corner */
-        position: absolute;
-        top: 5px;
-        right: 5px;
+        /* Put the dismiss button back in the flow */
+        position: static;
+        margin-left: auto;
     }
 }
