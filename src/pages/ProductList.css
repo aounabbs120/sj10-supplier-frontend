@@ -201,179 +201,203 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    padding: 15px;
-    background-color: #f9fafb;
+    padding: 20px;
+    background-color: #f8fafc; /* Very light cool grey */
     position: relative;
     overflow: hidden;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-/* --- HEADER --- */
+/* --- PROFESSIONAL HEADER --- */
 .product-list-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
-}
-.product-list-header h1 {
-    font-size: 22px;
-    font-weight: 800;
-    color: #111827;
-    margin: 0;
+    margin-bottom: 20px;
 }
 
+/* Title Group */
+.header-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.product-list-header h1 {
+    font-size: 26px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+.product-count-badge {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+/* Header Actions Group */
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
-/* Desktop Buttons */
-.desktop-btn {
-    background: white; border: 1px solid #e5e7eb; padding: 8px 16px; 
-    border-radius: 12px; font-weight: 600; color: #374151; cursor: pointer;
+/* --- BUTTON STYLES --- */
+
+/* 1. Desktop Text Buttons */
+.action-btn-desktop {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
     font-size: 13px;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+.action-btn-desktop:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #1e293b;
+}
+.action-btn-desktop .icon { font-size: 16px; }
+
+/* 2. Mobile Icon Buttons */
+.action-btn-mobile {
+    display: none; /* Hidden by default on desktop */
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    font-size: 18px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
     transition: background 0.2s;
 }
-.desktop-btn:hover { background: #f3f4f6; }
+.action-btn-mobile:active { background: #f1f5f9; }
 
-/* --- MOBILE BUTTONS (Optimized Size) --- */
-.mobile-btn {
-    display: none;
-    width: 34px;        /* Smaller width */
-    height: 34px;       /* Smaller height */
-    border-radius: 10px; 
-    border: 1px solid #e5e7eb;
-    background: white;
-    font-size: 16px;    /* Smaller icon */
-    align-items: center; justify-content: center;
-    cursor: pointer;
-}
-
+/* 3. Add Product Button (Standout) */
 .btn-add-product {
-    background: linear-gradient(135deg, #4f46e5, #6366f1);
-    color: white; width: 40px; height: 40px; border-radius: 12px;
-    border: none; font-size: 24px; display: flex; align-items: center; justify-content: center;
-    cursor: pointer; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
-    padding-bottom: 3px;
-    transition: transform 0.2s;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: white;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
 }
-.btn-add-product:active { transform: scale(0.95); }
+.btn-add-product:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+}
+.btn-add-product:active { transform: translateY(0); }
+.plus-sign { font-size: 26px; font-weight: 400; line-height: 1; margin-bottom: 2px; }
 
-/* --- SELECTION STATUS BAR --- */
+/* --- SELECTION BAR --- */
 .selection-status-bar {
     display: flex; justify-content: space-between; align-items: center;
-    background: #eef2ff; color: #4f46e5;
-    padding: 8px 15px; border-radius: 10px; margin-bottom: 10px;
+    background: #e0e7ff; color: #4338ca;
+    padding: 0 15px; border-radius: 12px;
     font-weight: 600; font-size: 13px;
-    height: 0; opacity: 0; overflow: hidden; transition: all 0.3s;
+    height: 0; opacity: 0; margin-bottom: 0;
+    overflow: hidden; transition: all 0.3s ease;
 }
 .selection-status-bar.visible {
-    height: auto; opacity: 1; padding: 8px 15px; margin-bottom: 10px;
+    height: 46px; opacity: 1; margin-bottom: 15px;
 }
 .selection-controls button {
     background: none; border: none; color: #4f46e5; font-weight: 700; 
-    margin-left: 10px; cursor: pointer; font-size: 12px;
+    margin-left: 12px; cursor: pointer; font-size: 12px;
 }
-.selection-controls .cancel-btn { color: #6b7280; font-weight: 500; }
+.selection-controls .cancel-btn { color: #64748b; font-weight: 500; }
 
 /* --- SEARCH BAR --- */
-.search-bar-container { position: relative; margin-bottom: 12px; }
+.search-bar-container { position: relative; margin-bottom: 15px; }
 .search-input {
-    width: 100%; padding: 10px 15px 10px 40px; border-radius: 12px;
-    border: 1px solid #e5e7eb; background: white; font-size: 14px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    width: 100%; padding: 12px 15px 12px 42px; border-radius: 14px;
+    border: 1px solid #e2e8f0; background: white; font-size: 14px;
+    color: #1e293b;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.01);
+    transition: border-color 0.2s;
 }
-.search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; font-size: 14px; }
+.search-input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1); }
+.search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 16px; }
 
-/* --- NEW: FILTER TABS CONTAINER --- */
+/* --- FILTER TABS --- */
 .filter-tabs-container {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 15px;
-    overflow-x: auto; /* Allow scroll on very small screens */
-    scrollbar-width: none; /* Hide scrollbar Firefox */
-    -ms-overflow-style: none; /* Hide scrollbar IE/Edge */
-    padding-bottom: 2px; /* Prevent clipping of shadow/border */
+    display: flex; gap: 8px; margin-bottom: 15px;
+    overflow-x: auto; padding-bottom: 2px;
+    scrollbar-width: none;
 }
-.filter-tabs-container::-webkit-scrollbar { display: none; } /* Hide scrollbar Chrome */
-
-/* --- FILTER TAB STYLE --- */
 .filter-tab {
-    background-color: #ffffff;
-    border: 1px solid #e5e7eb;
-    color: #6b7280;
-    padding: 6px 14px;
-    border-radius: 20px; /* Pill shape */
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.2s ease;
+    background-color: white; border: 1px solid #e2e8f0; color: #64748b;
+    padding: 8px 16px; border-radius: 30px; font-size: 12px; font-weight: 600;
+    cursor: pointer; white-space: nowrap; transition: all 0.2s;
 }
-
 .filter-tab.active {
-    background-color: #4f46e5; /* Primary Brand Color */
-    color: white;
-    border-color: #4f46e5;
-    box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);
+    background-color: #1e293b; color: white; border-color: #1e293b;
+    box-shadow: 0 2px 8px rgba(30, 41, 59, 0.2);
 }
+.filter-tab:hover:not(.active) { background-color: #f1f5f9; }
 
-.filter-tab:hover:not(.active) {
-    background-color: #f3f4f6;
-    color: #374151;
-}
-
-/* --- PRODUCT LIST SCROLL AREA --- */
+/* --- LIST --- */
 .products-scroll-area {
-    flex-grow: 1;
-    overflow-y: auto;
-    padding-bottom: 120px;
+    flex-grow: 1; overflow-y: auto; padding-bottom: 100px;
 }
 
-/* --- FLOATING BOTTOM ACTION BAR --- */
+/* --- MOBILE RESPONSIVENESS (The Critical Part) --- */
+@media (max-width: 768px) {
+    .product-list-container { padding: 15px; }
+    
+    .product-list-header h1 { font-size: 22px; }
+    .product-count-badge { font-size: 12px; }
+
+    /* HIDE TEXT BUTTONS ON MOBILE */
+    .action-btn-desktop { 
+        display: none !important; 
+    }
+
+    /* SHOW ICON BUTTONS ON MOBILE */
+    .action-btn-mobile { 
+        display: flex !important; 
+    }
+
+    .btn-add-product { width: 40px; height: 40px; font-size: 24px; border-radius: 12px; }
+    
+    .floating-bottom-bar {
+        bottom: 90px; width: 95%; padding: 12px;
+    }
+}
+
+/* --- FLOATING ACTION BAR --- */
 .floating-bottom-bar {
-    position: fixed;
-    bottom: 30px; 
-    left: 50%;
+    position: fixed; bottom: 30px; left: 50%;
     transform: translateX(-50%) translateY(200%);
     width: 90%; max-width: 400px;
     background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.5);
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.4);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
     border-radius: 20px;
     padding: 10px 20px;
     display: flex; justify-content: space-around; align-items: center;
     z-index: 9999;
     transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-.floating-bottom-bar.visible {
-    transform: translateX(-50%) translateY(0);
-}
-
-.fab-action {
-    background: none; border: none; cursor: pointer;
-    display: flex; flex-direction: column; align-items: center; gap: 4px;
-}
-.fab-icon {
-    width: 40px; height: 40px; border-radius: 12px; background: #f3f4f6;
-    display: flex; align-items: center; justify-content: center; font-size: 18px;
-    transition: transform 0.2s;
-}
-.fab-label { font-size: 10px; font-weight: 600; color: #4b5563; }
+.floating-bottom-bar.visible { transform: translateX(-50%) translateY(0); }
+.fab-action { background: none; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.fab-icon { width: 42px; height: 42px; border-radius: 12px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: transform 0.2s; }
+.fab-label { font-size: 11px; font-weight: 600; color: #475569; }
 .fab-action:active .fab-icon { transform: scale(0.9); }
-
-/* --- MEDIA QUERIES --- */
-@media (max-width: 600px) {
-    .product-list-container { padding: 12px; }
-    .product-list-header h1 { font-size: 18px; }
-    
-    .desktop-btn { display: none; }
-    .mobile-btn { display: flex; } /* Enable optimized mobile buttons */
-
-    .floating-bottom-bar {
-        bottom: 90px; 
-        width: 95%;
-        padding: 12px;
-    }
-}
