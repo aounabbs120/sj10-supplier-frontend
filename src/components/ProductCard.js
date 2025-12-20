@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 const ProductCard = ({ 
     product, 
-    cartCount = 0, 
+    cartCount = 0, // Default to 0 if not provided
     onDelete, 
     isSelectionMode, 
     isSelected, 
@@ -37,7 +37,7 @@ const ProductCard = ({
         timerRef.current = setTimeout(() => {
             isLongPress.current = true;
             onLongPress(product.id);
-        }, 500); // 0.5s hold time
+        }, 500); 
     };
 
     const handleEnd = () => {
@@ -53,10 +53,8 @@ const ProductCard = ({
         if (isSelectionMode) {
             onToggleSelect(product.id);
         } else {
-            // Only navigate if NOT clicking specific action buttons
-             // (Navigation is handled by the specific edit button below for safety, 
-             // but you can uncomment this if you want the whole card to be clickable)
-             // navigate(`/products/edit/${product.id}`);
+            // Normal click (optional: navigate to edit)
+            // navigate(`/products/edit/${product.id}`); 
         }
     };
 
@@ -70,7 +68,7 @@ const ProductCard = ({
             onTouchEnd={handleEnd}
             onClick={handleClick}
         >
-            {/* SELECTION OVERLAY (Only shows when selecting) */}
+            {/* SELECTION OVERLAY */}
             <div className={`selection-overlay ${isSelected ? 'visible' : ''}`}>
                 <div className="checkmark-circle">✓</div>
             </div>
@@ -112,9 +110,15 @@ const ProductCard = ({
                         </span>
                     </div>
                 </div>
+
+                {/* --- RESTORED: VIEWS & CARTS STATS --- */}
+                <div className="product-stats-row">
+                    <span className="stat-item">👁️ {product.views || 0}</span>
+                    <span className="stat-item">🛒 {cartCount || 0}</span>
+                </div>
             </div>
 
-            {/* HIDE ACTIONS IN SELECTION MODE TO PREVENT ACCIDENTAL CLICKS */}
+            {/* ACTIONS (Hidden when selecting) */}
             {!isSelectionMode && (
                 <div className="product-actions">
                     <button 

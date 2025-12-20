@@ -146,7 +146,7 @@ const ProductList = ({ setIsLoading }) => {
     return (
         <div className={`product-list-container ${isSelectionMode ? 'selection-active' : ''}`}>
             
-            {/* --- PROFESSIONAL HEADER --- */}
+            {/* HEADER */}
             <div className="product-list-header">
                 <div className="header-title-group">
                     <h1>Inventory</h1>
@@ -168,7 +168,7 @@ const ProductList = ({ setIsLoading }) => {
                     <button className="action-btn-mobile" onClick={handleImportClick} title="Import">📥</button>
                     <button className="action-btn-mobile" onClick={handleExport} title="Export">📤</button>
                     
-                    {/* MAIN ADD BUTTON */}
+                    {/* ADD BUTTON */}
                     <button className="btn-add-product" onClick={() => navigate('/products/add')}>
                         <span className="plus-sign">+</span>
                     </button>
@@ -215,6 +215,8 @@ const ProductList = ({ setIsLoading }) => {
                         <ProductCard 
                             key={product.id} 
                             product={product} 
+                            // Ensure backend cart count or 0 is passed
+                            cartCount={product.cart_count || 0} 
                             onDelete={handleDelete}
                             isSelectionMode={isSelectionMode}
                             isSelected={selectedIds.has(product.id)}
