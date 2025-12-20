@@ -1,28 +1,37 @@
+// src/pages/ProductList.js
+
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Papa from 'papaparse'; // Import the newly installed CSV parser
+import Papa from 'papaparse'; 
 import supplierService from '../services/supplierService';
 import ProductCard from '../components/ProductCard';
 import './ProductList.css';
 
-// Professional Skeleton Loader Component
+// Skeleton Loader
 const ProductCardSkeleton = () => (
     <div className="product-card-skeleton">
         <div className="skeleton-image"></div>
         <div className="skeleton-details">
             <div className="skeleton-line title"></div>
             <div className="skeleton-line text"></div>
-            <div className="skeleton-line text short"></div>
         </div>
     </div>
 );
 
-const ProductList = () => {
+const ProductList = ({ setIsLoading }) => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    
+    // --- NEW: FILTER STATUS STATE ('all' | 'in_stock' | 'out_of_stock') ---
+    const [filterStatus, setFilterStatus] = useState('all');
+
+    // --- SELECTION STATE ---
+    const [selectedIds, setSelectedIds] = useState(new Set());
+    const [isSelectionMode, setIsSelectionMode] = useState(false);
+
     const navigate = useNavigate();
-    const fileInputRef = useRef(null); // Ref for the hidden file input
+    const fileInputRef = useRef(null);
 
     const fetchProducts = useCallback(async () => {
         setLoading(true);
@@ -35,129 +44,228 @@ const ProductList = () => {
 
     useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
+    // --- ENHANCED FILTER LOGIC (Search + Tabs) ---
+    const filteredProducts = useMemo(() => {
+        return products.filter(p => {
+            // 1. Search Filter
+            const matchesSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase());
+            
+            // 2. Tab Status Filter
+            let matchesStatus = true;
+            if (filterStatus === 'in_stock') {
+                matchesStatus = p.quantity > 0;
+            } else if (filterStatus === 'out_of_stock') {
+                matchesStatus = p.quantity === 0;
+            }
+            // 'all' returns true by default
+
+            return matchesSearch && matchesStatus;
+        });
+    }, [products, searchTerm, filterStatus]);
+
+    // --- SINGLE DELETE ---
     const handleDelete = async (productId) => {
         if (window.confirm('Are you sure you want to delete this product?')) {
             try {
+                if(setIsLoading) setIsLoading(true);
                 await supplierService.deleteProduct(productId);
-                fetchProducts(); 
+                await fetchProducts(); 
             } catch (error) { alert('Could not delete product.'); }
+            finally { if(setIsLoading) setIsLoading(false); }
         }
     };
 
-    // --- NEW: CSV Import Handler ---
-    const handleImportClick = () => {
-        fileInputRef.current.click();
-    };
-
+    // --- CSV FUNCTIONS ---
+    const handleImportClick = () => fileInputRef.current.click();
     const handleFileSelect = (event) => {
         const file = event.target.files[0];
         if (!file) return;
-
-        setLoading(true);
+        if(setIsLoading) setIsLoading(true);
         Papa.parse(file, {
-            header: true,
-            skipEmptyLines: true,
+            header: true, skipEmptyLines: true,
             complete: async (results) => {
-                try {
-                    // NOTE: This assumes your backend has a POST /api/supplier/products/import endpoint
-                    // await supplierService.importProductsCSV(results.data);
-                    console.log("Parsed CSV Data to send to backend:", results.data);
-                    alert(`${results.data.length} products parsed. Implement backend endpoint to save them.`);
-                    // fetchProducts(); // Uncomment this after backend is ready
-                } catch (err) {
-                    alert('CSV Import Failed: ' + (err.response?.data?.message || err.message));
-                } finally {
-                    setLoading(false);
-                    fileInputRef.current.value = '';
-                }
-            },
-            error: (err) => {
-                setLoading(false);
-                alert('Error parsing CSV file: ' + err.message);
+                alert(`${results.data.length} products parsed.`);
+                if(setIsLoading) setIsLoading(false);
                 fileInputRef.current.value = '';
             }
         });
     };
 
-    // --- NEW: CSV Export Handler ---
     const handleExport = () => {
-        if (products.length === 0) {
-            alert("No products to export.");
-            return;
-        }
-
-        const productHeaders = ['id', 'title', 'description', 'price', 'discounted_price', 'quantity', 'status', 'category_id', 'attributes', 'image_urls', 'video_url'];
-        const productCSV = Papa.unparse(products.map(p => ({...p, attributes: JSON.stringify(p.attributes), image_urls: JSON.stringify(p.image_urls)})), { columns: productHeaders });
-
-        const variantHeaders = ['variant_id', 'product_id', 'color', 'size', 'price', 'stock', 'sku'];
-        const allVariants = products.flatMap(p => {
-            const variants = typeof p.variants === 'string' ? JSON.parse(p.variants) : (p.variants || []);
-            return variants.map(v => ({
-                variant_id: v.id, product_id: p.id, color: v.custom_color, size: v.custom_size,
-                price: v.price, stock: v.stock, sku: v.sku
-            }));
-        });
-        const variantsCSV = Papa.unparse(allVariants, { columns: variantHeaders });
-
-        downloadCSV(productCSV, 'products.csv');
-        if (allVariants.length > 0) {
-            downloadCSV(variantsCSV, 'variants.csv');
-        }
-    };
-
-    const downloadCSV = (csvString, filename) => {
-        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        if (filteredProducts.length === 0) return alert("No products to export.");
+        const csvData = Papa.unparse(filteredProducts.map(p => ({
+            ...p, attributes: JSON.stringify(p.attributes), image_urls: JSON.stringify(p.image_urls)
+        })));
+        const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", filename);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
+        link.href = URL.createObjectURL(blob);
+        link.download = `products_export_${Date.now()}.csv`;
         link.click();
-        document.body.removeChild(link);
     };
 
-    const filteredProducts = useMemo(() => {
-        if (!searchTerm) return products;
-        return products.filter(p => p.title.toLowerCase().includes(searchTerm.toLowerCase()));
-    }, [products, searchTerm]);
+    // --- SELECTION LOGIC ---
+    const handleLongPress = (productId) => {
+        setIsSelectionMode(true);
+        toggleSelection(productId);
+    };
+
+    const toggleSelection = (productId) => {
+        setSelectedIds(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(productId)) newSet.delete(productId);
+            else newSet.add(productId);
+            if (newSet.size === 0) setIsSelectionMode(false);
+            return newSet;
+        });
+    };
+
+    const handleSelectAll = () => {
+        if (selectedIds.size === filteredProducts.length) {
+            setSelectedIds(new Set());
+            setIsSelectionMode(false);
+        } else {
+            const allIds = filteredProducts.map(p => p.id);
+            setSelectedIds(new Set(allIds));
+            setIsSelectionMode(true);
+        }
+    };
+
+    const handleCancelSelection = () => {
+        setSelectedIds(new Set());
+        setIsSelectionMode(false);
+    };
+
+    // --- BULK ACTIONS ---
+    const handleBulkAction = async (actionType) => {
+        if (selectedIds.size === 0) return;
+        if (actionType === 'delete' && !window.confirm(`Permanently delete ${selectedIds.size} items?`)) return;
+
+        if(setIsLoading) setIsLoading(true);
+        try {
+            const updates = [...selectedIds].map(id => {
+                if (actionType === 'delete') return supplierService.deleteProduct(id);
+                
+                const product = products.find(p => p.id === id);
+                let payload = {};
+                if (actionType === 'in_stock') {
+                    payload = { quantity: product.quantity > 0 ? product.quantity : 10, status: 'in_stock' };
+                } else if (actionType === 'out_stock') {
+                    payload = { quantity: 0, status: 'out_of_stock' };
+                }
+                return supplierService.updateProduct(id, payload);
+            });
+
+            await Promise.all(updates);
+            await fetchProducts();
+            handleCancelSelection();
+        } catch (e) { alert("Operation failed."); }
+        finally { if(setIsLoading) setIsLoading(false); }
+    };
 
     return (
-        <div className="product-list-container">
+        <div className={`product-list-container ${isSelectionMode ? 'selection-active' : ''}`}>
+            
+            {/* HEADER */}
             <div className="product-list-header">
-                <h1>Products</h1>
+                <h1>Products ({filteredProducts.length})</h1>
                 <div className="header-actions">
                     <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: 'none' }} accept=".csv" />
-                    <button className="btn-secondary" onClick={handleImportClick}>Import CSV</button>
-                    <button className="btn-secondary" onClick={handleExport}>Export CSV</button>
+                    
+                    {/* Desktop Buttons */}
+                    <button className="btn-secondary desktop-btn" onClick={handleImportClick}>Import CSV</button>
+                    <button className="btn-secondary desktop-btn" onClick={handleExport}>Export CSV</button>
+                    
+                    {/* Mobile Icons (Smaller now) */}
+                    <button className="btn-icon-header mobile-btn" onClick={handleImportClick} title="Import">📥</button>
+                    <button className="btn-icon-header mobile-btn" onClick={handleExport} title="Export">📤</button>
+                    
                     <button className="btn-add-product" onClick={() => navigate('/products/add')}>+</button>
                 </div>
             </div>
-            
+
+            {/* SELECTION STATUS BAR */}
+            <div className={`selection-status-bar ${isSelectionMode ? 'visible' : ''}`}>
+                <div className="selection-count">{selectedIds.size} Selected</div>
+                <div className="selection-controls">
+                    <button onClick={handleSelectAll}>
+                        {selectedIds.size === filteredProducts.length ? 'Deselect All' : 'Select All'}
+                    </button>
+                    <button className="cancel-btn" onClick={handleCancelSelection}>Cancel</button>
+                </div>
+            </div>
+
+            {/* SEARCH BAR */}
             <div className="search-bar-container">
                 <span className="search-icon">🔍</span>
                 <input 
                     type="text"
                     className="search-input"
-                    placeholder="Search by product name..."
+                    placeholder="Search by name..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    disabled={isSelectionMode}
                 />
             </div>
 
+            {/* --- NEW: FILTER TABS --- */}
+            <div className="filter-tabs-container">
+                <button 
+                    className={`filter-tab ${filterStatus === 'all' ? 'active' : ''}`} 
+                    onClick={() => setFilterStatus('all')}
+                >
+                    All Products
+                </button>
+                <button 
+                    className={`filter-tab ${filterStatus === 'in_stock' ? 'active' : ''}`} 
+                    onClick={() => setFilterStatus('in_stock')}
+                >
+                    In Stock
+                </button>
+                <button 
+                    className={`filter-tab ${filterStatus === 'out_of_stock' ? 'active' : ''}`} 
+                    onClick={() => setFilterStatus('out_of_stock')}
+                >
+                    Out of Stock
+                </button>
+            </div>
+
+            {/* PRODUCT LIST */}
             <div className="products-scroll-area">
                 {loading ? (
-                    Array(5).fill(0).map((_, index) => <ProductCardSkeleton key={index} />)
+                    Array(6).fill(0).map((_, index) => <ProductCardSkeleton key={index} />)
                 ) : filteredProducts.length > 0 ? (
                     filteredProducts.map(product => (
-                        <ProductCard key={product.id} product={product} onDelete={handleDelete} />
+                        <ProductCard 
+                            key={product.id} 
+                            product={product} 
+                            onDelete={handleDelete}
+                            isSelectionMode={isSelectionMode}
+                            isSelected={selectedIds.has(product.id)}
+                            onToggleSelect={toggleSelection}
+                            onLongPress={handleLongPress}
+                        />
                     ))
                 ) : (
                     <div className="no-products-message">
-                        <h3>No Products Found</h3>
-                        <p>{searchTerm ? 'Try adjusting your search.' : 'Click the + button to add your first product.'}</p>
+                        <p>No products found in "{filterStatus.replace('_', ' ')}".</p>
                     </div>
                 )}
+            </div>
+
+            {/* BOTTOM FLOATING ACTION BAR */}
+            <div className={`floating-bottom-bar ${isSelectionMode ? 'visible' : ''}`}>
+                <button className="fab-action btn-instock" onClick={() => handleBulkAction('in_stock')}>
+                    <span className="fab-icon">⚡</span>
+                    <span className="fab-label">In Stock</span>
+                </button>
+                <button className="fab-action btn-outstock" onClick={() => handleBulkAction('out_stock')}>
+                    <span className="fab-icon">🚫</span>
+                    <span className="fab-label">Out Stock</span>
+                </button>
+                <button className="fab-action btn-delete-bulk" onClick={() => handleBulkAction('delete')}>
+                    <span className="fab-icon">🗑️</span>
+                    <span className="fab-label">Delete</span>
+                </button>
             </div>
         </div>
     );
