@@ -1,31 +1,10 @@
-// src/pages/Promotions.js (FULLY RESPONSIVE)
-
+// src/pages/Promotions.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import supplierService from '../services/supplierService';
 import PromotionRequestModal from '../components/PromotionRequestModal';
-import PromotionCardMobile from '../components/PromotionCardMobile'; // Import the new mobile component
+import PaymentModal from '../components/PaymentModal';
 import './Promotions.css';
-
-const renderPromoStatus = (status) => {
-    let className = 'status-default';
-    let text = (status || 'Unknown').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-
-    switch (status) {
-        case 'pending_approval': className = 'status-pending'; break;
-        case 'approved_awaiting_payment': className = 'status-awaiting-payment'; break;
-        case 'paid':
-        case 'active':
-        case 'successful':
-            className = 'status-active';
-            text = 'Active';
-            break;
-        case 'rejected':
-        case 'expired': className = 'status-cancelled'; break;
-        default: break;
-    }
-    return <span className={`status-badge ${className}`}>{text}</span>;
-};
 
 const Promotions = ({ setIsLoading }) => {
     const [promotions, setPromotions] = useState([]);
@@ -34,7 +13,7 @@ const Promotions = ({ setIsLoading }) => {
     
     const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-    
+
     const fetchPromotions = useCallback(async () => {
         setIsLoading(true);
         try {
@@ -54,123 +33,96 @@ const Promotions = ({ setIsLoading }) => {
         fetchPromotions();
     }, [fetchPromotions]);
 
+    const getDurationText = (promo) => {
+        if (!promo.start_date || !promo.end_date) return 'N/A';
+        const start = new Date(promo.start_date);
+        const end = new Date(promo.end_date);
+        const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24));
+        return `${diffDays} Days`;
+    };
+
+    const renderPromoStatus = (status) => {
+        let className = 'status-default';
+        let text = (status || 'Unknown').replace(/_/g, ' ');
+
+        if (status === 'pending_approval' || status === 'approved_awaiting_payment') {
+            className = 'status-pending';
+            text = 'Pending Approval';
+        } else if (['paid', 'active', 'successful'].includes(status)) {
+            className = 'status-active';
+            text = 'Active';
+        } else if (['rejected', 'expired'].includes(status)) {
+            className = 'status-rejected';
+        }
+        return <span className={`status-badge ${className}`}>{text}</span>;
+    };
+
+    const showPayNow = (status) => status === 'pending_approval' || status === 'approved_awaiting_payment';
+
     if (pageLoading) return null;
 
     return (
         <div className="promotions-container">
             <div className="page-header">
-                <h1 className="main-header">Product Promotions</h1>
+                <h1 className="main-header">Promotions</h1>
                 <button className="btn btn-primary" onClick={() => setIsRequestModalOpen(true)}>
-                    + Request New Promotion
+                    + New Promotion
                 </button>
             </div>
 
             <div className="alert-banner">
                 <span className="alert-icon">⚠️</span>
-                <p>
-                    <strong>Attention:</strong> All promotion requests are automatically and permanently deleted 60 days after they are created. Please ensure your payment is approved by the admin as soon as possible.
-                </p>
+                <p><strong>Note:</strong> Unpaid requests are deleted after 60 days.</p>
             </div>
 
-            <div className="card">
-                {error && <p className="error-message">{error}</p>}
-                {!error && promotions.length > 0 ? (
-                    <>
-                        {/* --- Desktop Table --- */}
-                        <div className="desktop-table-wrapper">
-                            <table className="content-table">
-                                <thead>
-                                    <tr>
-                                        <th>Product</th>
-                                        <th>End Date</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {promotions.map(p => (
-                                        <tr key={p.id}>
-                                            <td className="product-cell">
-                                                <img src={(JSON.parse(p.product_image_urls || '[]')[0]) || 'https://via.placeholder.com/50'} alt={p.product_title} />
-                                                <span>{p.product_title}</span>
-                                            </td>
-                                            <td>{new Date(p.end_date).toLocaleDateString()}</td>
-                                            <td>{renderPromoStatus(p.payment_status)}</td>
-                                            <td className="actions-cell">
-                                                {p.payment_status === 'approved_awaiting_payment' && (
-                                                    <button className="btn btn-success" onClick={() => setIsPaymentModalOpen(true)}>
-                                                        Pay Now
-                                                    </button>
-                                                )}
-                                                <Link to={`/promotions/${p.id}`} className="btn btn-secondary">
-                                                    View
-                                                </Link>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* --- Mobile Card List --- */}
-                        <div className="mobile-promo-list">
-                            {promotions.map(p => (
-                                <PromotionCardMobile 
-                                    key={p.id}
-                                    promotion={p}
-                                    renderStatus={renderPromoStatus}
-                                    onPayNow={() => setIsPaymentModalOpen(true)}
-                                />
-                            ))}
-                        </div>
-                    </>
+            {error && <p style={{color: '#ef4444'}}>{error}</p>}
+            
+            <div className="promo-grid-container">
+                {promotions.length > 0 ? (
+                    promotions.map(p => {
+                        const imgUrl = (JSON.parse(p.product_image_urls || '[]')[0]) || 'https://via.placeholder.com/300';
+                        return (
+                            <div className="promo-item-card" key={p.id}>
+                                <div className="card-top">
+                                    <div className="status-overlay">
+                                        {renderPromoStatus(p.payment_status)}
+                                    </div>
+                                    <img src={imgUrl} alt={p.product_title} />
+                                </div>
+                                <div className="card-content">
+                                    <h3 className="card-title">{p.product_title}</h3>
+                                    <div className="card-dates">
+                                        <span>Ends: {new Date(p.end_date).toLocaleDateString()}</span>
+                                        <span className="card-duration-badge">{getDurationText(p)}</span>
+                                    </div>
+                                    <div className="card-actions">
+                                        {showPayNow(p.payment_status) && (
+                                            <button className="btn btn-success" onClick={() => setIsPaymentModalOpen(true)}>
+                                                Pay Now
+                                            </button>
+                                        )}
+                                        {/* CRITICAL UPDATE: Pass state here */}
+                                        <Link 
+                                            to={`/promotions/${p.id}`} 
+                                            state={{ promotion: p }} 
+                                            className="btn btn-secondary"
+                                        >
+                                            Details
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    })
                 ) : (
-                    !error && <div className="empty-state">
-                        <h3>No Active Promotions</h3>
-                        <p>Boost your sales by promoting your products on the homepage.</p>
-                        <button className="btn btn-primary" onClick={() => setIsRequestModalOpen(true)}>
-                            Request a Promotion
-                        </button>
-                    </div>
+                    !error && <div style={{textAlign:'center', padding:'50px', color:'#9ca3af'}}>No Active Promotions</div>
                 )}
             </div>
             
             {isRequestModalOpen && (
-                <PromotionRequestModal 
-                    onClose={() => setIsRequestModalOpen(false)}
-                    onSuccess={() => {
-                        setIsRequestModalOpen(false);
-                        fetchPromotions();
-                    }}
-                />
+                <PromotionRequestModal onClose={() => setIsRequestModalOpen(false)} onSuccess={() => { setIsRequestModalOpen(false); fetchPromotions(); }} />
             )}
-
-            {isPaymentModalOpen && (
-                <div className="modal-backdrop" onClick={() => setIsPaymentModalOpen(false)}>
-                    <div className="modal-content" style={{maxWidth: '500px'}} onClick={e => e.stopPropagation()}>
-                        <button className="close-btn" onClick={() => setIsPaymentModalOpen(false)}>&times;</button>
-                        <h2>Payment Instructions</h2>
-                        <div className="payment-alert">
-                            Please send the payment to one of the accounts below and **must message the admin with a screenshot** for approval.
-                        </div>
-                        <div className="payment-accounts">
-                            <div className="payment-info-card">
-                                <h4>JazzCash</h4>
-                                <p><strong>Name:</strong> Azher Mehmood</p>
-                                <p><strong>Number:</strong> 033495643002</p>
-                            </div>
-                            <div className="payment-info-card">
-                                <h4>UPaisa</h4>
-                                <p><strong>Name:</strong> Azher Mehmood</p>
-                                <p><strong>Number:</strong> 03348846378</p>
-                            </div>
-                        </div>
-                        <div className="modal-actions">
-                            <button className="btn btn-secondary" onClick={() => setIsPaymentModalOpen(false)}>Close</button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {isPaymentModalOpen && <PaymentModal onClose={() => setIsPaymentModalOpen(false)} />}
         </div>
     );
 };
