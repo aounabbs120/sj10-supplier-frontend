@@ -265,3 +265,54 @@
     .chart-wrapper { height: 250px; }
     .chart-header { flex-direction: column; align-items: flex-start; }
 }
+/* STRIKE BANNER STYLES */
+.strike-banner {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    padding: 15px 20px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.1);
+    animation: fadeInDown 0.5s ease-out;
+}
+
+.strike-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.strike-icon {
+    color: #ef4444;
+    flex-shrink: 0;
+}
+
+.strike-content h4 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.strike-content p {
+    margin: 0;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.strike-dismiss {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #991b1b;
+    padding: 5px;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.strike-dismiss:hover {
+    background: rgba(239, 68, 68, 0.1);
+}

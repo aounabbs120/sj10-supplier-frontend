@@ -5,14 +5,10 @@ import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'r
 import * as THREE from 'three';
 import Waves from 'vanta/dist/vanta.waves.min';
 import { AnimatePresence } from 'framer-motion';
-
-// --- SERVICE & COMPONENT IMPORTS ---
 import supplierService from './services/supplierService';
 import MainLayout from './layout/MainLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import NotificationBanner from './components/NotificationBanner';
-
-// --- PAGE IMPORTS ---
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
@@ -36,10 +32,10 @@ import VerificationCenter from './pages/VerificationCenter';
 import ForgotPassword from './pages/ForgotPassword';
 import VerifyEmail from './pages/VerifyEmail';
 import ResetPassword from './pages/ResetPassword';
-import InvoicePage from './pages/InvoicePage'; // Import at top
-import OrderDetailsPage from './pages/OrderDetailsPage'; // <--- IMPORT THIS
-
-// Global CSS
+import InvoicePage from './pages/InvoicePage';
+import OrderDetailsPage from './pages/OrderDetailsPage'; // Correctly Imported
+import TrackOrderPage from './pages/TrackOrderPage';
+import FollowersPage from './pages/FollowersPage'; // <-- IMPORT THE NEW PAGE
 import './App.css';
 
 const VantaBackground = () => {
@@ -64,43 +60,31 @@ function App() {
   );
 }
 
-// =========================================================================
-// === APP LAYOUT - FIXED NOTIFICATION LOGIC ===
-// =========================================================================
 const AppLayout = ({ isLoading, setIsLoading }) => {
     const location = useLocation();
     const [showNotificationBanner, setShowNotificationBanner] = useState(false);
 
-    // 1. Define strictly what an "Auth Page" is
     const isAuthPage = ['/login', '/register', '/forgot-password', '/verify-email']
         .includes(location.pathname) || location.pathname.startsWith('/reset-password');
 
     useEffect(() => {
         const token = localStorage.getItem('supplierToken');
-
-        // 2. CRITICAL FIX: If no token OR if we are on an Auth Page, HIDE banner immediately.
         if (!token || isAuthPage) {
             setShowNotificationBanner(false);
             return; 
         }
 
-        // 3. Only proceed if logged in and inside the dashboard area
         const checkNotificationPermission = () => {
             const isSupported = 'Notification' in window && 'serviceWorker' in navigator;
             if (!isSupported) return;
-
             const hasBeenDismissed = sessionStorage.getItem('notificationBannerDismissed');
-            
-            // Only show if permission is 'default' (not yet granted or denied) and not dismissed
             if (Notification.permission === 'default' && !hasBeenDismissed) {
-                // Small delay for smooth UX
                 const timer = setTimeout(() => setShowNotificationBanner(true), 2000);
                 return () => clearTimeout(timer);
             }
         };
-
         checkNotificationPermission();
-    }, [isAuthPage, location.pathname]); // Re-run whenever path changes
+    }, [isAuthPage, location.pathname]);
 
     const handleDismissBanner = () => {
         sessionStorage.setItem('notificationBannerDismissed', 'true');
@@ -135,7 +119,6 @@ const AppLayout = ({ isLoading, setIsLoading }) => {
             {isAuthPage && <VantaBackground />}
             
             <AnimatePresence>
-                {/* 4. Ensure it renders conditionally based on state */}
                 {showNotificationBanner && (
                     <NotificationBanner 
                         onEnable={handleEnableNotifications}
@@ -146,19 +129,13 @@ const AppLayout = ({ isLoading, setIsLoading }) => {
             
             <div className={isAuthPage ? "auth-content-wrapper" : "main-content-wrapper"}>
                 <Routes>
-                    {/* Public Routes */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/verify-email" element={<VerifyEmail />} />
-                    
-                    {/* ✅ Corrected Reset Password Route (No /:token) */}
                     <Route path="/reset-password" element={<ResetPassword />} />
-
-                    {/* Protected Routes */}
                     <Route element={<ProtectedRoute />}>
                         <Route element={<MainLayout />}>
-                        <Route path="/orders/invoice" element={<InvoicePage />} />
                             <Route path="/dashboard" element={<Dashboard setIsLoading={setIsLoading} />} />
                             <Route path="/tools" element={<Tools setIsLoading={setIsLoading} />} />
                             <Route path="/reviews" element={<Reviews setIsLoading={setIsLoading} />} />
@@ -167,11 +144,9 @@ const AppLayout = ({ isLoading, setIsLoading }) => {
                             <Route path="/products" element={<ProductList setIsLoading={setIsLoading} />} />
                             <Route path="/products/add" element={<ProductForm setIsLoading={setIsLoading} />} />
                             <Route path="/products/edit/:productId" element={<ProductForm setIsLoading={setIsLoading} />} />
-                              
                             <Route path="/orders" element={<Orders setIsLoading={setIsLoading} />} />
                             <Route path="/orders/:orderId" element={<OrderDetailsPage setIsLoading={setIsLoading} />} />
                             <Route path="/orders/invoice" element={<InvoicePage />} />
-
                             <Route path="/account" element={<AccountPage />} />
                             <Route path="/account-settings" element={<AccountSettingsPage />} />
                             <Route path="/feedback" element={<Feedback setIsLoading={setIsLoading} />} />
@@ -180,10 +155,11 @@ const AppLayout = ({ isLoading, setIsLoading }) => {
                             <Route path="/about-us" element={<AboutUs setIsLoading={setIsLoading} />} />
                             <Route path="/verification-center" element={<VerificationCenter setIsLoading={setIsLoading} />} />
                             <Route path="/sj10-university" element={<SJ10University setIsLoading={setIsLoading} />} />
+                            <Route path="/orders/track/:orderId" element={<TrackOrderPage />} />
+                             <Route path="/followers" element={<FollowersPage />} />
                             <Route path="/sj10-university/:videoId" element={<VideoPlayer setIsLoading={setIsLoading} />} />
                         </Route>
                     </Route>
-                    
                     <Route path="*" element={<Navigate to="/login" />} />
                 </Routes>
             </div>

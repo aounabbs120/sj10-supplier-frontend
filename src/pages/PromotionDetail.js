@@ -1,47 +1,50 @@
-// src/pages/PromotionDetail.js
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import supplierService from '../services/supplierService';
-import PaymentModal from '../components/PaymentModal';
+import PromotionPaymentModal from '../components/PromotionPaymentModal';
 import './PromotionDetail.css';
 
 const PromotionDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const location = useLocation(); // Hook to access passed state
+    const location = useLocation();
     
-    // Initialize with passed state if available (Instant Load)
     const [promotion, setPromotion] = useState(location.state?.promotion || null);
+    // Receive priceOverride if passed from list page
+    const [priceOverride, setPriceOverride] = useState(location.state?.priceOverride || 0);
     const [loading, setLoading] = useState(!location.state?.promotion);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
     useEffect(() => {
-        // If we already have promotion data from state, don't fetch
-        if (promotion) {
-            setLoading(false);
-            return;
-        }
-
-        // Fallback: Fetch if page was refreshed or accessed directly
         const fetchDetail = async () => {
+            if (promotion && priceOverride > 0) {
+                setLoading(false);
+                return;
+            }
+
             setLoading(true);
             try {
-                // Try specific ID fetch first (if your API supports it)
-                if (supplierService.getPromotionById) {
-                    try {
-                        const data = await supplierService.getPromotionById(id);
-                        setPromotion(data);
-                        setLoading(false);
-                        return;
-                    } catch (e) { /* Ignore and try list fetch */ }
-                }
+                // Fetch Details AND Plans (to map price if missing)
+                const [promoData, plansData] = await Promise.all([
+                    supplierService.getPromotionById ? supplierService.getPromotionById(id) : supplierService.getMyPromotions().then(list => list.find(p => p.id == id)),
+                    supplierService.getPromotionPricing()
+                ]);
 
-                // Fallback to fetching list
-                const allPromotions = await supplierService.getMyPromotions();
-                // Compare loose equality (==) for string/number ID mismatch
-                const found = allPromotions.find(p => p.id == id); 
-                
-                if (found) setPromotion(found);
+                if (promoData) {
+                    setPromotion(promoData);
+                    
+                    // Logic to find price if we didn't get it from state
+                    let foundPrice = 0;
+                    if (promoData.price) foundPrice = parseFloat(promoData.price);
+                    else if (promoData.amount) foundPrice = parseFloat(promoData.amount);
+                    else if (promoData.pricing_plan) foundPrice = parseFloat(promoData.pricing_plan.price);
+                    else if (plansData && (promoData.pricing_id || promoData.plan_id)) {
+                        const plan = plansData.find(pl => pl.id == (promoData.pricing_id || promoData.plan_id));
+                        if (plan) foundPrice = parseFloat(plan.price);
+                    }
+                    
+                    setPriceOverride(foundPrice);
+                }
             } catch (error) {
                 console.error("Error fetching detail", error);
             } finally {
@@ -50,11 +53,10 @@ const PromotionDetail = () => {
         };
 
         fetchDetail();
-    }, [id, promotion]);
+    }, [id, promotion, priceOverride]);
 
     if (loading) return <div className="loading-screen"><div className="spinner"></div>Loading...</div>;
     
-    // Only show error if we really couldn't find it after trying everything
     if (!promotion) return (
         <div className="error-screen">
             <div className="error-box">
@@ -64,7 +66,6 @@ const PromotionDetail = () => {
         </div>
     );
 
-    // --- LOGIC ---
     const getDuration = () => {
         if (!promotion.end_date) return 'N/A';
         const start = new Date(promotion.start_date || promotion.created_at);
@@ -146,21 +147,20 @@ const PromotionDetail = () => {
                         </div>
                         <div className="stat-card purple">
                             <div className="stat-icon">💰</div>
-                            <div className="stat-number">{promotion.price || 0}</div>
+                            <div className="stat-number">{priceOverride > 0 ? priceOverride.toLocaleString() : '---'}</div>
                             <div className="stat-label">Cost (PKR)</div>
                         </div>
-                    </div>
-
-                    <div className="info-card details-list">
-                        <h4>Campaign Details</h4>
-                        <div className="detail-row"><span>ID:</span><span>#{promotion.id}</span></div>
-                        <div className="detail-row"><span>Created:</span><span>{new Date(promotion.created_at).toLocaleDateString()}</span></div>
-                        <div className="detail-row"><span>Plan:</span><span>Standard</span></div>
                     </div>
                 </div>
             </div>
 
-            {isPaymentModalOpen && <PaymentModal onClose={() => setIsPaymentModalOpen(false)} />}
+            {isPaymentModalOpen && (
+                <PromotionPaymentModal 
+                    promotion={promotion}
+                    fixedAmount={priceOverride} // Pass the calculated price
+                    onClose={() => setIsPaymentModalOpen(false)} 
+                />
+            )}
         </div>
     );
 };

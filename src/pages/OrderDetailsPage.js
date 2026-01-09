@@ -1,287 +1,258 @@
-// src/pages/OrderDetailsPage.js
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-    ArrowLeft, MapPin, Copy, CheckCircle, Truck, Package, 
-    Calendar, User, CreditCard, Box 
-} from 'lucide-react';
+import { ArrowLeft, MapPin, Copy, CheckCircle, Truck, Package, Lock, DollarSign, BarChart2, User as UserIcon, Calendar, Printer } from 'lucide-react';
 import supplierService from '../services/supplierService';
+import PaymentModal from '../components/PaymentModal';
+import CourierDropdown from '../components/CourierDropdown';
+import { validateTrackingNumber, getCourierExample } from '../utils/trackingValidator';
 import './OrderDetailsPage.css';
 
-const OrderDetailsPage = ({ setIsLoading }) => {
+const COURIER_LIST = [
+    { code: 'leopards', name: 'Leopards Courier', logo: '/logos/leopards.png' },
+    { code: 'tcs', name: 'TCS', logo: '/logos/tcs.png' },
+    { code: 'postex', name: 'PostEx', logo: '/logos/postex.png' },
+    { code: 'm-p', name: 'M&P (OCS)', logo: '/logos/mnp.png' },
+    { code: 'call-courier', name: 'Call Courier', logo: '/logos/call-courier.png' },
+    { code: 'daewoo', name: 'Daewoo Express', logo: '/logos/daewoo.png' },
+    { code: 'trax', name: 'Trax', logo: '/logos/trax.png' },
+    { code: 'swyft', name: 'Swyft', logo: '/logos/swyft.png' },
+    { code: 'dhl', name: 'DHL', logo: '/logos/dhl.png' },
+    { code: 'fedex', name: 'FedEx', logo: '/logos/fedex.png' },
+];
+
+const OrderDetailsPage = () => {
     const { orderId } = useParams();
     const navigate = useNavigate();
+
     const [order, setOrder] = useState(null);
     const [error, setError] = useState('');
-    
-    // UI States
-    const [isAddressCopied, setIsAddressCopied] = useState(false);
+    const [isPageLoading, setIsPageLoading] = useState(true);
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [copyState, setCopyState] = useState({});
+    const [selectedCourier, setSelectedCourier] = useState(null);
     const [trackingNumber, setTrackingNumber] = useState('');
-    const [courierName, setCourierName] = useState('');
+    const [trackingError, setTrackingError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // --- Hooks must be at the top ---
+    const financialTotals = useMemo(() => {
+        if (!order) return { products: 0, delivery: 0, commission: 0, profit: 0, subtotal: 0, net: 0 };
+        const totals = order.order_items.reduce((acc, item) => {
+            acc.products += (parseFloat(item.price_at_purchase) || 0) * item.quantity;
+            acc.delivery += (parseFloat(item.delivery_charge) || 0); // Calculated for display (Dummy)
+            acc.commission += (parseFloat(item.system_commission) || 0);
+            acc.profit += (parseFloat(item.profit) || 0);
+            return acc;
+        }, { products: 0, delivery: 0, commission: 0, profit: 0 });
+
+        // MODIFIED: Exclude delivery from subtotal calculation as requested
+        // totals.delivery is treated as a dummy value for display only.
+        totals.subtotal = totals.products + totals.profit + totals.commission;
+        
+        totals.net = totals.products + totals.delivery - totals.commission;
+        return totals;
+    }, [order]);
+
+    const isTrackable = useMemo(() => {
+        if (!order?.shipment_details) return false;
+        const { shipment_details } = order;
+        const trackableStatuses = ['Order Dispatched', 'InTransit', 'OutForDelivery', 'FailedAttempt'];
+        if (trackableStatuses.includes(shipment_details.current_status)) return true;
+        if (shipment_details.current_status === 'Delivered') {
+            const deliveryDate = new Date(shipment_details.updated_at);
+            const twoDaysLater = new Date(deliveryDate.getTime() + 2 * 24 * 60 * 60 * 1000);
+            return new Date() < twoDaysLater;
+        }
+        return false;
+    }, [order]);
+    
     useEffect(() => {
-        const fetchDetails = async () => {
-            // Only set global loader if prop exists, otherwise handle locally
-            if(setIsLoading) setIsLoading(true);
-            
+        const fetchOrderDetails = async () => {
+            if (!orderId) {
+                setError("Order ID is missing.");
+                setIsPageLoading(false);
+                return;
+            }
+            setIsPageLoading(true);
             try {
-                // Now calling the function we just added to supplierService
                 const data = await supplierService.getMyOrderDetails(orderId);
                 setOrder(data);
             } catch (err) {
-                console.error("Error fetching order details:", err);
-                setError("Failed to load order details. Please try again.");
+                console.error("Fetch Details Error:", err);
+                setError("Failed to load order details.");
             } finally {
-                if(setIsLoading) setIsLoading(false);
+                setIsPageLoading(false);
             }
         };
+        fetchOrderDetails();
+    }, [orderId]);
 
-        if (orderId) {
-            fetchDetails();
-        }
-    }, [orderId, setIsLoading]);
-
-    // --- HANDLERS ---
-    const handleCopyAddress = () => {
-        if (!order) return;
-        const { order_details } = order;
-        const addressText = `Name: ${order_details.customer_name}\nPhone: ${order_details.customer_phone}\nAddress: ${order_details.customer_address}\nCity: ${order_details.customer_city}`;
-        
-        navigator.clipboard.writeText(addressText);
-        setIsAddressCopied(true);
-        setTimeout(() => setIsAddressCopied(false), 2000);
+    const handleCopy = (text, field) => {
+        navigator.clipboard.writeText(text);
+        setCopyState({ [field]: true });
+        setTimeout(() => setCopyState({}), 2000);
     };
 
     const handleDispatch = async (e) => {
         e.preventDefault();
+        const validation = validateTrackingNumber(selectedCourier?.code, trackingNumber);
+        if (!validation.isValid) {
+            setTrackingError(validation.message);
+            return;
+        }
         setIsSubmitting(true);
         try {
             await supplierService.addTrackingToShipment(order.shipment_details.id, {
                 tracking_number: trackingNumber,
-                courier_name: courierName
+                courier_name: selectedCourier.code
             });
-            // Refresh data
-            const updated = await supplierService.getMyOrderDetails(orderId);
-            setOrder(updated);
-            alert("✅ Order Dispatched Successfully!");
+            const data = await supplierService.getMyOrderDetails(orderId);
+            setOrder(data);
         } catch (error) {
-            alert("❌ Failed to update tracking info.");
+            alert("Failed to dispatch order.");
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    // --- RENDER STATES ---
+    const handleTrackingNumberChange = (e) => {
+        const newTrackingNumber = e.target.value;
+        setTrackingNumber(newTrackingNumber);
+        const validation = validateTrackingNumber(selectedCourier?.code, newTrackingNumber);
+        setTrackingError(newTrackingNumber ? (validation.isValid ? '' : validation.message) : '');
+    };
 
-    // 1. Error State
-    if (error) {
-        return (
-            <div className="order-details-page" style={{textAlign:'center', paddingTop:'50px'}}>
-                 <h2 style={{color: '#ef4444'}}>Something went wrong</h2>
-                 <p>{error}</p>
-                 <button className="back-btn" onClick={() => navigate('/orders')} style={{margin:'20px auto'}}>
-                    <ArrowLeft size={20} /> Back to Orders
-                 </button>
-            </div>
-        );
-    }
+    const handleTrackOrder = () => {
+        navigate(`/orders/track/${orderId}`);
+    };
 
-    // 2. Loading State (Prevents White Page)
-    if (!order) {
-        return (
-            <div className="order-details-page">
-                <div style={{display:'flex', justifyContent:'center', marginTop:'100px'}}>
-                    <div className="spinner" style={{width:'40px', height:'40px', border:'4px solid #ddd', borderTopColor:'#6366f1', borderRadius:'50%', animation:'spin 1s linear infinite'}}></div>
-                </div>
-                <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
-            </div>
-        );
-    }
+    // --- Render Logic ---
+    if (isPageLoading) return <div className="loading-state">Loading...</div>;
+    if (error) return <div className="error-state">{error}</div>;
+    if (!order) return <div className="error-state">Order not found.</div>;
+    
+    const { order_details, order_items, shipment_details, is_locked, unpaid_commission, is_new } = order;
+    const isAccountLocked = is_locked || false;
+    const isOrderProcessing = shipment_details.current_status === 'processing';
+    const showSensitiveDetails = !isAccountLocked || !isOrderProcessing;
 
-    // 3. Success State
-    const { order_details, order_items, shipment_details } = order;
-    const status = shipment_details.current_status;
+    // MODIFIED: Calculate Final Total by subtracting 200 as requested
+    const deliveryDeduction = 200;
+    const finalTotalDisplay = (order_details.total_price || 0) - deliveryDeduction;
 
     return (
         <div className="order-details-page">
-            {/* HEADER */}
-            <div className="od-header">
-                <button className="back-btn" onClick={() => navigate('/orders')}>
-                    <ArrowLeft size={20} /> Back to Orders
-                </button>
+            <motion.div className="od-header" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+                <button className="back-btn" onClick={() => navigate('/orders')}><ArrowLeft size={18} /> Back to Orders</button>
                 <div className="od-title-group">
-                    <h1>Order #{order_details.id}</h1>
-                    <span className={`status-badge-lg status-${status}`}>
-                        {status.replace('_', ' ').toUpperCase()}
-                    </span>
+                    <h1>Order #{order_details.id.substring(0, 8).toUpperCase()}</h1>
+                    {is_new && <span className="new-tag-detail">NEW</span>}
+                    <span className={`status-badge-lg status-${shipment_details.current_status}`}>{shipment_details.current_status.replace(/_/g, ' ')}</span>
                 </div>
                 <div className="od-meta">
-                    <span><Calendar size={14}/> Placed on: {new Date(order_details.created_at).toLocaleString()}</span>
+                    <span><Calendar size={14}/> {new Date(order_details.created_at).toLocaleString()}</span>
+                    <button className="print-btn" onClick={() => navigate('/orders/invoice', { state: { order } })}><Printer size={14}/> Print Invoice</button>
                 </div>
-            </div>
+            </motion.div>
 
             <div className="od-grid">
-                
-                {/* --- PRODUCTS SECTION --- */}
                 <div className="od-col-main">
-                    <motion.div 
-                        className="od-card products-card"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                    >
-                        <div className="card-header">
-                            <Box size={20} className="icon-blue"/> 
-                            <h3>Ordered Products</h3>
-                        </div>
+                    <motion.div className="od-card" variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} initial="hidden" animate="visible">
+                        <div className="card-header"><Package size={20} /><h3>Ordered Items ({order_items.length})</h3></div>
                         <div className="product-list">
-                            {order_items.map((item, idx) => {
-                                const price = item.product_details.discounted_price || item.product_details.price || 0;
+                            {order_items.map(item => {
+                                const options = (item.options && typeof item.options === 'string') ? JSON.parse(item.options) : item.options || {};
+                                const productTitle = item.product_details.title || 'N/A';
+                                const productSKU = item.product_details.sku || 'N/A';
                                 return (
-                                    <div key={idx} className="od-product-item">
-                                        <div className="od-prod-img-box">
-                                            <img 
-                                                src={item.product_details.image || item.product_details.image_url || "https://via.placeholder.com/80"} 
-                                                alt="Product"
-                                                onError={(e) => {e.target.src = "https://via.placeholder.com/80"}}
-                                            />
-                                        </div>
-                                        <div className="od-prod-info">
-                                            <h4>{item.product_details.title}</h4>
-                                            <div className="od-prod-meta">
-                                                <span>SKU: {item.product_details.sku}</span>
-                                                {item.selected_size && <span> | Size: {item.selected_size}</span>}
-                                                {item.selected_color && <span> | Color: {item.selected_color}</span>}
-                                            </div>
-                                        </div>
-                                        <div className="od-prod-pricing">
-                                            <div className="qty-badge">Qty: {item.quantity}</div>
-                                            <span className="price">PKR {(price * item.quantity).toLocaleString()}</span>
+                                <div key={item.id} className="od-product-item">
+                                    <div className="od-prod-img-box"><img src={item.product_details.image || 'https://via.placeholder.com/70'} alt={productTitle} /></div>
+                                    <div className="od-prod-info">
+                                        <div className="info-line-copyable"><h4>{productTitle}</h4><button className="copy-icon-btn-sm" onClick={() => handleCopy(productTitle, `title-${item.id}`)}>{copyState[`title-${item.id}`] ? <CheckCircle size={14}/> : <Copy size={14}/>}</button></div>
+                                        <div className="od-prod-meta">
+                                            <div className="info-line-copyable"><span>SKU: {productSKU}</span><button className="copy-icon-btn-sm" onClick={() => handleCopy(productSKU, `sku-${item.id}`)}>{copyState[`sku-${item.id}`] ? <CheckCircle size={14}/> : <Copy size={14}/>}</button></div>
+                                            {Object.keys(options).length > 0 && Object.entries(options).map(([key, value]) => (
+                                                <span key={key}>{key.charAt(0).toUpperCase() + key.slice(1)}: <strong>{String(value)}</strong></span>
+                                            ))}
                                         </div>
                                     </div>
-                                );
-                            })}
+                                    <div className="od-prod-pricing">
+                                        <div className="qty-badge">x {item.quantity}</div>
+                                        <span className="price">PKR {(item.price_at_purchase * item.quantity).toLocaleString()}</span>
+                                    </div>
+                                </div>
+                            )})}
                         </div>
+                    </motion.div>
+                    
+                    <motion.div className="od-card" variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} initial="hidden" animate="visible" transition={{ delay: 0.1 }}>
+                        <div className="card-header"><BarChart2 size={20} className="icon-green"/><h3>Price Calculation</h3></div>
                         <div className="od-summary">
-                            <div className="summary-row">
-                                <span>Payment Method</span>
-                                <strong><CreditCard size={14}/> {order_details.payment_method}</strong>
-                            </div>
-                            <div className="summary-row total">
-                                <span>Total Amount</span>
-                                <span>PKR {order_details.total_price.toLocaleString()}</span>
-                            </div>
+                            <div className="summary-row"><span>Product(s) Price</span><span>PKR {financialTotals.products.toLocaleString()}</span></div>
+                            <div className="summary-row profit"><span>User (Reseller) Profit</span><span>+ PKR {financialTotals.profit.toLocaleString()}</span></div>
+                            {/* MODIFIED: Delivery Fee is shown but treated as dummy/not added to calculation */}
+                            <div className="summary-row"><span>Delivery Fee (Paid by User)</span><span>PKR {financialTotals.delivery.toLocaleString()}</span></div>
+                            <div className="summary-row"><span>SJ10 Fee (Commission)</span><span>+ PKR {financialTotals.commission.toLocaleString()}</span></div>
+                            {/* MODIFIED: Total Amount subtracted by 200 */}
+                            <div className="summary-row total"><span>Total Amount from Customer</span><span>PKR {finalTotalDisplay.toLocaleString()}</span></div>
                         </div>
                     </motion.div>
                 </div>
 
-                {/* --- RIGHT SIDE: SHIPPING & DISPATCH --- */}
                 <div className="od-col-side">
-                    
-                    {/* SHIPPING INFO */}
-                    <motion.div 
-                        className="od-card shipping-card"
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.1 }}
-                    >
-                        <div className="card-header">
-                            <MapPin size={20} className="icon-purple"/> 
-                            <h3>Shipping Details</h3>
-                            <motion.button 
-                                className={`copy-address-btn ${isAddressCopied ? 'copied' : ''}`}
-                                onClick={handleCopyAddress}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                            >
-                                {isAddressCopied ? (
-                                    <> <CheckCircle size={14}/> Copied! </>
-                                ) : (
-                                    <> <Copy size={14}/> Copy Info </>
-                                )}
-                            </motion.button>
-                        </div>
-                        
-                        <div className="customer-info-box">
-                            <div className="info-line">
-                                <User size={16}/> <strong>{order_details.customer_name}</strong>
-                            </div>
-                            <div className="info-line">
-                                <span className="label">Phone:</span> {order_details.customer_phone}
-                            </div>
-                            <div className="info-line address">
-                                <span className="label">Address:</span>
-                                <p>{order_details.customer_address}</p>
-                            </div>
-                            <div className="info-line">
-                                <span className="label">City:</span> {order_details.customer_city}
+                    <motion.div className="od-card shipping-card-container" variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }} initial="hidden" animate="visible" transition={{ duration: 0.5, delay: 0.2 }}>
+                        <div className="card-header"><MapPin size={20} className="icon-purple"/><h3>Shipping Details</h3></div>
+                        <div className={`shipping-content ${!showSensitiveDetails ? 'blurred' : ''}`}>
+                            <div className="customer-info-box">
+                                <div className="info-line"><UserIcon size={16}/><strong>{order_details.customer_name}</strong><button className="copy-icon-btn" onClick={() => handleCopy(order_details.customer_name, 'name')}>{copyState.name ? <CheckCircle size={14}/> : <Copy size={14}/>}</button></div>
+                                <div className="info-line"><span className="label">Phone:</span> {order_details.customer_phone}<button className="copy-icon-btn" onClick={() => handleCopy(order_details.customer_phone, 'phone')}>{copyState.phone ? <CheckCircle size={14}/> : <Copy size={14}/>}</button></div>
+                                <div className="info-line address"><span className="label">Address:</span><p>{order_details.customer_address}, {order_details.customer_city}</p><button className="copy-icon-btn" onClick={() => handleCopy(`${order_details.customer_address}, ${order_details.customer_city}`, 'address')}>{copyState.address ? <CheckCircle size={14}/> : <Copy size={14}/>}</button></div>
                             </div>
                         </div>
-                    </motion.div>
-
-                    {/* DISPATCH SECTION */}
-                    <motion.div 
-                        className="od-card dispatch-card"
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.2 }}
-                    >
-                        <div className="card-header">
-                            <Truck size={20} className="icon-green"/> 
-                            <h3>Logistics & Dispatch</h3>
-                        </div>
-
-                        {status === 'processing' ? (
-                            <form onSubmit={handleDispatch} className="dispatch-form">
-                                <div className="form-input-group">
-                                    <label>Courier Service</label>
-                                    <input 
-                                        type="text" 
-                                        placeholder="e.g. TCS, Leopards"
-                                        value={courierName}
-                                        onChange={e => setCourierName(e.target.value)}
-                                        required 
-                                    />
-                                </div>
-                                <div className="form-input-group">
-                                    <label>Tracking Number</label>
-                                    <input 
-                                        type="text" 
-                                        placeholder="Scan or type tracking ID"
-                                        value={trackingNumber}
-                                        onChange={e => setTrackingNumber(e.target.value)}
-                                        required 
-                                    />
-                                </div>
-                                <motion.button 
-                                    type="submit" 
-                                    className="dispatch-submit-btn"
-                                    disabled={isSubmitting}
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                >
-                                    {isSubmitting ? 'Dispatching...' : 'Confirm Dispatch'} <Package size={18}/>
-                                </motion.button>
-                            </form>
-                        ) : (
-                            <div className="tracking-display">
-                                <div className="tracking-row">
-                                    <span className="t-label">Courier:</span>
-                                    <span className="t-val">{shipment_details.courier_name}</span>
-                                </div>
-                                <div className="tracking-row">
-                                    <span className="t-label">Tracking #:</span>
-                                    <span className="t-val highlight">{shipment_details.tracking_number}</span>
-                                </div>
-                                <div className="dispatch-success-msg">
-                                    <CheckCircle size={16}/> Shipment Dispatched
-                                </div>
+                        {!showSensitiveDetails && (
+                            <div className="unlock-overlay" onClick={() => setIsPaymentModalOpen(true)}>
+                                <Lock size={24} />
+                                <span>Unlock to View Address</span>
                             </div>
                         )}
                     </motion.div>
+                    
+                    {isOrderProcessing && showSensitiveDetails && (
+                       <motion.div className="od-card" variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }} initial="hidden" animate="visible" transition={{ duration: 0.5, delay: 0.3 }}>
+                           <div className="card-header"><Truck size={20} className="icon-green"/><h3>Dispatch This Order</h3></div>
+                           <form onSubmit={handleDispatch} className="dispatch-form">
+                               <div className="form-input-group">
+                                   <label>Courier Service</label>
+                                   <CourierDropdown options={COURIER_LIST} selected={selectedCourier} onSelect={setSelectedCourier} />
+                               </div>
+                               <div className="form-input-group">
+                                   <label>Tracking Number</label>
+                                   <input type="text" placeholder={getCourierExample(selectedCourier?.code)} value={trackingNumber} onChange={handleTrackingNumberChange} required disabled={!selectedCourier} />
+                                   {trackingError && <p className="form-error">{trackingError}</p>}
+                               </div>
+                               <button type="submit" className="dispatch-submit-btn" disabled={isSubmitting || !selectedCourier || !!trackingError}>
+                                   {isSubmitting ? 'Dispatching...' : <><Package size={18}/> Confirm Dispatch</>}
+                               </button>
+                           </form>
+                       </motion.div>
+                    )}
+                    
+                    {!isOrderProcessing && shipment_details.tracking_number && (
+                        <motion.div className="od-card" variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }} initial="hidden" animate="visible" transition={{ duration: 0.5, delay: 0.3 }}>
+                           <div className="card-header"><Package size={20}/><h3>Tracking Information</h3></div>
+                            <div className="tracking-display">
+                                <div className="tracking-row"><span className="t-label">Courier:</span><span className="t-val">{shipment_details.courier_name}</span></div>
+                                <div className="tracking-row"><span className="t-label">Tracking #:</span><span className="t-val highlight">{shipment_details.tracking_number}</span></div>
+                                {isTrackable && (
+                                   <button className="track-order-btn-detail" onClick={handleTrackOrder}><Truck size={16}/> Track Order</button>
+                                )}
+                            </div>
+                        </motion.div>
+                    )}
                 </div>
             </div>
+            {isPaymentModalOpen && ( <PaymentModal amountDue={unpaid_commission || 0} closeModal={() => setIsPaymentModalOpen(false)} /> )}
         </div>
     );
 };

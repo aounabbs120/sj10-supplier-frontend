@@ -1,26 +1,39 @@
-// src/pages/Promotions.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import supplierService from '../services/supplierService';
-import PromotionRequestModal from '../components/PromotionRequestModal';
-import PaymentModal from '../components/PaymentModal';
+import PromotionRequestModal from '../components/PromotionRequestModal'; 
+import PromotionPaymentModal from '../components/PromotionPaymentModal';
 import './Promotions.css';
 
 const Promotions = ({ setIsLoading }) => {
     const [promotions, setPromotions] = useState([]);
+    // New State: Store pricing plans to lookup prices
+    const [pricingPlans, setPricingPlans] = useState([]); 
     const [pageLoading, setPageLoading] = useState(true);
     const [error, setError] = useState('');
     
     const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
-    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [selectedPromoForPayment, setSelectedPromoForPayment] = useState(null);
 
-    const fetchPromotions = useCallback(async () => {
+    const fetchData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const data = await supplierService.getMyPromotions();
-            setPromotions(data);
+            // Fetch Promotions AND Pricing Plans in parallel
+            const [promosData, plansData] = await Promise.all([
+                supplierService.getMyPromotions(),
+                supplierService.getPromotionPricing() // Ensure this endpoint exists
+            ]);
+            
+            setPromotions(promosData || []);
+            setPricingPlans(plansData || []);
+            
+            // Console log for debugging (Check your browser console F12)
+            console.log("Promotions:", promosData);
+            console.log("Plans:", plansData);
+
         } catch (err) {
-            setError('Could not load promotions.');
+            console.error("Fetch error:", err);
+            setError('Could not load data.');
         } finally {
             setTimeout(() => {
                 setIsLoading(false);
@@ -30,8 +43,8 @@ const Promotions = ({ setIsLoading }) => {
     }, [setIsLoading]);
 
     useEffect(() => {
-        fetchPromotions();
-    }, [fetchPromotions]);
+        fetchData();
+    }, [fetchData]);
 
     const getDurationText = (promo) => {
         if (!promo.start_date || !promo.end_date) return 'N/A';
@@ -57,6 +70,46 @@ const Promotions = ({ setIsLoading }) => {
         return <span className={`status-badge ${className}`}>{text}</span>;
     };
 
+    const getSafeImage = (imageField) => {
+        const placeholder = 'https://via.placeholder.com/300';
+        if (!imageField) return placeholder;
+        if (Array.isArray(imageField)) return imageField[0] || placeholder;
+        if (typeof imageField === 'string') {
+            if (imageField.startsWith('http')) return imageField;
+            try {
+                const parsed = JSON.parse(imageField);
+                return Array.isArray(parsed) ? parsed[0] : parsed;
+            } catch (e) { return placeholder; }
+        }
+        return placeholder;
+    };
+
+    // --- ⚡ FINAL FIXED PRICE FINDER ⚡ ---
+    const getPrice = (promo) => {
+        if (!promo) return 0;
+
+        // 1. Direct Price on Object
+        if (promo.price && parseFloat(promo.price) > 0) return parseFloat(promo.price);
+        if (promo.amount && parseFloat(promo.amount) > 0) return parseFloat(promo.amount);
+        if (promo.cost && parseFloat(promo.cost) > 0) return parseFloat(promo.cost);
+
+        // 2. Nested Price in pricing_plan object
+        if (promo.pricing_plan && parseFloat(promo.pricing_plan.price) > 0) {
+            return parseFloat(promo.pricing_plan.price);
+        }
+
+        // 3. LOOKUP: Match pricing_id with the fetched Plans list
+        if (pricingPlans.length > 0 && (promo.pricing_id || promo.plan_id)) {
+            const planId = promo.pricing_id || promo.plan_id;
+            const matchedPlan = pricingPlans.find(plan => plan.id == planId);
+            if (matchedPlan && matchedPlan.price) {
+                return parseFloat(matchedPlan.price);
+            }
+        }
+
+        return 0; // Still 0? Then manual entry is the only way.
+    };
+
     const showPayNow = (status) => status === 'pending_approval' || status === 'approved_awaiting_payment';
 
     if (pageLoading) return null;
@@ -80,7 +133,9 @@ const Promotions = ({ setIsLoading }) => {
             <div className="promo-grid-container">
                 {promotions.length > 0 ? (
                     promotions.map(p => {
-                        const imgUrl = (JSON.parse(p.product_image_urls || '[]')[0]) || 'https://via.placeholder.com/300';
+                        const imgUrl = getSafeImage(p.product_image_urls);
+                        const displayPrice = getPrice(p);
+
                         return (
                             <div className="promo-item-card" key={p.id}>
                                 <div className="card-top">
@@ -95,16 +150,20 @@ const Promotions = ({ setIsLoading }) => {
                                         <span>Ends: {new Date(p.end_date).toLocaleDateString()}</span>
                                         <span className="card-duration-badge">{getDurationText(p)}</span>
                                     </div>
+                                    
+                                    <div style={{fontSize: '0.9rem', color: '#a5b4fc', marginBottom: '10px'}}>
+                                        Price: <strong>PKR {displayPrice > 0 ? displayPrice.toLocaleString() : '---'}</strong>
+                                    </div>
+
                                     <div className="card-actions">
                                         {showPayNow(p.payment_status) && (
-                                            <button className="btn btn-success" onClick={() => setIsPaymentModalOpen(true)}>
+                                            <button className="btn btn-success" onClick={() => setSelectedPromoForPayment(p)}>
                                                 Pay Now
                                             </button>
                                         )}
-                                        {/* CRITICAL UPDATE: Pass state here */}
                                         <Link 
                                             to={`/promotions/${p.id}`} 
-                                            state={{ promotion: p }} 
+                                            state={{ promotion: p, priceOverride: displayPrice }} 
                                             className="btn btn-secondary"
                                         >
                                             Details
@@ -120,9 +179,17 @@ const Promotions = ({ setIsLoading }) => {
             </div>
             
             {isRequestModalOpen && (
-                <PromotionRequestModal onClose={() => setIsRequestModalOpen(false)} onSuccess={() => { setIsRequestModalOpen(false); fetchPromotions(); }} />
+                <PromotionRequestModal onClose={() => setIsRequestModalOpen(false)} onSuccess={() => { setIsRequestModalOpen(false); fetchData(); }} />
             )}
-            {isPaymentModalOpen && <PaymentModal onClose={() => setIsPaymentModalOpen(false)} />}
+            
+            {/* Pass the calculated price to the modal */}
+            {selectedPromoForPayment && (
+                <PromotionPaymentModal 
+                    promotion={selectedPromoForPayment} 
+                    fixedAmount={getPrice(selectedPromoForPayment)}
+                    onClose={() => setSelectedPromoForPayment(null)} 
+                />
+            )}
         </div>
     );
 };

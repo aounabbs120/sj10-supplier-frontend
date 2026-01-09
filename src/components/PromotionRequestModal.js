@@ -1,119 +1,154 @@
 // src/components/PromotionRequestModal.js
 import React, { useState, useEffect } from 'react';
 import supplierService from '../services/supplierService';
-// Ensure CSS from main file is applied or import specific CSS here if modular
+import './PromotionRequestModal.css';
 
 const PromotionRequestModal = ({ onClose, onSuccess }) => {
     const [step, setStep] = useState(1);
     const [products, setProducts] = useState([]);
     const [pricingOptions, setPricingOptions] = useState([]);
-    const [loadingData, setLoadingData] = useState(true);
-
-    const [selectedProductId, setSelectedProductId] = useState(null);
-    const [selectedPricingId, setSelectedPricingId] = useState(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
+    
+    const [selectedProduct, setSelectedProduct] = useState(null);
+    const [selectedPlan, setSelectedPlan] = useState(null);
+    const [error, setError] = useState('');
 
     useEffect(() => {
-        const fetchData = async () => {
+        const loadData = async () => {
             try {
-                const [prodRes, priceRes] = await Promise.all([
+                setLoading(true);
+                const [prods, prices] = await Promise.all([
                     supplierService.getMyProducts(),
                     supplierService.getPromotionPricing()
                 ]);
-                setProducts(prodRes);
-                setPricingOptions(priceRes);
-            } catch (e) {
-                alert("Failed to load options.");
-                onClose();
+                setProducts(prods || []);
+                setPricingOptions(prices || []);
+            } catch (err) {
+                console.error("Modal Fetch Error:", err);
+                setError("Failed to load products or pricing.");
             } finally {
-                setLoadingData(false);
+                setLoading(false);
             }
         };
-        fetchData();
-    }, [onClose]);
+        loadData();
+    }, []);
+
+    // --- 🛡️ CRASH-PROOF IMAGE HELPER ---
+    const getSafeImage = (imageField) => {
+        const placeholder = 'https://via.placeholder.com/100';
+        if (!imageField) return placeholder;
+
+        // 1. If Backend sends an Array (New Way) -> Use it directly
+        if (Array.isArray(imageField)) {
+            return imageField[0] || placeholder;
+        }
+
+        // 2. If Backend sends Text (Old Way) -> Parse it safely
+        if (typeof imageField === 'string') {
+            if (imageField.startsWith('http')) return imageField; // It's just a URL
+            try {
+                const parsed = JSON.parse(imageField);
+                return Array.isArray(parsed) ? parsed[0] : placeholder;
+            } catch (e) { return placeholder; }
+        }
+        return placeholder;
+    };
 
     const handleSubmit = async () => {
-        if (!selectedProductId || !selectedPricingId) return;
-        setIsSubmitting(true);
+        if (!selectedProduct || !selectedPlan) return;
+        setSubmitting(true);
         try {
             await supplierService.requestPromotion({
-                productId: selectedProductId,
-                pricingId: selectedPricingId
+                productId: selectedProduct.id,
+                pricingId: selectedPlan.id
             });
             onSuccess();
-        } catch (error) {
-            alert("Error submitting request.");
-        } finally {
-            setIsSubmitting(false);
+        } catch (err) {
+            setError(err.response?.data?.message || "Failed to submit request.");
+            setSubmitting(false);
         }
     };
 
     const renderStep1 = () => (
-        <div className="animate-slide-up">
-            <div className="wizard-header">
-                <h2>Select Product</h2>
-                <p style={{color: '#9ca3af'}}>Step 1 of 2</p>
+        <div className="modal-step">
+            <h3>Step 1: Select a Product</h3>
+            <div className="product-select-list">
+                {products.length === 0 ? (
+                    <p style={{textAlign:'center', color:'#666'}}>No products found.</p>
+                ) : (
+                    products.map(p => {
+                        // ✅ USE THE HELPER HERE
+                        const img = getSafeImage(p.image_urls); 
+                        const isSelected = selectedProduct?.id === p.id;
+                        
+                        return (
+                            <div 
+                                key={p.id} 
+                                className={`select-item ${isSelected ? 'selected' : ''}`}
+                                onClick={() => setSelectedProduct(p)}
+                            >
+                                <img src={img} alt={p.title} className="item-thumb" />
+                                <div className="item-info">
+                                    <div className="item-title">{p.title}</div>
+                                    <div className="item-sku">{p.sku}</div>
+                                </div>
+                                {isSelected && <span className="check-icon">✔</span>}
+                            </div>
+                        );
+                    })
+                )}
             </div>
-            <div className="wizard-grid">
-                {products.map(p => {
-                    const img = (JSON.parse(p.image_urls || '[]')[0]) || 'https://via.placeholder.com/150';
-                    return (
-                        <div 
-                            key={p.id} 
-                            className={`selection-card ${selectedProductId === p.id ? 'selected' : ''}`}
-                            onClick={() => setSelectedProductId(p.id)}
-                        >
-                            <img src={img} alt={p.title} />
-                            <div style={{fontSize: '0.9rem', fontWeight: '600'}}>{p.title}</div>
-                        </div>
-                    )
-                })}
-            </div>
-            <div style={{display: 'flex', justifyContent: 'flex-end'}}>
-                <button className="btn btn-primary" disabled={!selectedProductId} onClick={() => setStep(2)}>
-                    Next Step →
-                </button>
-            </div>
+            <button 
+                className="btn btn-primary full-width" 
+                disabled={!selectedProduct}
+                onClick={() => setStep(2)}
+                style={{marginTop:'15px'}}
+            >
+                Next: Select Plan
+            </button>
         </div>
     );
 
     const renderStep2 = () => (
-        <div className="animate-slide-up">
-            <div className="wizard-header">
-                <h2>Select Plan</h2>
-                <p style={{color: '#9ca3af'}}>Step 2 of 2</p>
+        <div className="modal-step">
+            <h3>Step 2: Select a Plan</h3>
+            <div className="plan-select-grid">
+                {pricingOptions.map(plan => {
+                    const isSelected = selectedPlan?.id === plan.id;
+                    return (
+                        <div 
+                            key={plan.id} 
+                            className={`plan-card ${isSelected ? 'selected' : ''}`}
+                            onClick={() => setSelectedPlan(plan)}
+                        >
+                            <div className="plan-name">{plan.name}</div>
+                            <div className="plan-price">PKR {plan.price.toLocaleString()}</div>
+                            <div className="plan-days">{plan.duration_days} Days Duration</div>
+                        </div>
+                    )
+                })}
             </div>
-            <div className="wizard-grid">
-                {pricingOptions.map(opt => (
-                    <div 
-                        key={opt.id}
-                        className={`selection-card pricing ${selectedPricingId === opt.id ? 'selected' : ''}`}
-                        onClick={() => setSelectedPricingId(opt.id)}
-                    >
-                        <div className="duration-tag">{opt.duration_days} Days</div>
-                        <div className="price-tag">PKR {opt.price}</div>
-                        <div style={{fontSize: '0.8rem', color: '#9ca3af'}}>Full Coverage</div>
-                    </div>
-                ))}
-            </div>
-            <div style={{display: 'flex', justifyContent: 'space-between'}}>
-                <button className="btn btn-secondary" onClick={() => setStep(1)}>← Back</button>
-                <button className="btn btn-success" disabled={!selectedPricingId || isSubmitting} onClick={handleSubmit}>
-                    {isSubmitting ? 'Processing...' : 'Done'}
+            <div className="step-actions">
+                <button className="btn btn-secondary" onClick={() => setStep(1)}>Back</button>
+                <button 
+                    className="btn btn-primary" 
+                    disabled={!selectedPlan || submitting}
+                    onClick={handleSubmit}
+                >
+                    {submitting ? 'Submitting...' : 'Submit Request'}
                 </button>
             </div>
         </div>
     );
 
     return (
-        <div className="modal-backdrop" onClick={onClose}>
-            <div className="modal-content large" onClick={e => e.stopPropagation()}>
-                <button className="close-btn" onClick={onClose}>&times;</button>
-                {loadingData ? (
-                    <div style={{textAlign: 'center', padding: '40px', color: '#fff'}}>Loading options...</div>
-                ) : (
-                    step === 1 ? renderStep1() : renderStep2()
-                )}
+        <div className="modal-overlay">
+            <div className="modal-content">
+                <button className="modal-close" onClick={onClose}>&times;</button>
+                {loading ? <div className="modal-loading">Loading...</div> : 
+                 error ? <div className="modal-error"><p>{error}</p></div> : 
+                 (step === 1 ? renderStep1() : renderStep2())}
             </div>
         </div>
     );

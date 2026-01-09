@@ -1,0 +1,11 @@
+.locked-container { display: flex; justify-content: center; align-items: center; padding: 40px 20px; background-color: #f1f5f9; }
+.locked-card { background: white; padding: 30px 40px; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); text-align: center; max-width: 500px; border: 1px solid #e2e8f0; }
+.lock-icon { font-size: 4rem; margin-bottom: 10px; display: block; }
+.locked-card h1 { font-size: 1.8rem; color: #b91c1c; margin: 0; }
+.locked-reason { color: #475569; margin: 10px 0 20px 0; font-size: 1rem; }
+.debt-info { background: #fef2f2; border: 1px solid #fecaca; padding: 15px; border-radius: 8px; margin: 25px 0; }
+.debt-info span { display: block; color: #991b1b; font-weight: 500; }
+.debt-info strong { font-size: 2.2rem; color: #b91c1c; }
+.locked-instructions { font-size: 0.9rem; color: #64748b; }
+.unlock-button { background-color: #16a34a; color: white; padding: 12px 25px; font-size: 1.1rem; border: none; border-radius: 8px; cursor: pointer; margin-top: 20px; font-weight: 600; transition: background-color 0.2s; }
+.unlock-button:hover { background-color: #15803d; }

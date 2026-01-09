@@ -1,0 +1,201 @@
+/* src/components/PaymentModal.css */
+
+/* --- OVERLAY & MODAL CONTAINER --- */
+.modal-overlay {
+    position: fixed;
+    z-index: 1000;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.modal-content {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+}
+
+/* --- ANIMATIONS --- */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(50px) scale(0.95); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+
+/* --- HEADER --- */
+.modal-header { text-align: center; margin-bottom: 25px; }
+.modal-header h2 { margin: 0; color: #1e293b; font-size: 1.5rem; font-weight: 800; }
+.sub-text { color: #64748b; font-size: 0.95rem; margin-top: 5px; }
+.amount-highlight { color: #dc2626; font-weight: 800; font-size: 1.1rem; }
+
+.close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #f1f5f9;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.close-btn:hover { background: #e2e8f0; color: #0f172a; }
+
+/* --- PAYMENT ACCOUNTS --- */
+.accounts-grid {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 25px;
+}
+
+.account-card {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s;
+}
+.account-card:hover { border-color: #cbd5e1; background: #f8fafc; }
+
+.acc-icon-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    flex-shrink: 0;
+    color: white;
+    font-weight: bold;
+}
+.bg-upaisa { background: linear-gradient(135deg, #16a34a, #15803d); }
+.bg-jazz { background: linear-gradient(135deg, #dc2626, #991b1b); }
+
+.acc-details { flex-grow: 1; }
+.acc-name { display: block; font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+.acc-number { display: block; font-size: 1rem; color: #0f172a; font-weight: 600; }
+.acc-title { font-size: 0.85rem; color: #64748b; }
+
+/* --- CUSTOM UPLOAD AREA --- */
+.upload-container { margin-bottom: 25px; }
+.upload-label { display: block; font-weight: 600; color: #334155; margin-bottom: 10px; font-size: 0.9rem; }
+
+.file-drop-zone {
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 30px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #f8fafc;
+    position: relative;
+}
+
+.file-drop-zone:hover { border-color: #3b82f6; background: #eff6ff; }
+.file-drop-zone input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+
+.upload-placeholder { display: flex; flex-direction: column; align-items: center; gap: 8px; color: #64748b; }
+.upload-text { font-size: 0.9rem; }
+.upload-sub { font-size: 0.75rem; color: #94a3b8; }
+.file-selected { display: flex; align-items: center; justify-content: center; gap: 8px; color: #0f172a; font-weight: 600; background: #e0f2fe; padding: 10px; border-radius: 8px; }
+
+/* --- ACTION BUTTONS --- */
+.submit-proof-btn {
+    width: 100%;
+    background: #0f172a;
+    color: white;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+.submit-proof-btn:hover { background: #1e293b; }
+.submit-proof-btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+.error-msg { color: #dc2626; font-size: 0.85rem; text-align: center; margin-top: 10px; }
+
+/* --- 🌟 SUCCESS ANIMATION VIEW 🌟 --- */
+.success-view {
+    text-align: center;
+    padding: 20px 10px;
+}
+
+/* The Animated Checkmark Circle */
+.checkmark-circle {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 25px auto;
+    border-radius: 50%;
+    display: block;
+    stroke-width: 2;
+    stroke: #16a34a;
+    stroke-miterlimit: 10;
+    box-shadow: inset 0px 0px 0px #16a34a;
+    animation: fill .4s ease-in-out .4s forwards, scale .3s ease-in-out .9s both;
+    position: relative;
+}
+
+/* The Pulsing Ring */
+.checkmark-circle::before {
+    content: '';
+    position: absolute;
+    top: -10px; left: -10px; right: -10px; bottom: -10px;
+    border: 2px solid #86efac;
+    border-radius: 50%;
+    animation: pulse-ring 2s infinite;
+    z-index: -1;
+}
+
+.checkmark-check {
+    transform-origin: 50% 50%;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+}
+
+@keyframes stroke { 100% { stroke-dashoffset: 0; } }
+@keyframes scale { 0%, 100% { transform: none; } 50% { transform: scale3d(1.1, 1.1, 1); } }
+@keyframes fill { 100% { box-shadow: inset 0px 0px 0px 50px #dcfce7; } }
+@keyframes pulse-ring {
+    0% { transform: scale(0.8); opacity: 0.5; }
+    100% { transform: scale(1.3); opacity: 0; }
+}
+
+.success-view h2 { color: #166534; margin: 0 0 10px 0; font-size: 1.6rem; }
+.success-view p { color: #475569; line-height: 1.6; font-size: 0.95rem; margin-bottom: 25px; }
+
+.support-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #64748b;
+    font-size: 0.85rem;
+    background: #f1f5f9;
+    padding: 8px 16px;
+    border-radius: 20px;
+    margin-top: 15px;
+}

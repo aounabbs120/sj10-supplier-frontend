@@ -13,12 +13,14 @@ import {
   Tooltip,
   Filler,
 } from 'chart.js';
+// Import Icons for Strikes and Stats
+import { AlertTriangle, X, ShieldAlert, CheckCircle, Package, Activity } from 'lucide-react';
 import './Dashboard.css';
 
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler);
 
-// --- 1. Helper Component: Animated Counter ---
+// --- Helper: Animated Counter ---
 const CountUp = ({ end, duration = 2000 }) => {
     const [count, setCount] = useState(0);
 
@@ -38,9 +40,9 @@ const CountUp = ({ end, duration = 2000 }) => {
     return <span>{count.toLocaleString()}</span>;
 };
 
-// --- 2. Helper Component: SVG Mini Chart ---
+// --- Helper: SVG Mini Chart ---
 const MiniChartSVG = ({ color = "#4ade80" }) => (
-    <svg width="100%" height="100%" viewBox="0 0 100 40" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="100%" height="100%" viewBox="0 0 100 40" preserveAspectRatio="none">
         <defs>
             <linearGradient id={`grad-${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" style={{ stopColor: color, stopOpacity: 0.5 }} />
@@ -54,6 +56,7 @@ const MiniChartSVG = ({ color = "#4ade80" }) => (
     </svg>
 );
 
+// --- Stat Card Component ---
 const StatCard = ({ title, value, percentage, index, icon, color }) => (
     <div className="stat-card" style={{ animationDelay: `${index * 150}ms` }}>
         <div className="stat-header">
@@ -68,7 +71,6 @@ const StatCard = ({ title, value, percentage, index, icon, color }) => (
         </div>
         <div className="stat-content">
             <h3 className="stat-value">
-                {/* Use raw number for counting if possible, else string */}
                 {typeof value === 'number' ? <CountUp end={value} /> : value}
             </h3>
             <p className="stat-title">{title}</p>
@@ -87,9 +89,10 @@ const Dashboard = ({ setIsLoading }) => {
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('YEAR');
     const [pageLoading, setPageLoading] = useState(true);
-    
-    // State to handle profile image fallback
     const [imgError, setImgError] = useState(false);
+    
+    // System State: Strikes
+    const [showStrikeBanner, setShowStrikeBanner] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -110,10 +113,16 @@ const Dashboard = ({ setIsLoading }) => {
 
                 setSupplierInfo(profile);
                 
+                // --- STRIKE CHECK LOGIC ---
+                // If the supplier has strikes > 0, show the warning banner
+                if (profile.strikes && Number(profile.strikes) > 0) {
+                    setShowStrikeBanner(true);
+                }
+
                 const statsData = dashboardApiResponse.stats || dashboardApiResponse;
                 setStats(statsData);
                 
-                // Use real data or fallback data for visual consistency
+                // Chart Data Logic
                 if (dashboardApiResponse.chartData && dashboardApiResponse.chartData.data.length > 0) {
                     setChartData(dashboardApiResponse.chartData);
                 } else {
@@ -140,7 +149,7 @@ const Dashboard = ({ setIsLoading }) => {
             <div className="full-screen-message-container">
                 <div className="message-box">
                     <span className="sad-emoji">⚠️</span> 
-                    <h1>Oops!</h1> 
+                    <h1>System Alert</h1> 
                     <p>{error}</p>
                 </div>
             </div>
@@ -149,7 +158,7 @@ const Dashboard = ({ setIsLoading }) => {
     
     if (pageLoading) return null;
 
-    // Chart Options
+    // Chart Configuration
     const salesChartConfig = {
         labels: chartData?.labels ?? [],
         datasets: [{
@@ -177,39 +186,46 @@ const Dashboard = ({ setIsLoading }) => {
     const salesChartOptions = {
         responsive: true, 
         maintainAspectRatio: false,
-        animation: { duration: 2000, easing: 'easeOutQuart' },
-        plugins: { 
-            legend: { display: false },
-            tooltip: { 
-                backgroundColor: '#1f2937', 
-                titleColor: '#fff', 
-                bodyColor: '#fff',
-                padding: 10,
-                cornerRadius: 8,
-                displayColors: false,
-            } 
-        },
+        plugins: { legend: { display: false } },
         scales: {
             x: { grid: { display: false }, ticks: { color: '#9ca3af' } },
-            y: {
-                grid: { borderDash: [5, 5], color: '#e5e7eb' },
-                ticks: { color: '#9ca3af', callback: (val) => `${val / 1000}k` }
-            }
+            y: { grid: { borderDash: [5, 5], color: '#e5e7eb' }, ticks: { color: '#9ca3af' } }
         },
     };
 
-    // Fallback Image Logic
     const profileImageSrc = !imgError && supplierInfo?.profile_pic 
         ? supplierInfo.profile_pic 
         : `https://ui-avatars.com/api/?name=${encodeURIComponent(supplierInfo?.full_name || 'User')}&background=6366f1&color=fff&size=128`;
 
     return (
         <div className="dashboard-container">
-            {/* Header Section */}
+            
+            {/* --- 1. STRIKE WARNING SYSTEM (New) --- */}
+            {showStrikeBanner && (
+                <div className="strike-banner fade-in-down">
+                    <div className="strike-content">
+                        <div className="strike-icon-box">
+                            <ShieldAlert size={24} />
+                        </div>
+                        <div className="strike-text">
+                            <h4>Account Warning: {supplierInfo.strikes} Strike(s) Active</h4>
+                            <p>
+                                You have received strikes due to policy violations or late commissions. 
+                                <strong>5 strikes</strong> will result in an automatic ban.
+                            </p>
+                        </div>
+                    </div>
+                    <button className="strike-dismiss" onClick={() => setShowStrikeBanner(false)}>
+                        <X size={20} />
+                    </button>
+                </div>
+            )}
+
+            {/* --- 2. Header Section --- */}
             <header className="dashboard-header fade-in-down">
                 <div className="header-text">
-                    <h1>Hello, {supplierInfo?.full_name?.split(' ')[0] || 'Supplier'}! 👋</h1>
-                    <p>Here's what's happening with your store today.</p>
+                    <h1>Hello, {supplierInfo?.full_name?.split(' ')[0] || 'Partner'}! 👋</h1>
+                    <p>Here is your performance overview.</p>
                 </div>
                 <div className="header-actions">
                     <div className="profile-container">
@@ -224,7 +240,7 @@ const Dashboard = ({ setIsLoading }) => {
                 </div>
             </header>
 
-            {/* Stats Grid */}
+            {/* --- 3. Stats Grid (Updated with Trust Score) --- */}
             {stats && (
               <div className="stats-grid">
                   <StatCard 
@@ -232,42 +248,42 @@ const Dashboard = ({ setIsLoading }) => {
                     value={stats.totalProducts ?? 0} 
                     percentage="+2.5%" 
                     index={0} 
-                    icon="📦"
+                    icon={<Package size={20}/>}
                     color="blue"
                   />
                   <StatCard 
-                    title="Pending Orders" 
-                    value={stats.pendingOrders ?? 0} 
-                    percentage="-1.8%" 
+                    title="Pending Commissions" 
+                    value={`PKR ${supplierInfo?.total_commission_due || 0}`} 
+                    percentage={supplierInfo?.total_commission_due > 0 ? "Action Needed" : "Clear"} 
                     index={1} 
-                    icon="⏳"
-                    color="orange"
+                    icon={<AlertTriangle size={20}/>}
+                    color={supplierInfo?.total_commission_due > 0 ? "orange" : "green"}
                   />
                   <StatCard 
-                    title="Delivered" 
+                    title="Completed Orders" 
                     value={stats.totalDeliveredOrders ?? 0} 
                     percentage="+5.1%" 
                     index={2} 
-                    icon="✅"
+                    icon={<CheckCircle size={20}/>}
                     color="green"
                   />
                   <StatCard 
-                    title="New Reviews" 
-                    value={stats.newReviews ?? 0} 
-                    percentage="+12%" 
+                    title="Trust Score" 
+                    value={`${supplierInfo?.trust_score || 50}/100`} 
+                    percentage={supplierInfo?.trust_score >= 80 ? "Excellent" : "Average"} 
                     index={3} 
-                    icon="⭐"
+                    icon={<Activity size={20}/>}
                     color="purple"
                   />
               </div>
             )}
 
-            {/* Chart Section */}
+            {/* --- 4. Chart Section --- */}
             <div className="sales-chart-container fade-in-up">
                 <div className="chart-header">
                     <div className="chart-title">
-                        <h3>Sales Analytics</h3>
-                        <p>Revenue over time</p>
+                        <h3>Revenue Analytics</h3>
+                        <p>Sales performance over time</p>
                     </div>
                     <div className="chart-tabs">
                         {['WEEK', 'MONTH', 'YEAR'].map((tab) => (

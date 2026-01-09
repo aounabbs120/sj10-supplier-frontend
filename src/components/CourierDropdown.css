@@ -1,0 +1,15 @@
+.courier-dropdown { position: relative; width: 100%; font-family: 'Inter', sans-serif; }
+.dropdown-selected { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+.selected-logo { width: 24px; height: 24px; object-fit: contain; margin-right: 10px; }
+.placeholder { color: #64748b; }
+.chevron-icon { color: #64748b; transition: transform 0.2s; }
+.chevron-icon.open { transform: rotate(180deg); }
+.dropdown-options { position: absolute; top: 110%; left: 0; width: 100%; background: white; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); z-index: 10; max-height: 300px; overflow-y: auto; }
+.search-box { padding: 10px; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; }
+.search-icon { color: #9ca3af; margin-right: 8px; }
+.search-box input { width: 100%; border: none; outline: none; font-size: 1rem; }
+.options-list { list-style: none; margin: 0; padding: 0; }
+.options-list li { padding: 12px 15px; display: flex; align-items: center; cursor: pointer; transition: background-color 0.1s; }
+.options-list li:hover { background-color: #f1f5f9; }
+.option-logo { width: 24px; height: 24px; object-fit: contain; margin-right: 10px; }
+.no-results { color: #9ca3af; padding: 15px; text-align: center; }
