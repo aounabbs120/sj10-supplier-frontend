@@ -42,15 +42,25 @@ const Orders = ({ setIsLoading }) => {
     }, [setIsLoading]);
 
     const categorizedOrders = useMemo(() => {
-        if (!allOrders.length) return { Processing: [], Shipping: [], Delivered: [], Cancelled: [], Returned: [] };
-        const Processing = allOrders.filter(o => o.shipment_details.current_status === 'processing');
-        const Shipping = allOrders.filter(o => ['Order Dispatched', 'InTransit', 'OutForDelivery'].includes(o.shipment_details.current_status));
-        const Delivered = allOrders.filter(o => o.shipment_details.current_status === 'Delivered');
-        const Cancelled = allOrders.filter(o => ['Cancelled', 'Refused', 'Exception'].includes(o.shipment_details.current_status));
-        const Returned = allOrders.filter(o => o.shipment_details.current_status === 'Returned');
-        return { Processing, Shipping, Delivered, Cancelled, Returned };
-    }, [allOrders]);
+    if (!allOrders.length) return { Processing: [], Shipping: [], Delivered: [], Cancelled: [], Returned: [] };
 
+    // 1. Normalize status to lowercase for safer comparison
+    const getStatus = (o) => (o.shipment_details.current_status || '').toLowerCase();
+
+    // 2. Define specific buckets
+    const Processing = allOrders.filter(o => getStatus(o) === 'processing');
+    const Delivered = allOrders.filter(o => getStatus(o) === 'delivered');
+    const Returned = allOrders.filter(o => getStatus(o) === 'returned');
+    const Cancelled = allOrders.filter(o => ['cancelled', 'refused', 'failedattempt', 'exception'].includes(getStatus(o)));
+
+    // 3. THE FIX: The Shipping tab catches EVERYTHING else (InTransit, OutForDelivery, Dispatched, etc.)
+    const Shipping = allOrders.filter(o => {
+        const s = getStatus(o);
+        return s !== 'processing' && s !== 'delivered' && s !== 'returned' && !['cancelled', 'refused', 'failedattempt', 'exception'].includes(s);
+    });
+
+    return { Processing, Shipping, Delivered, Cancelled, Returned };
+}, [allOrders]);
     const tabs = ['Processing', 'Shipping', 'Delivered', 'Cancelled', 'Returned'];
 
     const containerVariants = {

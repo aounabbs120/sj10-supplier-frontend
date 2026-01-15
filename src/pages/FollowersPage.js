@@ -1,5 +1,5 @@
 // src/pages/FollowersPage.js
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import supplierService from '../services/supplierService';
 import './FollowersPage.css';
@@ -17,17 +17,16 @@ const ImageModal = ({ src, onClose }) => {
     );
 };
 
-
-// --- Follower Item with New Design ---
+// --- Follower Item ---
 const FollowerItem = ({ follower, onViewImage }) => {
     const [imgError, setImgError] = useState(false);
 
-    // Fallback logic for profile picture
+    // Fallback logic
     const profileImageSrc = !imgError && follower.profile_pic
         ? follower.profile_pic
         : `https://ui-avatars.com/api/?name=${encodeURIComponent(follower.full_name || 'U')}&background=random&color=fff&bold=true&size=128`;
 
-    // Date formatting logic
+    // Date formatting
     const formatDate = (dateString) => {
         if (!dateString) return '';
         const date = new Date(dateString);
@@ -36,8 +35,9 @@ const FollowerItem = ({ follower, onViewImage }) => {
     };
 
     return (
-        <div className="follower-item">
+        <div className="follower-item fade-in-item">
             <div className="pfp-container-animated" onClick={() => onViewImage(profileImageSrc)}>
+                {/* Pseudo-element for border handled in CSS */}
                 <img 
                     src={profileImageSrc} 
                     alt={follower.full_name} 
@@ -53,10 +53,10 @@ const FollowerItem = ({ follower, onViewImage }) => {
     );
 };
 
-// Skeleton loader for the new list style
+// Skeleton loader
 const FollowersSkeleton = () => (
     <div className="followers-list-container">
-        {Array(10).fill(0).map((_, i) => (
+        {Array(8).fill(0).map((_, i) => (
             <div key={i} className="follower-item-skeleton">
                 <div className="skeleton-pfp-circle"></div>
                 <div className="skeleton-text-group">
@@ -72,23 +72,43 @@ const FollowersPage = () => {
     const [followers, setFollowers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [viewingImage, setViewingImage] = useState(null); // State for modal
+    const [viewingImage, setViewingImage] = useState(null);
     const navigate = useNavigate();
+    
+    // To prevent double-fetching in StrictMode
+    const hasFetched = useRef(false);
 
     const fetchFollowers = useCallback(async () => {
+        // 1. Check Session Storage (Instant Load)
+        const cached = sessionStorage.getItem('my_followers_list');
+        if (cached) {
+            setFollowers(JSON.parse(cached));
+            setLoading(false); 
+            // We continue to fetch in background to update data
+        }
+
         try {
-            setLoading(true);
             const data = await supplierService.getMyFollowers();
-            setFollowers(data);
+            
+            // 2. Only update state if data changed (Deep comparison simple check)
+            if (JSON.stringify(data) !== cached) {
+                setFollowers(data);
+                sessionStorage.setItem('my_followers_list', JSON.stringify(data));
+            }
         } catch (err) {
-            setError('Could not load your followers. Please try again.');
+            console.error("Follower Fetch Error:", err);
+            // Only show error if we have no cached data
+            if (!cached) setError('Could not load your followers. Please try again.');
         } finally {
             setLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        fetchFollowers();
+        if (!hasFetched.current) {
+            hasFetched.current = true;
+            fetchFollowers();
+        }
     }, [fetchFollowers]);
 
     return (
@@ -101,23 +121,23 @@ const FollowersPage = () => {
                     <div className="count-badge">{followers.length}</div>
                 </div>
 
-                {loading && <FollowersSkeleton />}
-                {error && <p className="error-message">{error}</p>}
+                {loading && followers.length === 0 && <FollowersSkeleton />}
+                {error && followers.length === 0 && <p className="error-message">{error}</p>}
                 
-                {!loading && !error && (
-                    followers.length > 0 ? (
-                        <div className="followers-list-container">
-                            {followers.map(follower => (
-                                <FollowerItem key={follower.id} follower={follower} onViewImage={setViewingImage} />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="empty-state">
-                            <div className="empty-icon">👥</div>
-                            <h3>No Followers Yet</h3>
-                            <p>Share your products to start building your community!</p>
-                        </div>
-                    )
+                {!loading && !error && followers.length === 0 && (
+                    <div className="empty-state">
+                        <div className="empty-icon">👥</div>
+                        <h3>No Followers Yet</h3>
+                        <p>Share your products to start building your community!</p>
+                    </div>
+                )}
+
+                {followers.length > 0 && (
+                    <div className="followers-list-container">
+                        {followers.map(follower => (
+                            <FollowerItem key={follower.id} follower={follower} onViewImage={setViewingImage} />
+                        ))}
+                    </div>
                 )}
             </div>
         </>

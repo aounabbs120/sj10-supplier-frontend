@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Eye, Printer, Truck, ChevronRight } from 'lucide-react';
+import { Lock, Printer, Truck, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import PaymentModal from './PaymentModal';
 import supplierService from '../services/supplierService';
@@ -10,22 +10,47 @@ const OrderCard = ({ order, isAccountLocked, unpaidAmount, isNew }) => {
     const { order_details, order_items, shipment_details } = order;
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
+    // --- ⚡ FIXED TRACKING LOGIC ---
     const isTrackable = useMemo(() => {
-        if (!shipment_details) return false;
-        const trackableStatuses = ['Order Dispatched', 'InTransit', 'OutForDelivery', 'FailedAttempt'];
-        if (trackableStatuses.includes(shipment_details.current_status)) return true;
-        if (shipment_details.current_status === 'Delivered') {
+        if (!shipment_details || !shipment_details.current_status) return false;
+        
+        // 1. Normalize: Convert to lowercase and remove spaces (e.g., "In Transit" -> "intransit")
+        const status = shipment_details.current_status.toLowerCase().replace(/\s/g, '');
+
+        // 2. List of statuses where Tracking Button should appear
+        const trackableStatuses = [
+            'orderdispatched', 
+            'intransit', 
+            'outfordelivery', 
+            'failedattempt', 
+            'shipped', 
+            'booked', 
+            'arrivalatdestination',
+            'arrivalatorigin'
+        ];
+
+        // 3. Check if status matches any of the above
+        if (trackableStatuses.includes(status)) return true;
+
+        // 4. Check Delivered (Allow tracking for 2 days after delivery)
+        if (status === 'delivered') {
             const deliveryDate = new Date(shipment_details.updated_at);
             const twoDaysLater = new Date(deliveryDate.getTime() + 2 * 24 * 60 * 60 * 1000);
             return new Date() < twoDaysLater;
         }
+        
+        // 5. Allow tracking for Returned/ReturnProcessInitiated just in case they want to see history
+        if (status.includes('return')) return true;
+
         return false;
     }, [shipment_details]);
 
     const mainItem = order_items[0];
     if (!mainItem) return null;
 
-    const isCardLocked = isAccountLocked && shipment_details.current_status === 'processing';
+    // Lock card only if status is strictly 'processing' AND account is locked
+    const isCardLocked = isAccountLocked && (shipment_details.current_status || '').toLowerCase() === 'processing';
+    
     const product = mainItem.product_details || {};
     const finalPrice = order_details.total_price || 0;
 
@@ -72,10 +97,10 @@ const OrderCard = ({ order, isAccountLocked, unpaidAmount, isNew }) => {
                             <p className="prod-qty">Qty: {mainItem.quantity}</p>
                         </div>
 
-                        {/* Status (Wrapped in container for mobile grid area) */}
+                        {/* Status Label */}
                         <div className="status-container">
-                             <span className={`status-label status-${shipment_details.current_status}`}>
-                                {(shipment_details.current_status || 'unknown').replace(/_/g, ' ')}
+                             <span className={`status-label status-${(shipment_details.current_status || 'processing').replace(/\s/g, '')}`}>
+                                {(shipment_details.current_status || 'Processing').replace(/_/g, ' ')}
                             </span>
                         </div>
 
@@ -87,6 +112,7 @@ const OrderCard = ({ order, isAccountLocked, unpaidAmount, isNew }) => {
                     </div>
                     
                     <div className="card-footer-actions">
+                        {/* ⚡ TRACK BUTTON IS NOW VISIBLE FOR IN TRANSIT */}
                         {isTrackable && !isCardLocked && (
                             <button className="action-btn track" onClick={handleTrackOrder}>
                                 <Truck size={16}/> Track

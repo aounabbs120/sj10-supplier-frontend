@@ -29,17 +29,42 @@ const ProductList = ({ setIsLoading }) => {
 
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
+    const hasFetched = useRef(false);
 
-    const fetchProducts = useCallback(async () => {
-        setLoading(true);
+    // --- 1. OPTIMIZED FETCH WITH CACHE ---
+    const fetchProducts = useCallback(async (forceRefresh = false) => {
+        // A. Check Cache First (Instant Load)
+        const cachedProducts = sessionStorage.getItem('sj10_supplier_products');
+        
+        if (cachedProducts && !forceRefresh) {
+            setProducts(JSON.parse(cachedProducts));
+            setLoading(false);
+        }
+
+        // B. Fetch Fresh Data (Background Update)
         try {
             const data = await supplierService.getMyProducts();
+            
+            // Only update if data changed (Simple length check or deep check)
+            // For performance, we simply overwrite to ensure sync
             setProducts(data);
-        } catch (error) { console.error("Failed to fetch products:", error); } 
-        finally { setLoading(false); }
+            
+            // Save to Cache
+            sessionStorage.setItem('sj10_supplier_products', JSON.stringify(data));
+
+        } catch (error) { 
+            console.error("Failed to fetch products:", error); 
+        } finally { 
+            setLoading(false); 
+        }
     }, []);
 
-    useEffect(() => { fetchProducts(); }, [fetchProducts]);
+    useEffect(() => { 
+        if (!hasFetched.current) {
+            hasFetched.current = true;
+            fetchProducts(); 
+        }
+    }, [fetchProducts]);
 
     const filteredProducts = useMemo(() => {
         return products.filter(p => {
@@ -56,7 +81,14 @@ const ProductList = ({ setIsLoading }) => {
             try {
                 if(setIsLoading) setIsLoading(true);
                 await supplierService.deleteProduct(productId);
-                await fetchProducts(); 
+                
+                // OPTIMISTIC UPDATE: Remove from UI immediately
+                const newProducts = products.filter(p => p.id !== productId);
+                setProducts(newProducts);
+                sessionStorage.setItem('sj10_supplier_products', JSON.stringify(newProducts));
+
+                // Then fetch fresh to be sure
+                await fetchProducts(true); 
             } catch (error) { alert('Could not delete product.'); }
             finally { if(setIsLoading) setIsLoading(false); }
         }
@@ -74,6 +106,8 @@ const ProductList = ({ setIsLoading }) => {
                 alert(`${results.data.length} products parsed.`);
                 if(setIsLoading) setIsLoading(false);
                 fileInputRef.current.value = '';
+                // Refresh list after import
+                await fetchProducts(true);
             }
         });
     };
@@ -128,6 +162,24 @@ const ProductList = ({ setIsLoading }) => {
 
         if(setIsLoading) setIsLoading(true);
         try {
+            // Optimistic UI Update first
+            let updatedProducts = [...products];
+
+            if (actionType === 'delete') {
+                updatedProducts = updatedProducts.filter(p => !selectedIds.has(p.id));
+            } else {
+                updatedProducts = updatedProducts.map(p => {
+                    if (selectedIds.has(p.id)) {
+                        if (actionType === 'in_stock') return { ...p, quantity: p.quantity > 0 ? p.quantity : 10, status: 'in_stock' };
+                        if (actionType === 'out_stock') return { ...p, quantity: 0, status: 'out_of_stock' };
+                    }
+                    return p;
+                });
+            }
+            setProducts(updatedProducts);
+            sessionStorage.setItem('sj10_supplier_products', JSON.stringify(updatedProducts));
+
+            // Perform Server Actions
             const updates = [...selectedIds].map(id => {
                 if (actionType === 'delete') return supplierService.deleteProduct(id);
                 const product = products.find(p => p.id === id);
@@ -136,11 +188,20 @@ const ProductList = ({ setIsLoading }) => {
                 else if (actionType === 'out_stock') payload = { quantity: 0, status: 'out_of_stock' };
                 return supplierService.updateProduct(id, payload);
             });
+            
             await Promise.all(updates);
-            await fetchProducts();
             handleCancelSelection();
-        } catch (e) { alert("Operation failed."); }
-        finally { if(setIsLoading) setIsLoading(false); }
+            
+            // Final Fetch to ensure sync
+            await fetchProducts(true);
+
+        } catch (e) { 
+            alert("Operation failed."); 
+            // Revert changes on error by fetching again
+            await fetchProducts(true);
+        } finally { 
+            if(setIsLoading) setIsLoading(false); 
+        }
     };
 
     return (
@@ -156,7 +217,7 @@ const ProductList = ({ setIsLoading }) => {
                 <div className="header-actions">
                     <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: 'none' }} accept=".csv" />
                     
-                    {/* DESKTOP BUTTONS (Hidden on Mobile) */}
+                    {/* DESKTOP BUTTONS */}
                     <button className="action-btn-desktop" onClick={handleImportClick}>
                         <span className="icon">📥</span> Import CSV
                     </button>
@@ -164,7 +225,7 @@ const ProductList = ({ setIsLoading }) => {
                         <span className="icon">📤</span> Export CSV
                     </button>
                     
-                    {/* MOBILE BUTTONS (Hidden on Desktop) */}
+                    {/* MOBILE BUTTONS */}
                     <button className="action-btn-mobile" onClick={handleImportClick} title="Import">📥</button>
                     <button className="action-btn-mobile" onClick={handleExport} title="Export">📤</button>
                     
@@ -215,7 +276,6 @@ const ProductList = ({ setIsLoading }) => {
                         <ProductCard 
                             key={product.id} 
                             product={product} 
-                            // Ensure backend cart count or 0 is passed
                             cartCount={product.cart_count || 0} 
                             onDelete={handleDelete}
                             isSelectionMode={isSelectionMode}

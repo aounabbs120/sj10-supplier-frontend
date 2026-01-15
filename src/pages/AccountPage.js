@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import supplierService from '../services/supplierService';
 import authService from '../services/authService';
@@ -11,7 +10,6 @@ const StarRating = ({ rating }) => {
     const totalStars = 5;
     const numRating = parseFloat(rating) || 0;
     const fullStars = Math.floor(numRating);
-    // A half star is shown for ratings like 3.5, 4.5 etc.
     const halfStar = numRating % 1 >= 0.5;
     const emptyStars = totalStars - fullStars - (halfStar ? 1 : 0);
 
@@ -32,7 +30,7 @@ const VerificationBadge = ({ status }) => {
     return <div className={`verification-badge ${className}`} title={text}><span className="badge-icon">{icon}</span></div>;
 };
 
-// --- Skeleton Loader for the new layout ---
+// --- Skeleton Loader ---
 const AccountSkeleton = () => (
     <div className="account-container">
         <div className="account-header-card pulse">
@@ -59,29 +57,70 @@ const AccountPage = () => {
     const [imgError, setImgError] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
     
+    const hasFetched = useRef(false);
     const navigate = useNavigate();
 
     const fetchData = useCallback(async () => {
+        // 1. INSTANTLY LOAD FROM CACHE (Speed)
+        const cachedProfile = sessionStorage.getItem('sj10_supplier_profile');
+        const cachedDelivered = sessionStorage.getItem('sj10_supplier_delivered');
+
+        if (cachedProfile && cachedDelivered) {
+            setProfile(JSON.parse(cachedProfile));
+            setDeliveredCount(parseInt(cachedDelivered));
+            setLoading(false); // Show UI immediately
+        }
+
+        // 2. FETCH FRESH DATA FROM SERVER (Accuracy)
+        // We do NOT return here anymore. We always check the server.
         try {
             const [profileData, ordersData] = await Promise.all([
                 supplierService.getMyProfile(),
                 supplierService.getMyOrders().catch(() => [])
             ]);
             
-            setProfile(profileData);
             const delivered = ordersData.filter(order => order.shipment_details.current_status === 'Delivered').length;
-            setDeliveredCount(delivered);
+            
+            // 3. CHECK IF DATA CHANGED
+            const isProfileDifferent = JSON.stringify(profileData) !== cachedProfile;
+            const isDeliveredDifferent = delivered.toString() !== cachedDelivered;
+
+            // 4. UPDATE UI & CACHE ONLY IF DATA IS NEW
+            if (isProfileDifferent || isDeliveredDifferent) {
+                console.log("⚡ New data found, updating UI...");
+                setProfile(profileData);
+                setDeliveredCount(delivered);
+                
+                // Update Cache
+                sessionStorage.setItem('sj10_supplier_profile', JSON.stringify(profileData));
+                sessionStorage.setItem('sj10_supplier_delivered', delivered.toString());
+            }
 
         } catch (err) {
-            setError('Failed to load profile. Please refresh the page.');
+            console.error("Background Fetch Error:", err);
+            // Only show error screen if we have NO data at all
+            if (!cachedProfile) {
+                setError('Failed to load profile. Please refresh the page.');
+            }
         } finally {
-            setTimeout(() => setLoading(false), 300);
+            setLoading(false);
         }
     }, []);
 
-    useEffect(() => { fetchData(); }, [fetchData]);
+    useEffect(() => { 
+        if (!hasFetched.current) {
+            hasFetched.current = true;
+            fetchData(); 
+        }
+    }, [fetchData]);
     
-    const handleLogout = () => { authService.logout(); navigate('/login'); };
+    const handleLogout = () => { 
+        sessionStorage.removeItem('sj10_supplier_profile');
+        sessionStorage.removeItem('sj10_supplier_delivered');
+        authService.logout(); 
+        navigate('/login'); 
+    };
+
     const navigateTo = (path) => navigate(path);
 
     const handleCopyId = (e) => {
@@ -112,7 +151,6 @@ const AccountPage = () => {
                 <div className="profile-info-section">
                     <h2 className="brand-name">{profile?.brand_name || 'Your Brand'}</h2>
                     <h3 className="user-name">{profile?.full_name}</h3>
-                    {/* --- CORRECTED SELLER ID WITH FALLBACK & COPY BUTTON --- */}
                     <div className="id-pill">
                         <span className="id-label">Seller ID:</span>
                         <span className="id-value">{profile?.supplier_code || profile?.id}</span>
@@ -122,21 +160,18 @@ const AccountPage = () => {
                     </div>
                 </div>
 
-                {/* --- CORRECTED HORIZONTAL & RESPONSIVE STATS BAR --- */}
                 <div className="stats-bar">
-                    {/* LEFT ITEM */}
                     <div className="stat-item">
                         <span className="stat-label">Reviews ({formatCount(profile?.total_reviews || 0)})</span>
                         <div className="stat-value star-value">
                             <StarRating rating={profile?.average_rating} />
                         </div>
                     </div>
-                    {/* CENTER ITEM */}
+                    {/* FOLLOWERS COUNT WILL NOW UPDATE AUTOMATICALLY */}
                     <div className="stat-item">
                          <span className="stat-label">Followers</span>
                         <span className="stat-value">{formatCount(profile?.followers_count || 0)}</span>
                     </div>
-                    {/* RIGHT ITEM */}
                     <div className="stat-item">
                         <span className="stat-label">Delivered</span>
                         <div className="stat-value icon-value">
@@ -147,7 +182,7 @@ const AccountPage = () => {
                 </div>
             </div>
 
-            {/* --- MENU GROUPS (Updated Icon & Restored Legal Section) --- */}
+            {/* Menu Groups */}
             <div className="menu-group slide-in-up" style={{ animationDelay: '0.1s' }}>
                 <h4 className="group-title">My Business</h4>
                 <div className="menu-card">
@@ -174,7 +209,6 @@ const AccountPage = () => {
                 </div>
             </div>
             
-            {/* --- RESTORED LEGAL & INFO SECTION --- */}
             <div className="menu-group slide-in-up" style={{ animationDelay: '0.3s' }}>
                 <h4 className="group-title">Legal & Info</h4>
                 <div className="menu-card">

@@ -5,10 +5,11 @@ const VALIDATION_RULES = {
         example: 'e.g., 12345678901'
     },
     'leopards': {
-        rule: /^\d{7,15}$/,
-        message: 'Invalid Leopards format. Must be 7-15 digits.',
-        example: 'e.g., 123456789'
-    },
+  rule: /^[A-Z]{0,3}\d{7,15}$/,
+  message: 'Invalid Leopards tracking number.',
+  example: 'e.g., FS7511410463'
+},
+
     'postex': {
         rule: /^[a-zA-Z0-9]{8,20}$/,
         message: 'Invalid PostEx format.',

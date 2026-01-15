@@ -173,7 +173,143 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #4f46e5
 .grid-card span { font-size: 13px; font-weight: 600; color: #374151; line-height: 1.2; }
 .card-arrow { color: #9ca3af; margin-top: auto; }
 .card-select { background: #eef2ff; color: #4f46e5; font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 4px; margin-top: auto; }
+/* =========================================
+   VARIANT IMAGE SELECTOR & PREVIEW STYLES
+   ========================================= */
 
+/* --- 1. THE BIG UPLOAD BUTTON (State: No Image Selected) --- */
+.v-img-placeholder {
+    width: 100%;
+    max-width: 140px;      /* Restrict Width */
+    height: 140px;         /* Restrict Height */
+    margin: 0 auto;        /* Center it */
+    border: 2px dashed #d1d5db;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 600;
+    background: #f9fafb;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.v-img-placeholder:hover {
+    border-color: #4f46e5;
+    background: #eef2ff;
+    color: #4f46e5;
+    transform: translateY(-2px);
+}
+
+.v-img-placeholder svg {
+    width: 32px;
+    height: 32px;
+    stroke-width: 1.5;
+}
+
+/* --- 2. THE SELECTED IMAGE PREVIEW (State: Image Selected) --- */
+/* This is the class causing the big image issue. We lock it down here. */
+.v-img-selected {
+    width: 140px !important;       /* FORCE Width */
+    height: 140px !important;      /* FORCE Height */
+    margin: 0 auto !important;     /* Center it */
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #4f46e5 !important;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    background: #eef2ff;
+    padding: 0 !important;         /* Remove padding so image fills box */
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* The Image itself inside the box */
+.v-img-selected img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;  /* Crop neatly */
+    border-radius: 0 !important;
+    display: block;
+}
+
+/* The 'Change Image' Label Overlay */
+.v-img-selected span {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(79, 70, 229, 0.9);
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    padding: 6px 0;
+    backdrop-filter: blur(2px);
+}
+
+/* --- 3. THE SELECTION MODAL GRID (Popup) --- */
+.variant-img-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)) !important; 
+    gap: 12px !important;
+    padding: 10px 0;
+}
+
+.v-img-card {
+    height: 90px !important;
+    width: 100% !important;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid transparent;
+    cursor: pointer;
+    background: #f3f4f6;
+    position: relative;
+}
+
+.v-img-card:hover {
+    border-color: #4f46e5;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.v-img-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* --- 4. THE LIST TABLE THUMBNAIL (Bottom List) --- */
+.variant-list-view .v-item .v-img-thumb {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-right: 12px;
+    background: #f3f4f6;
+}
+
+.variant-list-view .v-item .v-img-thumb img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+}
+
+/* --- 5. CENTER THE BUTTON CONTAINER --- */
+.v-image-selector {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+    margin-bottom: 20px;
+}
 /* Variant Creator (Professional Open Design) */
 .variant-creator-card {
     background: white; border-radius: 12px; padding: 25px; border: 1px solid #e5e7eb;
@@ -234,3 +370,64 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: #4f46e5
 .flex-grp { display: flex; gap: 8px; }
 .flex-grp input { flex: 1; } .flex-grp select { width: 80px; }
 .error-text { color: #ef4444; text-align: center; margin-top: 15px; font-weight: 500; font-size: 13px; }
+/* --- NEW SPECIFICATION STYLES --- */
+.specs-divider { height: 1px; background: #e5e7eb; margin: 20px 0; }
+
+.spec-info-alert { padding: 12px; border-radius: 8px; font-size: 13px; font-weight: 500; margin-bottom: 15px; }
+.alert-info { background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe; }
+.alert-danger { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+
+/* Bank Select Trigger (Dropdown style) */
+.bank-select-trigger {
+    border: 1px solid #d1d5db; background: #f9fafb; padding: 12px; 
+    border-radius: 8px; cursor: pointer; display: flex; justify-content: space-between; 
+    align-items: center; transition: 0.2s;
+}
+.bank-select-trigger:hover { border-color: #4f46e5; background: white; }
+.bank-select-trigger .placeholder { color: #9ca3af; }
+.bank-select-trigger .selected-val { color: #111827; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+
+/* Color Bank Grid (Overlay) */
+.color-grid-bank { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 12px; margin-top: 15px; }
+.bank-item {
+    border: 1px solid #e5e7eb; padding: 10px; border-radius: 8px; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    background: white; transition: 0.2s;
+}
+.bank-item:hover { border-color: #4f46e5; transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+.bank-dot { width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.1); box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); }
+.bank-item span { font-size: 12px; font-weight: 600; color: #374151; text-align: center; }
+
+/* Size Bank Grid (Overlay) */
+.size-group { margin-bottom: 25px; }
+.size-group h4 { font-size: 14px; font-weight: 700; color: #4b5563; margin-bottom: 10px; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px; }
+.size-bank-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+.size-bank-grid button {
+    background: white; border: 1px solid #d1d5db; padding: 10px 18px; border-radius: 8px;
+    font-size: 13px; font-weight: 600; color: #374151; cursor: pointer; transition: 0.2s;
+}
+.size-bank-grid button:hover { border-color: #4f46e5; color: #4f46e5; background: #eef2ff; transform: translateY(-1px); }
+
+/* --- FIX: FORCE SMALL IMAGES IN VARIANT LIST --- */
+
+/* Target specific images inside the Added Variants List */
+.variant-list-view .v-item .v-img-thumb {
+    width: 40px !important;   /* Force small width */
+    height: 40px !important;  /* Force small height */
+    min-width: 40px;          /* Prevent shrinking */
+    border-radius: 6px;
+    margin-right: 12px;       /* Space between image and text */
+}
+
+.variant-list-view .v-item .v-img-thumb img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+    border-radius: 0;         /* Let container handle radius */
+}
+
+/* Ensure the row stays compact */
+.variant-list-view .v-item {
+    padding: 10px 15px;       /* Compact padding */
+    align-items: center;
+}
