@@ -1,10 +1,11 @@
 /* src/components/PromotionPaymentModal.css */
 
+/* --- Overlay & Animation --- */
 .promo-modal-overlay {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(17, 24, 39, 0.85);
-    backdrop-filter: blur(5px);
+    background: rgba(15, 23, 42, 0.8); /* Dark slate overlay */
+    backdrop-filter: blur(8px); /* Frosted glass effect */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -15,107 +16,208 @@
 .promo-modal-content {
     background: #ffffff;
     width: 90%;
-    max-width: 480px;
-    border-radius: 20px;
-    padding: 30px;
+    max-width: 500px;
+    border-radius: 24px;
+    padding: 0; /* Padding handled inside sections */
     position: relative;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     font-family: 'Segoe UI', sans-serif;
+    overflow: hidden;
     animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Header */
-.promo-modal-header {
+/* --- Header Section --- */
+.pm-header {
+    background: linear-gradient(135deg, #4f46e5, #4338ca);
+    padding: 30px 25px;
+    color: white;
     text-align: center;
-    margin-bottom: 25px;
+    position: relative;
 }
-.promo-modal-header h2 {
+
+.pm-header h2 {
     margin: 0;
-    font-size: 1.6rem;
-    background: linear-gradient(135deg, #4f46e5, #ec4899);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-weight: 800;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 5px;
 }
-.promo-sub-text {
-    color: #6b7280;
-    margin-top: 8px;
-    font-size: 0.95rem;
+
+.pm-secure-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 15px;
 }
-.promo-price-tag {
-    color: #4f46e5;
+
+.pm-amount-display {
+    font-size: 2.2rem;
     font-weight: 800;
-    font-size: 1.2rem;
+    margin-top: 10px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.pm-currency { font-size: 1rem; opacity: 0.8; vertical-align: middle; margin-right: 5px; }
+
+/* --- Body Section --- */
+.pm-body {
+    padding: 25px;
+}
+
+.pm-instruction {
+    font-size: 0.9rem;
+    color: #4b5563;
+    text-align: center;
+    margin-bottom: 20px;
+    line-height: 1.5;
 }
 
 /* Bank Accounts */
-.promo-accounts-box {
-    background: #f3f4f6;
-    border: 1px solid #e5e7eb;
+.pm-account-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
     padding: 15px;
-    margin-bottom: 25px;
-}
-.promo-account-row {
+    margin-bottom: 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px dashed #d1d5db;
+    transition: border-color 0.2s;
 }
-.promo-account-row:last-child { border-bottom: none; }
-.pa-label { font-weight: 600; color: #374151; display: flex; align-items: center; gap: 8px; }
-.pa-number { font-family: monospace; font-size: 1.1rem; color: #111827; font-weight: 700; }
 
-/* Upload Area */
-.promo-upload-area {
-    border: 2px dashed #6366f1;
-    background: #eef2ff;
-    border-radius: 12px;
-    text-align: center;
-    padding: 25px;
+.pm-account-card:hover { border-color: #cbd5e1; }
+
+.pm-bank-info { display: flex; flex-direction: column; }
+.pm-bank-name { font-size: 0.8rem; font-weight: 600; color: #64748b; text-transform: uppercase; }
+.pm-bank-number { font-size: 1.1rem; font-weight: 700; color: #1e293b; font-family: monospace; letter-spacing: 1px; }
+
+.btn-copy {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    padding: 8px;
+    border-radius: 8px;
     cursor: pointer;
+    color: #6366f1;
     transition: all 0.2s;
-    position: relative;
-    margin-bottom: 20px;
 }
-.promo-upload-area:hover { background: #e0e7ff; }
-.promo-file-input {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;
-}
-.promo-upload-placeholder { color: #4f46e5; font-weight: 600; font-size: 0.9rem; }
-.promo-file-name { color: #059669; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-copy:active { transform: scale(0.9); background: #eef2ff; }
 
-/* Actions */
-.promo-btn-submit {
+/* --- Upload Area (The Big Change) --- */
+.pm-upload-wrapper {
+    margin-top: 25px;
+}
+
+.pm-upload-box {
     width: 100%;
-    padding: 14px;
+    height: 160px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 16px;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s;
+}
+
+.pm-upload-box:hover {
+    border-color: #6366f1;
+    background: #eef2ff;
+}
+
+.pm-upload-box.has-image {
+    border-style: solid;
+    border-color: #10b981;
+}
+
+.pm-file-input {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10;
+}
+
+.pm-preview-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Keeps aspect ratio */
+    background: #000;
+}
+
+.pm-upload-placeholder {
+    text-align: center;
+    color: #64748b;
+}
+.pm-upload-text { font-size: 0.9rem; font-weight: 600; margin-top: 10px; }
+.pm-upload-sub { font-size: 0.75rem; color: #94a3b8; }
+
+/* Re-upload button overlay */
+.pm-reupload-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    font-size: 0.8rem;
+    padding: 5px;
+    text-align: center;
+    z-index: 5;
+}
+
+/* --- Submit Button --- */
+.pm-submit-btn {
+    width: 100%;
+    margin-top: 20px;
+    padding: 16px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
     border: none;
     border-radius: 12px;
-    background: linear-gradient(135deg, #4f46e5, #6366f1);
-    color: white;
+    font-size: 1.05rem;
     font-weight: 700;
-    font-size: 1rem;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
     transition: transform 0.2s;
-}
-.promo-btn-submit:disabled { background: #9ca3af; cursor: not-allowed; box-shadow: none; }
-.promo-btn-submit:active { transform: scale(0.98); }
-
-.promo-close-btn {
-    position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.5rem; color: #9ca3af; cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
 }
 
-/* Manual Price Input (Fail-safe) */
-.manual-price-input {
-    width: 100px;
-    padding: 5px;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    font-size: 1rem;
-    margin-left: 5px;
-}
+.pm-submit-btn:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; }
+.pm-submit-btn:active { transform: scale(0.98); }
 
-@keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+/* --- Success View --- */
+.pm-success-view {
+    padding: 40px 30px;
+    text-align: center;
+}
+.pm-success-title { color: #065f46; font-size: 1.5rem; margin-top: 20px; margin-bottom: 10px; }
+.pm-success-desc { color: #4b5563; line-height: 1.6; margin-bottom: 30px; }
+
+.pm-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    z-index: 20;
+}
+.pm-close-btn:hover { background: rgba(255,255,255,0.4); }
+
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }

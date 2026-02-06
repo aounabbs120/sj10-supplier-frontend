@@ -1,200 +1,239 @@
-// src/pages/Register.js
-
-import React, { useState } from 'react';
+import React, { useState } from 'react'; // ✅ CORRECTED THIS LINE
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css';
+import Swal from 'sweetalert2';
 import authService from '../services/authService';
-import './FormStyles.css'; 
+import { 
+  FaUser, FaEnvelope, FaLock, FaStore, FaEye, FaEyeSlash, 
+  FaCheckCircle, FaMapMarkerAlt, FaShoppingBag, FaShippingFast, FaShieldAlt
+} from 'react-icons/fa';
 
-// A more visually appealing step indicator with icons
-const StepIndicator = ({ currentStep, totalSteps }) => {
-    const steps = [
-        { label: "Account", icon: "👤" },
-        { label: "Business", icon: "🏢" },
-        { label: "Profile", icon: "📝" },
-    ];
-    return (
-        <div className="step-indicator">
-            {steps.map((step, i) => (
-                <React.Fragment key={i}>
-                    <div className={`step ${i + 1 <= currentStep ? 'active' : ''}`}>
-                        <div className="step-icon-wrapper">
-                            <div className="step-icon">{step.icon}</div>
-                        </div>
-                        <div className="step-label">{step.label}</div>
-                    </div>
-                    {i < totalSteps - 1 && <div className={`step-line ${i + 1 < currentStep ? 'completed' : ''}`}></div>}
-                </React.Fragment>
-            ))}
+export default function Register() {
+  const navigate = useNavigate();
+
+  // ✅ CORRECTED all instances of 'aoun.useState' to just 'useState'
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    password: '',
+    brandName: '',
+    city: '',
+    address: ''
+  });
+  const [phone, setPhone] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPass, setShowPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const validateAndSubmit = async (e) => {
+    e.preventDefault();
+
+    // --- Client-Side Validation ---
+    if (formData.password !== confirmPassword) {
+      Swal.fire({ icon: 'error', title: 'Oops...', text: 'Passwords do not match.' });
+      return;
+    }
+    if (formData.password.length < 6) {
+      Swal.fire({ icon: 'error', title: 'Weak Password', text: 'Password must be at least 6 characters long.' });
+      return;
+    }
+    const forbidden = ['sj10', 'sj10 official', 'admin'];
+    if (forbidden.some(name => formData.brandName.toLowerCase().includes(name))) {
+      Swal.fire({ icon: 'error', title: 'Reserved Name', text: 'This brand name is reserved. Please choose another.' });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await authService.register({
+          ...formData,
+          contactNumber: `+${phone}`
+      });
+      
+      Swal.fire({
+        icon: 'success',
+        title: 'Registration Submitted!',
+        text: 'Please check your email to verify your account. Your application is now under review.',
+        confirmButtonText: 'Go to Login',
+        confirmButtonColor: '#2563eb',
+        allowOutsideClick: false
+      }).then(() => navigate('/login'));
+
+    } catch (err) {
+      const msg = err.response?.data?.message || "Registration failed. Please try again.";
+      Swal.fire({ icon: 'error', title: 'Registration Failed', text: msg });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- Animation Variants ---
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 120 } },
+  };
+
+  // --- STYLES ---
+  const styles = {
+    container: { 
+      minHeight: '100vh', display: 'flex', flexDirection: 'column',
+      justifyContent: 'center', alignItems: 'center', 
+      background: 'radial-gradient(at 0% 100%, hsla(213,94%,88%,1) 0, transparent 50%), radial-gradient(at 100% 100%, hsla(27,100%,92%,1) 0, transparent 50%), #ffffff',
+      fontFamily: "'Poppins', sans-serif", padding: '40px 20px'
+    },
+    header: { textAlign: 'center', marginBottom: '30px', zIndex: 2 },
+    iconsContainer: { display: 'flex', justifyContent: 'center', gap: '30px', marginBottom: '15px' },
+    heroTitle: {
+      fontSize: '2.5rem', fontWeight: '800', margin: '0 0 5px 0',
+      background: 'linear-gradient(to right, #1e3a8a, #ea580c)',
+      WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'
+    },
+    card: { 
+      backgroundColor: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(15px)',
+      padding: '40px', borderRadius: '32px', 
+      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.1)', 
+      width: '100%', maxWidth: '480px', textAlign: 'center',
+      border: '1px solid rgba(255, 255, 255, 0.6)', zIndex: 10
+    },
+    title: { fontSize: '1.8rem', fontWeight: '700', color: '#111827', marginBottom: '5px' },
+    subtitle: { fontSize: '1rem', color: '#6b7280', marginBottom: '25px' },
+    inputGroup: { position: 'relative', marginBottom: '18px' },
+    inputIcon: { position: 'absolute', top: '50%', left: '20px', transform: 'translateY(-50%)', color: '#9ca3af' },
+    eyeIcon: { position: 'absolute', top: '50%', right: '20px', transform: 'translateY(-50%)', color: '#9ca3af', cursor: 'pointer' },
+    input: { 
+      width: '100%', padding: '15px 50px', borderRadius: '16px', border: '2px solid #e5e7eb', 
+      fontSize: '1rem', outline: 'none', backgroundColor: '#f9fafb', boxSizing: 'border-box', 
+      transition: 'all 0.2s ease', color: '#1f2937'
+    },
+    button: { 
+      width: '100%', padding: '16px', backgroundColor: '#2563eb', color: 'white', border: 'none', 
+      borderRadius: '16px', fontSize: '1.05rem', fontWeight: '600', cursor: 'pointer', marginTop: '10px', 
+      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', 
+      transition: 'all 0.2s ease', boxShadow: '0 10px 20px -5px rgba(37, 99, 235, 0.3)'
+    },
+    footerText: { marginTop: '25px', color: '#6b7280', fontSize: '0.9rem' },
+    link: { color: '#2563eb', fontWeight: 700, textDecoration: 'none' },
+    spinner: { width: '20px', height: '20px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' },
+  };
+
+  return (
+    <>
+      <style>{`
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+        .float-anim-1 { animation: float 6s ease-in-out infinite; }
+        .float-anim-2 { animation: float 6s ease-in-out infinite 2s; }
+        .float-anim-3 { animation: float 6s ease-in-out infinite 4s; }
+        .input-focus:focus { border-color: #2563eb !important; background-color: #fff !important; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
+        .button-hover:hover:not(:disabled) { background-color: #1d4ed8; transform: translateY(-2px); box-shadow: 0 12px 25px -5px rgba(37, 99, 235, 0.4); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+      <div style={styles.container}>
+        
+        <div style={styles.header}>
+            <div style={styles.iconsContainer}>
+                <FaShoppingBag size={32} color="#f97316" className="float-anim-1" />
+                <FaShieldAlt size={32} color="#2563eb" className="float-anim-2" />
+                <FaShippingFast size={32} color="#10b981" className="float-anim-3" />
+            </div>
+            <h1 style={styles.heroTitle}>Become a Supplier</h1>
+            <p style={{color: '#64748b'}}>Join Pakistan's Fastest Growing B2B Platform.</p>
         </div>
-    );
-};
 
-// The beautiful, animated success screen
-const SuccessScreen = () => (
-    <motion.div 
-        className="success-screen"
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.8 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
-    >
-        <div className="success-icon">✓</div>
-        <h2>Account Created!</h2>
-        <p>Dear Seller, thank you for signing up. Please check your email to verify your account before logging in.</p>
-    </motion.div>
-);
+        <motion.div 
+          style={styles.card}
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut' }}
+        >
+          <div style={{marginBottom: '25px'}}>
+            <h1 style={styles.title}>Create Your Account</h1>
+            <p style={styles.subtitle}>Fill in the details to get started.</p>
+          </div>
+          
+          <motion.form 
+            onSubmit={validateAndSubmit}
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <motion.div style={styles.inputGroup} variants={itemVariants}>
+              <FaUser style={styles.inputIcon} />
+              <input name="fullName" placeholder="Full Name" style={styles.input} className="input-focus" value={formData.fullName} onChange={handleChange} required />
+            </motion.div>
 
-const Register = () => {
-    const [step, setStep] = useState(1);
-    const [formData, setFormData] = useState({
-        fullName: '', email: '', contactNumber: '', password: '',
-        brandName: '', city: '', address: '',
-        business_type: 'Retailer', stock_quantity_range: '1-100',
-        gender: 'Male', age: '',
-    });
-    const [error, setError] = useState('');
-    const [isSubmitted, setIsSubmitted] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [direction, setDirection] = useState(1);
-    const navigate = useNavigate();
-    const totalSteps = 3;
-
-    const handleChange = (input) => (e) => {
-        setFormData({ ...formData, [input]: e.target.value });
-        // Clear error when user starts typing again
-        if (error) setError('');
-    };
-    
-    const handleBoxSelect = (field, value) => setFormData({ ...formData, [field]: value });
-
-    // --- Per-step validation logic ---
-    const validateStep = () => {
-        setError(''); 
-        if (step === 1) {
-            if (!formData.fullName || !formData.email || !formData.contactNumber || !formData.password) {
-                setError("Please fill in all required fields for this step."); return false;
-            }
-            if (!/\S+@\S+\.\S+/.test(formData.email)) {
-                setError("Please enter a valid email address."); return false;
-            }
-            if (formData.password.length < 6) {
-                setError("Password must be at least 6 characters long."); return false;
-            }
-        }
-        if (step === 2) {
-            if (!formData.brandName || !formData.city || !formData.address) {
-                setError("Please fill in all required business details."); return false;
-            }
-        }
-        return true;
-    };
-
-    const nextStep = () => { if (validateStep()) { setDirection(1); setStep(s => s + 1); }};
-    const prevStep = () => { setDirection(-1); setStep(s => s - 1); };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!validateStep()) return;
-        setError('');
-        setIsLoading(true);
-
-        try {
-            await authService.register(formData);
-            setIsSubmitted(true);
-            setTimeout(() => navigate('/login'), 5000); // Give them time to read the success message
-        } catch (err) {
-            // --- HERE IS THE FIX: Display the specific backend message ---
-            // The backend sends: "This Email Address is already registered..." or "This Phone Number..."
-            const backendMsg = err.response?.data?.message || 'Registration failed. Please try again.';
-            setError(backendMsg);
+            <motion.div style={styles.inputGroup} variants={itemVariants}>
+              <FaEnvelope style={styles.inputIcon} />
+              <input name="email" type="email" placeholder="Email Address" style={styles.input} className="input-focus" value={formData.email} onChange={handleChange} required />
+            </motion.div>
             
-            // If the error is about Email or Phone (Step 1), move the user back to Step 1 automatically
-            if (backendMsg.toLowerCase().includes('email') || backendMsg.toLowerCase().includes('phone') || backendMsg.toLowerCase().includes('number')) {
-                setStep(1);
-            }
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    
-    const variants = {
-        enter: (direction) => ({ x: direction * 50, opacity: 0 }),
-        center: { x: 0, opacity: 1 },
-        exit: (direction) => ({ x: direction * -50, opacity: 0 }),
-    };
+            <motion.div variants={itemVariants} style={{marginBottom: '18px'}}>
+                <PhoneInput 
+                    country={'pk'} 
+                    value={phone} 
+                    onChange={setPhone} 
+                    inputStyle={{...styles.input, paddingLeft: '58px', width: '100%', height: '54px'}} 
+                    placeholder="Enter phone number"
+                    inputProps={{ required: true }}
+                />
+            </motion.div>
 
-    return (
-        <div className="auth-layout">
-            <div className="branding-panel">
-                <motion.img src="/logo.gif" alt="SJ10 Logo" className="branding-logo" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 120 }} />
-                <motion.h1 className="branding-title" initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>Empower Your Business</motion.h1>
-                <motion.p className="branding-subtitle" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}>Join Pakistan's fastest-growing marketplace and reach thousands of new customers.</motion.p>
-            </div>
+            <motion.div style={styles.inputGroup} variants={itemVariants}>
+              <FaLock style={styles.inputIcon} />
+              <input name="password" type={showPass ? 'text' : 'password'} placeholder="Password (min. 6 characters)" style={styles.input} className="input-focus" value={formData.password} onChange={handleChange} required />
+              <div style={styles.eyeIcon} onClick={() => setShowPass(!showPass)}>{showPass ? <FaEyeSlash /> : <FaEye />}</div>
+            </motion.div>
 
-            <div className="form-panel">
-                <motion.div className="glass-form-container register" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, ease: 'easeOut' }}>
-                    {isSubmitted ? <SuccessScreen /> : (
-                        <>
-                            <StepIndicator currentStep={step} totalSteps={totalSteps} />
-                            <div className="form-wrapper">
-                                <AnimatePresence initial={false} custom={direction} mode="wait">
-                                    <motion.form key={step} onSubmit={handleSubmit} className="auth-form" custom={direction} variants={variants} initial="enter" animate="center" exit="exit" transition={{ type: 'tween', ease: 'circOut', duration: 0.5 }}>
-                                        {step === 1 && (
-                                            <>
-                                                <div className="input-group"><label>Full Name</label><input type="text" placeholder="e.g., Aoun Abbas" onChange={handleChange('fullName')} value={formData.fullName} /></div>
-                                                <div className="input-group"><label>Email</label><input type="email" placeholder="you@example.com" onChange={handleChange('email')} value={formData.email} /></div>
-                                                <div className="input-group"><label>Contact Number</label><input type="tel" placeholder="03001234567" onChange={handleChange('contactNumber')} value={formData.contactNumber} /></div>
-                                                <div className="input-group"><label>Password</label><input type="password" placeholder="Minimum 6 characters" onChange={handleChange('password')} value={formData.password} /></div>
-                                            </>
-                                        )}
-                                        {step === 2 && (
-                                            <>
-                                                <div className="input-group"><label>Brand Name</label><input type="text" placeholder="e.g., SJ10 Fashions" onChange={handleChange('brandName')} value={formData.brandName} /></div>
-                                                <div className="input-group"><label>City</label><input type="text" placeholder="e.g., Lahore" onChange={handleChange('city')} value={formData.city} /></div>
-                                                <div className="input-group"><label>Full Address</label><input type="text" placeholder="Your shop or warehouse address" onChange={handleChange('address')} value={formData.address} /></div>
-                                                <div className="input-group"><label>Business Type</label><div className="radio-box-group"><div className={`radio-box ${formData.business_type === 'Retailer' ? 'selected' : ''}`} onClick={() => handleBoxSelect('business_type', 'Retailer')}>Retailer</div><div className={`radio-box ${formData.business_type === 'Wholesaler' ? 'selected' : ''}`} onClick={() => handleBoxSelect('business_type', 'Wholesaler')}>Wholesaler</div></div></div>
-                                            </>
-                                        )}
-                                        {step === 3 && (
-                                            <>
-                                                <div className="input-group"><label>Gender</label><div className="radio-box-group"><div className={`radio-box ${formData.gender === 'Male' ? 'selected' : ''}`} onClick={() => handleBoxSelect('gender', 'Male')}>Male</div><div className={`radio-box ${formData.gender === 'Female' ? 'selected' : ''}`} onClick={() => handleBoxSelect('gender', 'Female')}>Female</div><div className={`radio-box ${formData.gender === 'Other' ? 'selected' : ''}`} onClick={() => handleBoxSelect('gender', 'Other')}>Other</div></div></div>
-                                                <div className="input-group"><label>Age</label><input type="number" placeholder="e.g., 25" onChange={handleChange('age')} value={formData.age} /></div>
-                                                <div className="input-group custom-select"><label>Average Stock Quantity</label><select onChange={handleChange('stock_quantity_range')} value={formData.stock_quantity_range}><option value="1-100">1-100 Items</option><option value="100-1000">100-1000 Items</option><option value="10000+">10,000+ Items</option></select></div>
-                                                <p className="form-hint">You can upload a profile picture and verify your account after approval.</p>
-                                            </>
-                                        )}
-                                    </motion.form>
-                                </AnimatePresence>
-                            </div>
-                            
-                            {/* --- NEW: Animated Error Box using FormStyles.css classes --- */}
-                            {error && (
-                                <motion.div 
-                                    className="error-message error" 
-                                    initial={{ opacity: 0, y: -10 }} 
-                                    animate={{ opacity: 1, y: 0 }}
-                                >
-                                    <span style={{ marginRight: '8px', fontSize: '1.2em' }}>⚠️</span>
-                                    {error}
-                                </motion.div>
-                            )}
+            <motion.div style={styles.inputGroup} variants={itemVariants}>
+              <FaLock style={styles.inputIcon} />
+              <input type={showConfirmPass ? 'text' : 'password'} placeholder="Confirm Password" style={styles.input} className="input-focus" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+               <div style={styles.eyeIcon} onClick={() => setShowConfirmPass(!showConfirmPass)}>{showConfirmPass ? <FaEyeSlash /> : <FaEye />}</div>
+            </motion.div>
+            
+            <motion.div style={styles.inputGroup} variants={itemVariants}>
+              <FaStore style={styles.inputIcon} />
+              <input name="brandName" placeholder="Brand / Shop Name" style={styles.input} className="input-focus" value={formData.brandName} onChange={handleChange} required />
+            </motion.div>
 
-                            <div className="multi-step-actions">
-                                {step > 1 && <motion.button type="button" className="back-btn" onClick={prevStep} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>Back</motion.button>}
-                                {step < totalSteps && <motion.button type="button" className="next-btn" onClick={nextStep}>Next →</motion.button>}
-                                {step === totalSteps && <motion.button type="button" className="submit-btn" disabled={isLoading} onClick={handleSubmit}>{isLoading ? <div className="spinner"></div> : 'Complete Sign Up'}</motion.button>}
-                            </div>
-
-                            <div className="redirect-link">
-                                <p>Already have an account? <Link to="/login">Sign In</Link></p>
-                            </div>
-                        </>
-                    )}
-                </motion.div>
-            </div>
-        </div>
-    );
-};
-
-export default Register;
+            <motion.div style={styles.inputGroup} variants={itemVariants}>
+              <FaMapMarkerAlt style={styles.inputIcon} />
+              <input name="city" placeholder="City" style={styles.input} className="input-focus" value={formData.city} onChange={handleChange} required />
+            </motion.div>
+            
+            <motion.button 
+              type="submit" 
+              style={styles.button} 
+              className="button-hover" 
+              disabled={loading}
+              variants={itemVariants}
+            >
+              {loading ? (
+                <div style={styles.spinner}></div>
+              ) : (
+                <>
+                  <FaCheckCircle />
+                  <span>Submit Application</span>
+                </>
+              )}
+            </motion.button>
+          </motion.form>
+          
+          <p style={styles.footerText}>
+             Already have an account? <Link to="/login" style={styles.link}>Login Here</Link>
+          </p>
+        </motion.div>
+      </div>
+    </>
+  );
+}

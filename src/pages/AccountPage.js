@@ -215,6 +215,8 @@ const AccountPage = () => {
                     <div className="menu-item" onClick={() => navigateTo('/shipping-policy')}><span className="menu-icon bg-gray">🚚</span><span className="menu-text">Shipping Policy</span><span className="menu-arrow">›</span></div>
                     <div className="menu-item" onClick={() => navigateTo('/privacy-policy')}><span className="menu-icon bg-gray">🔒</span><span className="menu-text">Privacy Policy</span><span className="menu-arrow">›</span></div>
                     <div className="menu-item" onClick={() => navigateTo('/about-us')}><span className="menu-icon bg-gray">🏢</span><span className="menu-text">About Us</span><span className="menu-arrow">›</span></div>
+                      {/* --- NEW LINK ADDED HERE --- */}
+                    <div className="menu-item" onClick={() => navigateTo('/terms-conditions')}><span className="menu-icon bg-gray">📜</span><span className="menu-text">Terms & Conditions</span><span className="menu-arrow">›</span></div>
                 </div>
             </div>
 

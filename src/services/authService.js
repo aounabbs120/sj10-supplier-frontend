@@ -43,7 +43,31 @@ const logout = () => {
     localStorage.removeItem('supplierToken');
 };
 
+// --- NEW SOCIAL LOGIN FUNCTIONS ---
+const googleLogin = async (accessToken) => {
+    const response = await axios.post(`${API_BASE_URL}/auth/google`, { accessToken });
+    if (response.data.token) {
+        localStorage.setItem('supplierToken', response.data.token);
+    }
+    return response.data;
+};
 
+const facebookLogin = async (accessToken, userID) => {
+    const response = await axios.post(`${API_BASE_URL}/auth/facebook`, { accessToken, userID });
+    if (response.data.token) {
+        localStorage.setItem('supplierToken', response.data.token);
+    }
+    return response.data;
+};
+
+// --- NEW PROFILE COMPLETION FUNCTION ---
+const completeProfile = async (profileData) => {
+    const token = localStorage.getItem('supplierToken');
+    const response = await axios.post(`${API_BASE_URL}/auth/complete-profile`, profileData, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return response.data;
+};
 // --- FIX #2: RESOLVED the Anonymous Export ESLint Error ---
 // Instead of exporting an anonymous object, we assign it to a named constant...
 const authService = {
@@ -52,6 +76,9 @@ const authService = {
     verifyEmail,
     forgotPassword,
     resetPassword,
+     googleLogin,
+    facebookLogin,
+    completeProfile,
     logout
 };
 

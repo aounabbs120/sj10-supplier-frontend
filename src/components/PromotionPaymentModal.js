@@ -1,42 +1,45 @@
+// src/components/PromotionPaymentModal.js
 import React, { useState, useEffect } from 'react';
-import { X, Upload, CheckCircle, CreditCard } from 'lucide-react';
+import { X, Upload, CheckCircle, ShieldCheck, Copy, Banknote } from 'lucide-react';
 import supplierService from '../services/supplierService';
 import './PromotionPaymentModal.css';
 
-// Added 'fixedAmount' prop to receive the exact price from the parent
 const PromotionPaymentModal = ({ promotion, fixedAmount, onClose }) => {
     const [screenshot, setScreenshot] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(null); // For image preview
+    const [amountToPay, setAmountToPay] = useState(fixedAmount || 0);
+    
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
     const [error, setError] = useState('');
-    
-    // Initialize price with fixedAmount if available, otherwise 0
-    const [amountToPay, setAmountToPay] = useState(fixedAmount || 0);
 
-    // If fixedAmount changes (or wasn't passed initially), update state
     useEffect(() => {
         if (fixedAmount && fixedAmount > 0) {
             setAmountToPay(fixedAmount);
         } else if (promotion) {
-            // Fallback: Try to find price inside promotion object if fixedAmount wasn't passed
-            const detected = parseFloat(
-                promotion.price || 
-                promotion.amount || 
-                promotion.cost || 
-                (promotion.pricing_plan && promotion.pricing_plan.price) || 
-                0
-            );
+            const detected = parseFloat(promotion.price_paid || promotion.price || 0);
             setAmountToPay(detected);
         }
     }, [fixedAmount, promotion]);
 
     const handleFileChange = (e) => {
-        if (e.target.files[0]) setScreenshot(e.target.files[0]);
+        const file = e.target.files[0];
+        if (file) {
+            setScreenshot(file);
+            // Create a temporary URL to show the image instantly
+            const url = URL.createObjectURL(file);
+            setPreviewUrl(url);
+        }
+    };
+
+    const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text);
+        // Optional: You could show a tiny toast here "Copied!"
     };
 
     const handleSubmit = async () => {
-        if (!screenshot) return setError('Please upload a screenshot.');
-        if (amountToPay <= 0) return setError('Please enter a valid amount.');
+        if (!screenshot) return setError('Transaction proof is required.');
+        if (amountToPay <= 0) return setError('Invalid amount.');
 
         setIsSubmitting(true);
         setError('');
@@ -45,12 +48,13 @@ const PromotionPaymentModal = ({ promotion, fixedAmount, onClose }) => {
             const formData = new FormData();
             formData.append('screenshot', screenshot);
             formData.append('amount', amountToPay);
-            // formData.append('promotion_id', promotion.id); // Uncomment if backend requires it
+            formData.append('promotionId', promotion.id); 
 
-            await supplierService.submitCommissionProof(formData); 
+            await supplierService.submitPromotionProof(formData);
             setIsSuccess(true);
         } catch (err) {
-            setError('Upload failed. Please try again.');
+            console.error(err);
+            setError('Submission failed. Please check your internet connection.');
         } finally {
             setIsSubmitting(false);
         }
@@ -61,71 +65,97 @@ const PromotionPaymentModal = ({ promotion, fixedAmount, onClose }) => {
     return (
         <div className="promo-modal-overlay">
             <div className="promo-modal-content">
-                <button className="promo-close-btn" onClick={onClose}><X /></button>
+                
+                {/* --- HEADER --- */}
+                <div className="pm-header">
+                    <button className="pm-close-btn" onClick={onClose}><X size={20} /></button>
+                    <div className="pm-secure-badge">
+                        <ShieldCheck size={14} /> Secure Payment Gateway
+                    </div>
+                    <h2>Activate Campaign</h2>
+                    <div className="pm-amount-display">
+                        <span className="pm-currency">PKR</span>
+                        {amountToPay > 0 ? amountToPay.toLocaleString() : '---'}
+                    </div>
+                </div>
 
                 {!isSuccess ? (
-                    <>
-                        <div className="promo-modal-header">
-                            <h2>Activate Promotion</h2>
-                            <p className="promo-sub-text">
-                                Pay <span className="promo-price-tag">PKR 
-                                {amountToPay > 0 ? (
-                                    ` ${amountToPay.toLocaleString()}`
-                                ) : (
-                                    <input 
-                                        type="number" 
-                                        className="manual-price-input" 
-                                        placeholder="Enter Amount"
-                                        value={amountToPay || ''}
-                                        onChange={(e) => setAmountToPay(parseFloat(e.target.value))}
-                                    />
-                                )}
-                                </span> to start campaign.
-                            </p>
-                        </div>
-
-                        <div className="promo-accounts-box">
-                            <div className="promo-account-row">
-                                <span className="pa-label"><CreditCard size={16}/> Upaisa</span>
-                                <span className="pa-number">0334 8846378</span>
-                            </div>
-                            <div className="promo-account-row">
-                                <span className="pa-label"><CreditCard size={16}/> JazzCash</span>
-                                <span className="pa-number">0349 5643002</span>
-                            </div>
-                            <div style={{textAlign:'center', marginTop:'10px', fontSize:'0.8rem', color:'#6b7280'}}>
-                                Title: <strong>Azher Mehmood</strong>
-                            </div>
-                        </div>
-
-                        <div className="promo-upload-area">
-                            <input type="file" accept="image/*" className="promo-file-input" onChange={handleFileChange} />
-                            {screenshot ? (
-                                <div className="promo-file-name"><CheckCircle size={18} /> {screenshot.name.substring(0, 20)}...</div>
-                            ) : (
-                                <div className="promo-upload-placeholder">
-                                    <Upload size={24} style={{display:'block', margin:'0 auto 5px'}}/>
-                                    Tap to Upload Payment Screenshot
-                                </div>
-                            )}
-                        </div>
-
-                        {error && <p style={{color:'#ef4444', textAlign:'center', marginBottom:'15px'}}>{error}</p>}
-
-                        <button className="promo-btn-submit" onClick={handleSubmit} disabled={isSubmitting}>
-                            {isSubmitting ? 'Processing...' : 'Submit Payment Proof'}
-                        </button>
-                    </>
-                ) : (
-                    <div style={{textAlign:'center', padding:'20px'}}>
-                        <CheckCircle size={64} color="#10b981" style={{margin:'0 auto 20px'}} />
-                        <h2 style={{color:'#065f46', marginBottom:'10px'}}>Submitted!</h2>
-                        <p style={{color:'#4b5563', lineHeight:'1.5'}}>
-                            Your request for <strong>{promotion.product_title}</strong> is under review. 
-                            It will be active within 6-12 hours.
+                    /* --- UPLOAD FORM --- */
+                    <div className="pm-body">
+                        <p className="pm-instruction">
+                            Please transfer the total amount to one of the verified accounts below and upload the transaction receipt.
                         </p>
-                        <button className="promo-btn-submit" style={{marginTop:'20px'}} onClick={() => window.location.reload()}>
-                            Okay, Got it
+
+                        <div className="pm-accounts">
+                            {/* JazzCash Card */}
+                            <div className="pm-account-card">
+                                <div className="pm-bank-info">
+                                    <span className="pm-bank-name">JazzCash / Mobilink</span>
+                                    <span className="pm-bank-number">0349 5643002</span>
+                                    <span style={{fontSize:'0.75rem', color:'#94a3b8'}}>Title: Azher Mehmood</span>
+                                </div>
+                                <button className="btn-copy" onClick={() => copyToClipboard('03495643002')}>
+                                    <Copy size={18} />
+                                </button>
+                            </div>
+
+                            {/* Upaisa Card */}
+                            <div className="pm-account-card">
+                                <div className="pm-bank-info">
+                                    <span className="pm-bank-name">Upaisa / Ufone</span>
+                                    <span className="pm-bank-number">0334 8846378</span>
+                                    <span style={{fontSize:'0.75rem', color:'#94a3b8'}}>Title: Azher Mehmood</span>
+                                </div>
+                                <button className="btn-copy" onClick={() => copyToClipboard('03348846378')}>
+                                    <Copy size={18} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Upload Area with Preview */}
+                        <div className="pm-upload-wrapper">
+                            <div className={`pm-upload-box ${previewUrl ? 'has-image' : ''}`}>
+                                <input type="file" accept="image/*" className="pm-file-input" onChange={handleFileChange} />
+                                
+                                {previewUrl ? (
+                                    <>
+                                        <img src={previewUrl} alt="Preview" className="pm-preview-img" />
+                                        <div className="pm-reupload-overlay">Tap to change image</div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload size={32} color="#6366f1" style={{marginBottom:'10px'}} />
+                                        <div className="pm-upload-text">Upload Transaction Proof</div>
+                                        <div className="pm-upload-sub">Supports: JPG, PNG, Screenshots</div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
+                        {error && <p style={{color:'#ef4444', textAlign:'center', marginTop:'15px', fontSize:'0.9rem'}}>{error}</p>}
+
+                        <button className="pm-submit-btn" onClick={handleSubmit} disabled={isSubmitting}>
+                            {isSubmitting ? (
+                                'Verifying...'
+                            ) : (
+                                <>
+                                    <Banknote size={20} /> Confirm Payment
+                                </>
+                            )}
+                        </button>
+                    </div>
+                ) : (
+                    /* --- SUCCESS CONFIRMATION --- */
+                    <div className="pm-success-view">
+                        <CheckCircle size={80} color="#10b981" style={{margin:'0 auto'}} strokeWidth={1.5} />
+                        <h2 className="pm-success-title">Payment Submitted!</h2>
+                        <p className="pm-success-desc">
+                            Your transaction proof has been securely received. 
+                            <br/><br/>
+                            Our financial team is reviewing your request. Your campaign for <strong>{promotion.product_title}</strong> will automatically go live upon verification (approx. 6-12 hours).
+                        </p>
+                        <button className="pm-submit-btn" onClick={() => window.location.reload()}>
+                            Return to Dashboard
                         </button>
                     </div>
                 )}

@@ -1,122 +1,263 @@
 /* src/pages/FollowersPage.css */
+
+/* --- Layout & Container --- */
 .followers-page-container {
-    max-width: 700px;
+    max-width: 650px;
     margin: 0 auto;
-    padding: 20px;
-    padding-bottom: 100px;
+    padding-bottom: 80px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+    background-color: #f9fafb;
 }
 
-.followers-header {
+/* --- Glassmorphism Sticky Header --- */
+.followers-header-glass {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.3s ease;
+}
+
+.header-left {
     display: flex;
     align-items: center;
     gap: 15px;
-    margin-bottom: 25px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #e5e7eb;
 }
 
-.back-button {
+.back-btn-modern {
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    color: #1f2937;
+    cursor: pointer;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.2s;
+}
+
+.back-btn-modern:hover {
     background: #f3f4f6;
+}
+
+.header-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.count-badge-modern {
+    background: linear-gradient(135deg, #4f46e5 0%, #818cf8 100%);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);
+}
+
+/* --- Follower List & Items --- */
+.followers-list-wrapper {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.follower-card {
+    background: white;
+    border-radius: 16px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+    border: 1px solid #f3f4f6;
+    transition: transform 0.2s, box-shadow 0.2s;
+    animation: slideUpFade 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.follower-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+}
+
+/* Staggered Animation Delays */
+.follower-card:nth-child(1) { animation-delay: 0.05s; }
+.follower-card:nth-child(2) { animation-delay: 0.1s; }
+.follower-card:nth-child(3) { animation-delay: 0.15s; }
+.follower-card:nth-child(4) { animation-delay: 0.2s; }
+.follower-card:nth-child(5) { animation-delay: 0.25s; }
+
+/* Avatar Container with Gradient Border */
+.avatar-wrapper {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    padding: 2px;
+    background: linear-gradient(135deg, #e0e7ff, #4f46e5);
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.follower-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid white; /* Creates the gap between image and gradient */
+    background-color: #f3f4f6;
+}
+
+.follower-details {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.follower-name-text {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.follower-date-text {
+    font-size: 0.8rem;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* --- Shimmer Loading Effect (The "Beautiful Skeleton") --- */
+@keyframes shimmerWave {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.skeleton-card {
+    background: white;
+    border-radius: 16px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid #f3f4f6;
+}
+
+.shimmer-bg {
+    background: #f3f4f6;
+    background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+    background-size: 200% 100%;
+    animation: shimmerWave 1.5s infinite linear;
+}
+
+.skeleton-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.skeleton-info {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.skeleton-line-long {
+    height: 16px;
+    width: 60%;
+    border-radius: 6px;
+}
+
+.skeleton-line-short {
+    height: 12px;
+    width: 40%;
+    border-radius: 6px;
+}
+
+/* --- Empty & Error States --- */
+.empty-view {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-top: 60px;
+    text-align: center;
+    color: #6b7280;
+}
+
+.empty-icon-large {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes slideUpFade {
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Image Modal --- */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.modal-content img {
+    max-width: 90vw;
+    max-height: 80vh;
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(255,255,255,0.2);
+    color: white;
     border: none;
     width: 40px;
     height: 40px;
     border-radius: 50%;
     font-size: 24px;
-    color: #4b5563;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.2s;
-}
-.back-button:hover { background-color: #e5e7eb; }
-
-.followers-header h1 {
-    font-size: 24px; font-weight: 700; color: #111827; margin: 0;
 }
 
-.count-badge {
-    background-color: #eef2ff; color: #4f46e5; padding: 4px 10px;
-    border-radius: 12px; font-size: 14px; font-weight: 600;
-}
-
-/* --- NEW: TikTok-style List --- */
-.followers-list-container {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-
-.follower-item {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 10px;
-    border-radius: 12px;
-    background: #fff;
-    transition: background-color 0.2s;
-}
-.follower-item:hover { background-color: #f9fafb; }
-
-/* --- NEW: Neon Edge Animation --- */
-@keyframes rotateGradient {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-.pfp-container-animated {
-    position: relative;
-    width: 60px;
-    height: 60px;
-    min-width: 60px;
-    border-radius: 50%;
-    padding: 3px; /* Controls thickness of the border */
-    cursor: pointer;
-}
-
-.pfp-container-animated::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    padding: 2px; /* Border thickness */
-    background: linear-gradient(45deg, #818cf8, #c084fc, #f472b6);
-    -webkit-mask: 
-        linear-gradient(#fff 0 0) content-box, 
-        linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    animation: rotateGradient 4s linear infinite;
-}
-
-.follower-pfp {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
-}
-
-.follower-info {
-    display: flex;
-    flex-direction: column;
-}
-
-.follower-name { font-weight: 600; color: #1f2937; font-size: 16px; }
-.follow-date { font-size: 13px; color: #9ca3af; }
-
-/* Empty & Error States */
-.empty-state, .error-message { text-align: center; margin-top: 50px; color: #6b7280; font-size: 16px; }
-.empty-icon { font-size: 48px; margin-bottom: 10px; }
-
-/* --- Image Modal Styles --- */
-.image-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: flex; align-items: center; justify-content: center; }
-.image-modal-content { max-width: 90%; max-height: 90%; }
-.image-modal-content img { width: 100%; height: 100%; object-fit: contain; border-radius: 10px; }
-.close-modal-button { position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.5); color: white; border: none; font-size: 30px; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; }
-
-/* --- Skeleton Styles for List --- */
-.follower-item-skeleton { display: flex; align-items: center; gap: 15px; padding: 10px; animation: pulse 1.5s infinite ease-in-out; }
-.skeleton-pfp-circle { width: 60px; height: 60px; border-radius: 50%; background: #f3f4f6; }
-.skeleton-text-group { display: flex; flex-direction: column; gap: 8px; flex: 1; }
-.skeleton-name-bar { height: 18px; width: 60%; background: #f3f4f6; border-radius: 4px; }
-.skeleton-date-bar { height: 14px; width: 40%; background: #f3f4f6; border-radius: 4px; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }

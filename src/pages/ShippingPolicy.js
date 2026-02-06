@@ -1,50 +1,110 @@
-// src/pages/ShippingPolicy.js
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import './StaticPage.css';
+import './LegalPages.css';
 
 const ShippingPolicy = ({ setIsLoading }) => {
+    const [activeSection, setActiveSection] = useState('intro');
+
     useEffect(() => {
         setIsLoading(true);
-        const timer = setTimeout(() => setIsLoading(false), 500);
-        return () => clearTimeout(timer);
+        setTimeout(() => setIsLoading(false), 500);
+        window.scrollTo(0, 0);
     }, [setIsLoading]);
 
+    const scrollToSection = (id) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+            setActiveSection(id);
+        }
+    };
+
+    const sections = [
+        { id: 'intro', title: '1. Introduction' },
+        { id: 'model', title: '2. Self-Fulfillment Model' },
+        { id: 'couriers', title: '3. Supported Couriers' },
+        { id: 'tracking', title: '4. Tracking Process' },
+        { id: 'warranty', title: '5. 7-Day Return Warranty' },
+        { id: 'packaging', title: '6. Packaging Guidelines' },
+    ];
+
     return (
-        <div className="static-page-container">
-            <div className="static-page-header">
-                <h1>Shipping Policy</h1>
-                <Link to="/account" className="back-link">Back to Account</Link>
+        <div className="legal-page-container">
+            <div className="legal-hero-card legal-anim-fade-down">
+                <h1 className="legal-main-title">Shipping Policy</h1>
+                <p className="legal-sub-text">Understand how to fulfill, ship, and track orders on SJ10.</p>
+                <Link to="/account" className="legal-back-btn">← Back to Account</Link>
             </div>
-            <div className="static-content">
-                <p><strong>Last Updated:</strong> 14 December 2025</p>
-                <p>Welcome to the SJ10 Supplier Platform. This Shipping Policy outlines the responsibilities and procedures for our valued suppliers regarding the shipment of orders placed through our marketplace.</p>
 
-                <h2>Our Marketplace Model</h2>
-                <p>SJ10 operates as a multi-vendor marketplace, connecting talented suppliers like you with customers across Pakistan. As a supplier on our platform, you are in control of your inventory, and you are responsible for shipping your products directly to the customer.</p>
-                
-                <h2>Supplier Responsibilities</h2>
-                <ul>
-                    <li><strong>Order Fulfillment:</strong> You are responsible for processing, packaging, and dispatching all orders for your products in a timely and professional manner.</li>
-                    <li><strong>Packaging:</strong> All items must be securely packaged to prevent damage during transit. We recommend using high-quality materials to ensure a positive customer experience.</li>
-                    <li><strong>Shipping Carrier:</strong> You are free to use any reputable local courier service in Pakistan (e.g., Leopards, TCS, M&P, etc.) to ship your orders.</li>
-                </ul>
+            <div className="legal-layout-wrapper">
+                <aside className="legal-toc-sidebar legal-anim-slide-up">
+                    <div className="legal-toc-card">
+                        <div className="legal-toc-header">Table of Contents</div>
+                        <ul className="legal-toc-list">
+                            {sections.map(section => (
+                                <li key={section.id} className={`legal-toc-item ${activeSection === section.id ? 'active-item' : ''}`} onClick={() => scrollToSection(section.id)}>
+                                    {section.title}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </aside>
 
-                <h2>The Shipping Process on SJ10</h2>
-                <ol>
-                    <li><strong>Receive Order:</strong> When a customer places an order for one of your products, it will appear in the "Manage Orders" section of your Supplier Dashboard.</li>
-                    <li><strong>Dispatch Order:</strong> After you have packaged the order and handed it over to your chosen courier, you will receive a tracking number.</li>
-                    <li><strong>Update on Platform:</strong> You must then log in to your SJ10 dashboard, find the relevant order, and submit the tracking number and the courier's name. This action marks the order as "Dispatched."</li>
-                    <li><strong>Automated Tracking:</strong> Once the tracking number is submitted, our system, powered by Track123, will automatically provide real-time tracking updates to both you and the customer.</li>
-                </ol>
+                <main className="legal-content-area">
+                    <section id="intro" className="legal-section-block">
+                        <h2 className="legal-section-heading"><span className="legal-icon-box">🚚</span> 1. Introduction</h2>
+                        <p>Welcome to the <strong>SJ10 Shipping Policy</strong>. As a multi-vendor marketplace operating in Pakistan, we aim to provide the fastest and most reliable delivery experience. This policy outlines the obligations for suppliers regarding order fulfillment.</p>
+                    </section>
 
-                <h2>Timeliness</h2>
-                <p>We encourage our suppliers to dispatch orders within 48 hours of receiving them to ensure customer satisfaction. Consistent and prompt shipping is a key factor in maintaining a good seller rating on our platform.</p>
+                    <section id="model" className="legal-section-block">
+                        <h2 className="legal-section-heading"><span className="legal-icon-box">📦</span> 2. Self-Fulfillment Model</h2>
+                        <p>SJ10 operates on a <strong>Self-Fulfillment</strong> basis. This means:</p>
+                        <ul>
+                            <li>You (the Supplier) keep your own stock.</li>
+                            <li>You are responsible for packing and handing over the parcel to the courier.</li>
+                            <li>You maintain control over your inventory speed and quality.</li>
+                        </ul>
+                    </section>
 
-                <h2>Contact & Support</h2>
-                <p>If you have any questions about this shipping policy or the order fulfillment process, please do not hesitate to contact the SJ10 Admin team through the support channels provided.</p>
-                <p>Thank you for being a part of the SJ10 community.</p>
-                <p><em>- Aoun Abbas, Founder of SJ10</em></p>
+                    <section id="couriers" className="legal-section-block">
+                        <h2 className="legal-section-heading"><span className="legal-icon-box">🏢</span> 3. Supported Couriers</h2>
+                        <p>To ensure real-time tracking integration with our system, we support the following major courier services in Pakistan. You must use one of these providers:</p>
+                        <ul>
+                            <li><strong>Leopards Courier</strong></li>
+                            <li><strong>PostEx</strong></li>
+                            <li><strong>Trax / Call Courier</strong></li>
+                            <li><strong>Swift</strong></li>
+                            <li><strong>DHL</strong> (For high-value or specific items)</li>
+                            <li><strong>TCS</strong></li>
+                        </ul>
+                    </section>
+
+                    <section id="tracking" className="legal-section-block">
+                        <h2 className="legal-section-heading"><span className="legal-icon-box">📲</span> 4. The Tracking Process</h2>
+                        <p>Our system offers <strong>Live Tracking</strong> integration. Here is the mandatory workflow:</p>
+                        <ol>
+                            <li><strong>Receive Order:</strong> You get a notification in your SJ10 Dashboard.</li>
+                            <li><strong>Ship Item:</strong> Book the shipment with your chosen courier (e.g., Leopards) and get the <strong>Tracking Number (CN Number)</strong>.</li>
+                            <li><strong>Input Data:</strong> Go to the "Orders" page on SJ10, click "Fulfill", and enter the Tracking Number and Courier Name in the input fields.</li>
+                            <li><strong>Live Updates:</strong> Once saved, our system automatically connects with the courier's API. The customer will receive live notifications (SMS/Email) regarding their parcel's location.</li>
+                        </ol>
+                    </section>
+
+                    <section id="warranty" className="legal-section-block">
+                        <h2 className="legal-section-heading"><span className="legal-icon-box">🛡️</span> 5. 7-Day Return Warranty</h2>
+                        <p>SJ10 mandates a <strong>7-Day Return Warranty</strong> on all products to build customer trust. If a customer receives a damaged, incorrect, or faulty item, they have the right to claim a return within 7 days of delivery.</p>
+                        <p>Suppliers must honor this warranty. Failure to accept valid returns may lead to account penalties.</p>
+                    </section>
+
+                    <section id="packaging" className="legal-section-block">
+                        <h2 className="legal-section-heading"><span className="legal-icon-box">🎁</span> 6. Packaging Guidelines</h2>
+                        <p>Products must be packed securely using bubble wrap and flyer bags to prevent damage. SJ10 is not liable for damages caused by poor packaging during transit.</p>
+                    </section>
+
+                    <div className="legal-footer-note">
+                        <p>Last Updated: February 2026 | Approved by Aoun Abbas (Founder)</p>
+                    </div>
+                </main>
             </div>
         </div>
     );

@@ -296,3 +296,19 @@
     .modal-content { padding: 40px; }
     .main-header { font-size: 2.5rem; }
 }
+
+
+/* Add this new status color */
+.status-review { background-color: #3b82f6; color: #fff; } /* Blue for Under Review */
+.status-expired { background-color: #374151; color: #9ca3af; }
+
+/* Time Info Styles */
+.time-info {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 5px;
+}
+.time-label { color: #6b7280; font-size: 0.85rem; }
+.time-val { color: #d1d5db; font-weight: 600; font-size: 0.9rem; }
+.time-badge.expired { color: #ef4444; font-weight: bold; }
