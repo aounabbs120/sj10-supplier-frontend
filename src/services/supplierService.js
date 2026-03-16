@@ -68,7 +68,8 @@ const supplierService = {
             headers: { 'Content-Type': 'multipart/form-data' }
         })).data;
     },
-
+// Add this line inside the `supplierService` object export:
+genericGet: async (url) => (await api.get(url)).data,
     getMyFollowers: async () => (await api.get('/social/followers')).data,
     getNotificationHistory: async () => (await api.get('/notifications')).data,
     markNotificationsRead: async () => (await api.put('/notifications/read')).data,
@@ -81,6 +82,7 @@ const supplierService = {
     getVapidPublicKey: async () => (await api.get(supplierApi('/vapid-public-key'))).data,
     saveSubscription: async (subscription) => (await api.post(supplierApi('/subscribe'), { subscription })).data,
     markOrderAsSeen 
+
 };
 
 export default supplierService;

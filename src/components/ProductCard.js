@@ -1,7 +1,7 @@
 // src/components/ProductCard.js
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { formatCount } from '../utils/formatCount'; // Import the formatter
+import { formatCount } from '../utils/formatCount'; 
 
 const ProductCard = ({ 
     product, 
@@ -12,58 +12,76 @@ const ProductCard = ({
     onLongPress 
 }) => {
     const navigate = useNavigate();
-    const [isImageLoading, setIsImageLoading] = useState(true);
-    const [isCopied, setIsCopied] = useState(false);
+    const [isImgLoaded, setIsImgLoaded] = useState(false);
     
     const timerRef = useRef(null);
     const isLongPress = useRef(false);
 
-    const safeImageUrls = typeof product.image_urls === 'string' ? JSON.parse(product.image_urls) : (product.image_urls || []);
-    const imageUrl = safeImageUrls.length > 0 ? safeImageUrls[0] : 'https://via.placeholder.com/80';
+    const imageUrl = product.image_urls?.length > 0 ? product.image_urls[0] : 'https://via.placeholder.com/80';
 
-    const handleCopySku = (e) => {
-        e.stopPropagation();
-        navigator.clipboard.writeText(product.sku).then(() => {
-            setIsCopied(true);
-            setTimeout(() => setIsCopied(false), 2000);
-        });
-    };
-
+    // --- WHATSAPP-STYLE LONG PRESS (1.2 Seconds) ---
     const handleStart = () => {
         isLongPress.current = false;
+        
         timerRef.current = setTimeout(() => {
             isLongPress.current = true;
+            // Haptic Feedback for premium mobile feel
+            if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(50);
             onLongPress(product.id);
-        }, 500); 
+        }, 1200); // 1.2s delay prevents accidental triggers
     };
 
-    const handleEnd = () => { if (timerRef.current) clearTimeout(timerRef.current); };
+    // Cancels hold if user lifts finger or starts scrolling (TouchMove)
+    const handleCancel = () => { 
+        if (timerRef.current) clearTimeout(timerRef.current); 
+    };
 
     const handleClick = () => {
-        if (isLongPress.current) { isLongPress.current = false; return; }
-        if (isSelectionMode) { onToggleSelect(product.id); } 
-        else { navigate(`/products/edit/${product.id}`); }
+        if (isLongPress.current) { 
+            isLongPress.current = false; 
+            return; 
+        }
+        if (isSelectionMode) { 
+            onToggleSelect(product.id); 
+        } else { 
+            navigate(`/products/edit/${product.id}`); 
+        }
     };
 
     return (
         <div 
-            className={`product-card ${isSelected ? 'selected' : ''} ${isSelectionMode ? 'selection-mode' : ''}`}
-            onMouseDown={handleStart} onMouseUp={handleEnd} onMouseLeave={handleEnd}
-            onTouchStart={handleStart} onTouchEnd={handleEnd} onClick={handleClick}
+            className={`premium-product-card ${isSelected ? 'selected' : ''} ${isSelectionMode ? 'selection-mode' : ''}`}
+            onMouseDown={handleStart} 
+            onMouseUp={handleCancel} 
+            onMouseLeave={handleCancel}
+            onTouchStart={handleStart} 
+            onTouchEnd={handleCancel} 
+            onTouchMove={handleCancel} /* CRITICAL: Cancels long-press while scrolling */
+            onClick={handleClick}
         >
-            <div className={`selection-overlay ${isSelected ? 'visible' : ''}`}><div className="checkmark-circle">✓</div></div>
+            {/* WhatsApp Style Tick */}
+            <div className={`whatsapp-tick ${isSelected ? 'visible' : ''}`}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </div>
 
             <div className="product-image-container">
-                {isImageLoading && <div className="shimmer-wrapper"></div>}
-                <img src={imageUrl} alt={product.title} className="product-image" onLoad={() => setIsImageLoading(false)} />
+                {/* Instant Shimmer until image loads */}
+                {!isImgLoaded && <div className="shimmer-img-overlay shimmer-bg"></div>}
+                <img 
+                    src={imageUrl} 
+                    alt={product.title} 
+                    className="product-image" 
+                    onLoad={() => setIsImgLoaded(true)} 
+                    onError={() => setIsImgLoaded(true)} // Prevents infinite shimmer on broken images
+                    style={{ opacity: isImgLoaded ? 1 : 0 }}
+                />
             </div>
 
             <div className="product-details">
-                <h3 className="product-title">{product.title}</h3>
-                <div className="product-id-container">
-                    <p className="product-sku">SKU: {product.sku}</p>
-                    <button className="copy-id-btn" onClick={handleCopySku} title="Copy SKU">{isCopied ? '✅' : '📋'}</button>
-                </div>
+                <h3 className="product-title" title={product.title}>{product.title}</h3>
+                <p className="product-sku">SKU: {product.sku}</p>
                 
                 <div className="product-meta">
                     <div className="price-wrapper">
@@ -72,17 +90,16 @@ const ProductCard = ({
                                 <span className="product-price-discounted">Rs. {parseFloat(product.discounted_price).toLocaleString()}</span>
                                 <s className="product-price-original">{parseFloat(product.price).toLocaleString()}</s>
                             </>
-                        ) : ( <span className="product-price">Rs. {parseFloat(product.price).toLocaleString()}</span> )}
+                        ) : ( 
+                            <span className="product-price">Rs. {parseFloat(product.price).toLocaleString()}</span> 
+                        )}
                     </div>
                     
-                    <div className="stock-wrapper">
-                        <span className={`stock-badge ${product.quantity > 0 ? 'in-stock' : 'out-of-stock'}`}>
-                            {product.quantity > 0 ? `Stock: ${product.quantity}` : 'Out of Stock'}
-                        </span>
-                    </div>
+                    <span className={`stock-badge ${product.quantity > 0 ? 'in-stock' : 'out-of-stock'}`}>
+                        {product.quantity > 0 ? `${product.quantity} in stock` : 'Out of Stock'}
+                    </span>
                 </div>
 
-                {/* --- STATS ROW WITH FORMATTING --- */}
                 <div className="product-stats-row">
                     <span className="stat-item">👁️ {formatCount(product.views)}</span>
                     <span className="stat-item">🛒 {formatCount(product.cart_count)}</span>
@@ -91,9 +108,9 @@ const ProductCard = ({
             </div>
 
             {!isSelectionMode && (
-                <div className="product-actions">
-                    <button className="btn-icon btn-edit" onClick={(e) => { e.stopPropagation(); navigate(`/products/edit/${product.id}`); }}>✏️</button>
-                    <button className="btn-icon btn-delete" onClick={(e) => { e.stopPropagation(); onDelete(product.id); }}>🗑️</button>
+                <div className="product-actions-menu">
+                    <button className="btn-icon-soft" onClick={(e) => { e.stopPropagation(); navigate(`/products/edit/${product.id}`); }}>✏️</button>
+                    <button className="btn-icon-soft text-red" onClick={(e) => { e.stopPropagation(); onDelete(product.id); }}>🗑️</button>
                 </div>
             )}
         </div>
