@@ -1,118 +1,227 @@
 // src/components/ProductCard.js
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { formatCount } from '../utils/formatCount'; 
+import { Edit, Trash2, Copy, Check, Eye, ShoppingCart, Heart } from 'lucide-react';
+import { formatCount } from '../utils/formatCount';
 
-const ProductCard = ({ 
-    product, 
-    onDelete, 
-    isSelectionMode, 
-    isSelected, 
-    onToggleSelect, 
-    onLongPress 
-}) => {
+const ProductCard = ({ product, onDelete, isSelectionMode, isSelected, onToggleSelect, onLongPress }) => {
     const navigate = useNavigate();
-    const [isImgLoaded, setIsImgLoaded] = useState(false);
-    
+    const [copied, setCopied] = useState(null);
     const timerRef = useRef(null);
-    const isLongPress = useRef(false);
+    const longPressActive = useRef(false);
+    
+    // Detect mobile accurately
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 500);
 
-    const imageUrl = product.image_urls?.length > 0 ? product.image_urls[0] : 'https://via.placeholder.com/80';
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 500);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
-    // --- WHATSAPP-STYLE LONG PRESS (1.2 Seconds) ---
+    const imageUrl = product.image_urls?.[0] || 'https://via.placeholder.com/150';
+
+    const handleCopy = (e, text, id) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(text);
+        setCopied(id);
+        setTimeout(() => setCopied(null), 1500);
+    };
+
     const handleStart = () => {
-        isLongPress.current = false;
-        
+        longPressActive.current = false;
         timerRef.current = setTimeout(() => {
-            isLongPress.current = true;
-            // Haptic Feedback for premium mobile feel
-            if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(50);
+            longPressActive.current = true;
+            if (window.navigator.vibrate) window.navigator.vibrate(50);
             onLongPress(product.id);
-        }, 1200); // 1.2s delay prevents accidental triggers
+        }, 800); 
     };
 
-    // Cancels hold if user lifts finger or starts scrolling (TouchMove)
-    const handleCancel = () => { 
-        if (timerRef.current) clearTimeout(timerRef.current); 
+    const handleEnd = () => { if (timerRef.current) clearTimeout(timerRef.current); };
+
+    const handleCardClick = () => {
+        if (longPressActive.current) return;
+        if (isSelectionMode) onToggleSelect(product.id);
+        else navigate(`/products/edit/${product.id}`);
     };
 
-    const handleClick = () => {
-        if (isLongPress.current) { 
-            isLongPress.current = false; 
-            return; 
-        }
-        if (isSelectionMode) { 
-            onToggleSelect(product.id); 
-        } else { 
-            navigate(`/products/edit/${product.id}`); 
+    // --- PREMIUM STYLES ---
+    const styles = {
+        card: {
+            backgroundColor: '#ffffff',
+            borderRadius: '14px',
+            border: isSelected ? '2px solid #4f46e5' : '1px solid #eef2f6',
+            position: 'relative',
+            marginBottom: '12px',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+            cursor: 'pointer',
+            userSelect: 'none',
+            width: '100%',
+            boxSizing: 'border-box',
+            overflow: 'hidden', // Ensures nothing bleeds out
+        },
+        selectionTick: {
+            position: 'absolute',
+            top: '8px',
+            left: '8px',
+            width: '20px',
+            height: '20px',
+            backgroundColor: '#4f46e5',
+            borderRadius: '50%',
+            display: isSelected ? 'flex' : 'none',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 5,
+            border: '2px solid white'
+        },
+        container: {
+            display: 'flex',
+            padding: isMobile ? '8px' : '12px',
+            gap: isMobile ? '10px' : '15px',
+            alignItems: 'center',
+            width: '100%',
+            boxSizing: 'border-box'
+        },
+        imageWrapper: {
+            width: isMobile ? '85px' : '110px',
+            height: isMobile ? '85px' : '110px',
+            borderRadius: '10px',
+            overflow: 'hidden',
+            position: 'relative',
+            flexShrink: 0, // Prevents image from squishing
+            backgroundColor: '#f8fafc'
+        },
+        stockBadge: {
+            position: 'absolute',
+            bottom: 0,
+            width: '100%',
+            fontSize: '8px',
+            fontWeight: '900',
+            textAlign: 'center',
+            padding: '3px 0',
+            color: 'white',
+            textTransform: 'uppercase',
+            backgroundColor: product.quantity > 0 ? '#10b981' : '#ef4444'
+        },
+        infoBox: {
+            flex: 1, // Takes all available space
+            minWidth: 0, // 🔥 CRITICAL: Allows child text to truncate
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '2px'
+        },
+        title: {
+            fontSize: isMobile ? '14px' : '16px',
+            fontWeight: '700',
+            color: '#1e293b',
+            margin: 0,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis', // Adds "..."
+            width: '100%'
+        },
+        skuRow: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            fontSize: '10px',
+            color: '#94a3b8',
+            fontFamily: 'monospace'
+        },
+        price: {
+            fontSize: isMobile ? '15px' : '18px',
+            fontWeight: '800',
+            color: '#0f172a',
+            margin: '2px 0'
+        },
+        statsRow: {
+            display: 'flex',
+            gap: '8px',
+            marginTop: '4px'
+        },
+        statPill: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: '3px',
+            fontSize: '10px',
+            fontWeight: '700',
+            color: '#64748b',
+            backgroundColor: '#f1f5f9',
+            padding: '2px 6px',
+            borderRadius: '5px'
+        },
+        actionColumn: {
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            paddingLeft: '5px',
+            borderLeft: '1px solid #f1f5f9',
+            flexShrink: 0 // Keeps buttons from moving
+        },
+        btn: {
+            width: '34px',
+            height: '34px',
+            borderRadius: '8px',
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            backgroundColor: '#f8fafc',
+            color: '#64748b'
         }
     };
 
     return (
         <div 
-            className={`premium-product-card ${isSelected ? 'selected' : ''} ${isSelectionMode ? 'selection-mode' : ''}`}
-            onMouseDown={handleStart} 
-            onMouseUp={handleCancel} 
-            onMouseLeave={handleCancel}
-            onTouchStart={handleStart} 
-            onTouchEnd={handleCancel} 
-            onTouchMove={handleCancel} /* CRITICAL: Cancels long-press while scrolling */
-            onClick={handleClick}
+            style={styles.card}
+            onMouseDown={handleStart} onMouseUp={handleEnd} onTouchStart={handleStart} onTouchEnd={handleEnd}
+            onClick={handleCardClick}
         >
-            {/* WhatsApp Style Tick */}
-            <div className={`whatsapp-tick ${isSelected ? 'visible' : ''}`}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-            </div>
+            <div style={styles.selectionTick}><Check size={12} color="white" strokeWidth={4}/></div>
 
-            <div className="product-image-container">
-                {/* Instant Shimmer until image loads */}
-                {!isImgLoaded && <div className="shimmer-img-overlay shimmer-bg"></div>}
-                <img 
-                    src={imageUrl} 
-                    alt={product.title} 
-                    className="product-image" 
-                    onLoad={() => setIsImgLoaded(true)} 
-                    onError={() => setIsImgLoaded(true)} // Prevents infinite shimmer on broken images
-                    style={{ opacity: isImgLoaded ? 1 : 0 }}
-                />
-            </div>
+            <div style={styles.container}>
+                {/* 1. Image */}
+                <div style={styles.imageWrapper}>
+                    <img src={imageUrl} style={{width:'100%', height:'100%', objectFit:'cover'}} alt="" loading="lazy" />
+                    <div style={styles.stockBadge}>{product.quantity > 0 ? 'INSTOCK' : 'OUT'}</div>
+                </div>
 
-            <div className="product-details">
-                <h3 className="product-title" title={product.title}>{product.title}</h3>
-                <p className="product-sku">SKU: {product.sku}</p>
-                
-                <div className="product-meta">
-                    <div className="price-wrapper">
-                        {product.discounted_price && parseFloat(product.discounted_price) > 0 ? (
-                            <>
-                                <span className="product-price-discounted">Rs. {parseFloat(product.discounted_price).toLocaleString()}</span>
-                                <s className="product-price-original">{parseFloat(product.price).toLocaleString()}</s>
-                            </>
-                        ) : ( 
-                            <span className="product-price">Rs. {parseFloat(product.price).toLocaleString()}</span> 
-                        )}
+                {/* 2. Info */}
+                <div style={styles.infoBox}>
+                    <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', width:'100%'}}>
+                        <h3 style={styles.title}>{product.title}</h3>
+                        <button style={{background:'none', border:'none', padding:2, color:'#cbd5e1'}} onClick={(e)=>handleCopy(e, product.title, 't')}>
+                            {copied === 't' ? <Check size={12} color="#10b981"/> : <Copy size={12}/>}
+                        </button>
                     </div>
                     
-                    <span className={`stock-badge ${product.quantity > 0 ? 'in-stock' : 'out-of-stock'}`}>
-                        {product.quantity > 0 ? `${product.quantity} in stock` : 'Out of Stock'}
-                    </span>
+                    <div style={styles.skuRow}>
+                        <span>SKU: {product.sku}</span>
+                        <button style={{background:'none', border:'none', padding:0, color:'#cbd5e1'}} onClick={(e)=>handleCopy(e, product.sku, 's')}>
+                            {copied === 's' ? <Check size={12} color="#10b981"/> : <Copy size={12}/>}
+                        </button>
+                    </div>
+
+                    <div style={styles.price}>Rs. {product.discounted_price?.toLocaleString()}</div>
+
+                    <div style={styles.statsRow}>
+                        <div style={styles.statPill}><Eye size={12}/> {formatCount(product.views)}</div>
+                        <div style={styles.statPill}><ShoppingCart size={12}/> {formatCount(product.cart_count)}</div>
+                        <div style={styles.statPill}><Heart size={12}/> {formatCount(product.favorite_count)}</div>
+                    </div>
                 </div>
 
-                <div className="product-stats-row">
-                    <span className="stat-item">👁️ {formatCount(product.views)}</span>
-                    <span className="stat-item">🛒 {formatCount(product.cart_count)}</span>
-                    <span className="stat-item">❤️ {formatCount(product.favorite_count)}</span>
+                {/* 3. Actions */}
+                <div style={styles.actionColumn}>
+                    <button style={styles.btn} onClick={(e) => { e.stopPropagation(); navigate(`/products/edit/${product.id}`); }}>
+                        <Edit size={16}/>
+                    </button>
+                    <button style={{...styles.btn, color:'#ef4444'}} onClick={(e) => { e.stopPropagation(); onDelete(product.id, product._shardKey); }}>
+                        <Trash2 size={16}/>
+                    </button>
                 </div>
             </div>
-
-            {!isSelectionMode && (
-                <div className="product-actions-menu">
-                    <button className="btn-icon-soft" onClick={(e) => { e.stopPropagation(); navigate(`/products/edit/${product.id}`); }}>✏️</button>
-                    <button className="btn-icon-soft text-red" onClick={(e) => { e.stopPropagation(); onDelete(product.id); }}>🗑️</button>
-                </div>
-            )}
         </div>
     );
 };

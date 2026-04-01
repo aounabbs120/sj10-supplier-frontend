@@ -1,183 +1,173 @@
 // src/pages/ProductList.js
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useSWR from 'swr'; // Using the simpler useSWR hook now
-import Papa from 'papaparse'; 
+import useSWRInfinite from 'swr/infinite';
+import { 
+    Search, Plus, Loader2, Trash2, CheckCircle, 
+    XCircle, CheckSquare, Square, X 
+} from 'lucide-react';
 import supplierService from '../services/supplierService';
 import ProductCard from '../components/ProductCard';
 import './ProductList.css';
 
-const ProductCardSkeleton = () => (
-    <div className="product-card-skeleton">
-        <div className="skeleton-img-box shimmer-bg"></div>
-        <div className="skeleton-details">
-            <div className="skeleton-line title shimmer-bg"></div>
-            <div className="skeleton-line meta shimmer-bg"></div>
-            <div className="skeleton-line short shimmer-bg"></div>
-        </div>
-    </div>
-);
-
-// SWR Fetcher now points to our new, fast backend endpoint
-const fetcher = async () => {
-    return await supplierService.genericGet('/supplier/products/all-light');
-};
-
-const ProductList = () => {
+const ProductList = ({ setIsLoading }) => {
     const navigate = useNavigate();
-    const fileInputRef = useRef(null);
-    const loaderRef = useRef(null); // For IntersectionObserver
-
-    // --- SWR CACHING ---
-    const { data: allProducts = [], error, isLoading, mutate } = useSWR('sj10_all_light_products', fetcher, {
-        revalidateOnFocus: true,
-        dedupingInterval: 60000, 
-    });
-
-    // --- UI STATES ---
+    const loaderRef = useRef(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
     const [filterStatus, setFilterStatus] = useState('all');
     const [selectedIds, setSelectedIds] = useState(new Set());
     const [isSelectionMode, setIsSelectionMode] = useState(false);
-    const [visibleCount, setVisibleCount] = useState(40);
 
-    // --- FRONTEND FILTERING (Lightning Fast) ---
-    const filteredProducts = useMemo(() => {
-        if (!allProducts) return [];
-        return allProducts.filter(p => {
-            const matchesSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                                 (p.sku && p.sku.toLowerCase().includes(searchTerm.toLowerCase()));
-            let matchesStatus = true;
-            if (filterStatus === 'in_stock') matchesStatus = p.quantity > 0;
-            else if (filterStatus === 'out_of_stock') matchesStatus = p.quantity === 0;
-            return matchesSearch && matchesStatus;
-        });
-    }, [allProducts, searchTerm, filterStatus]);
-
-    // Reset chunks when filters change
     useEffect(() => {
-        setVisibleCount(40);
-        window.scrollTo(0, 0);
-    }, [searchTerm, filterStatus]);
+        const handler = setTimeout(() => setDebouncedSearch(searchTerm), 400);
+        return () => clearTimeout(handler);
+    }, [searchTerm]);
 
-    // --- Intersection Observer for Infinite Scroll ---
+    const getKey = (pageIndex, previousPageData) => {
+        if (previousPageData && !previousPageData.hasMore) return null;
+        return `/supplier/products/paginated?page=${pageIndex + 1}&limit=40&search=${encodeURIComponent(debouncedSearch)}&status=${filterStatus}`;
+    };
+
+    const { data, size, setSize, mutate, isValidating, isLoading } = useSWRInfinite(
+        getKey, (url) => supplierService.genericGet(url), { 
+            revalidateOnFocus: false, 
+            persistSize: true,
+            revalidateFirstPage: false 
+        }
+    );
+
+    const products = useMemo(() => data ? data.flatMap(page => page.products || []) : [], [data]);
+    const totalCount = data?.[0]?.totalCount || 0;
+    const isReachingEnd = data && data[data.length - 1]?.hasMore === false;
+
+    // 🔥 FIXED: STABLE INTERSECTION OBSERVER 🔥
     useEffect(() => {
-        const observer = new IntersectionObserver(
-            (entries) => {
-                if (entries[0].isIntersecting && visibleCount < filteredProducts.length) {
-                    setVisibleCount(prev => Math.min(prev + 40, filteredProducts.length));
+        const currentLoader = loaderRef.current;
+        const observer = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting && !isValidating && !isReachingEnd && products.length > 0) {
+                setSize(s => s + 1);
+            }
+        }, { rootMargin: '200px' });
+
+        if (currentLoader) observer.observe(currentLoader);
+        return () => {
+            if (currentLoader) observer.unobserve(currentLoader);
+        };
+        // Removed unnecessary dependencies that cause the size-change error
+    }, [isValidating, isReachingEnd, products.length, setSize]);
+
+    useEffect(() => { setSize(1); }, [debouncedSearch, filterStatus, setSize]);
+
+    const handleAction = async (type, productId = null, shard = null) => {
+        const ids = productId ? [productId] : [...selectedIds];
+        if (ids.length === 0) return;
+        const optimisticData = data.map(page => ({
+            ...page,
+            products: page.products.filter(p => !(type === 'delete' && ids.includes(p.id))).map(p => {
+                if (ids.includes(p.id)) {
+                    if (type === 'in_stock') return { ...p, quantity: 10 };
+                    if (type === 'out_of_stock') return { ...p, quantity: 0 };
                 }
-            },
-            { rootMargin: '400px' }
-        );
-        if (loaderRef.current) observer.observe(loaderRef.current);
-        return () => observer.disconnect();
-    }, [visibleCount, filteredProducts.length]);
-
-    const displayedProducts = useMemo(() => {
-        return filteredProducts.slice(0, visibleCount);
-    }, [filteredProducts, visibleCount]);
-
-    const isReachingEnd = visibleCount >= filteredProducts.length;
-
-    // --- SELECTION & ACTIONS (No changes needed here) ---
-    const handleLongPress = (productId) => { /* ... same as before ... */ setIsSelectionMode(true); toggleSelection(productId); };
-    const toggleSelection = (productId) => { /* ... same as before ... */ setSelectedIds(prev => { const newSet = new Set(prev); if (newSet.has(productId)) newSet.delete(productId); else newSet.add(productId); if (newSet.size === 0) setIsSelectionMode(false); return newSet; }); };
-    const handleSelectAll = () => { /* ... same as before ... */ if (selectedIds.size === filteredProducts.length) { setSelectedIds(new Set()); setIsSelectionMode(false); } else { setSelectedIds(new Set(filteredProducts.map(p => p.id))); setIsSelectionMode(true); } };
-    const handleCancelSelection = () => { /* ... same as before ... */ setSelectedIds(new Set()); setIsSelectionMode(false); };
-    const handleDelete = async (productId) => { if (window.confirm('Permanently delete?')) { try { await supplierService.deleteProduct(productId); mutate(); } catch (err) { alert('Delete failed.'); } } };
-    const handleBulkAction = async (actionType) => { /* ... same as before ... */ }; // This logic remains the same
-    const handleFileSelect = (event) => { /* ... same as before ... */ }; // This logic remains the same
-    const handleExport = () => { /* ... same as before ... */ }; // This logic remains the same
-    
-    if (error) return <div className="error-state-message">Failed to load inventory. Please check your connection and refresh.</div>;
+                return p;
+            })
+        }));
+        mutate(optimisticData, false);
+        try {
+            const promises = ids.map(id => {
+                const p = products.find(item => item.id === id);
+                const s = shard || p?._shardKey;
+                if (type === 'delete') return supplierService.deleteProduct(id, s);
+                return supplierService.updateProduct(id, { quantity: type === 'in_stock' ? 10 : 0 }, s);
+            });
+            await Promise.all(promises);
+            if (!productId) { setIsSelectionMode(false); setSelectedIds(new Set()); }
+            mutate();
+        } catch (e) { mutate(); }
+    };
 
     return (
-        <div className={`product-list-container ${isSelectionMode ? 'selection-active' : ''}`}>
-            
-            <div className="product-list-header">
-                <div className="header-title-group">
-                    <h1>Inventory</h1>
-                    <span className="product-count-badge">
-                        {isLoading ? 'Loading...' : `Total ${allProducts.length.toLocaleString()} Items`}
-                    </span>
-                </div>
-                <div className="header-actions">
-                    <input type="file" ref={fileInputRef} onChange={handleFileSelect} style={{ display: 'none' }} accept=".csv" />
-                    <button className="action-btn-desktop" onClick={() => fileInputRef.current.click()}><span className="icon">📥</span> Import</button>
-                    <button className="action-btn-desktop" onClick={handleExport}><span className="icon">📤</span> Export</button>
-                    <button className="btn-add-product" onClick={() => navigate('/products/add')}><span className="plus-sign">+</span></button>
-                </div>
-            </div>
-
-            <div className={`selection-status-bar ${isSelectionMode ? 'visible' : ''}`}>
-                <div className="selection-count">{selectedIds.size} Selected</div>
-                <div className="selection-controls">
-                    <button onClick={handleSelectAll}>{selectedIds.size === filteredProducts.length ? 'Deselect All' : 'Select All'}</button>
-                    <button className="cancel-btn" onClick={handleCancelSelection}>Cancel</button>
-                </div>
-            </div>
-
-            <div className="search-filter-wrapper">
-                <div className="search-bar-container">
-                    <span className="search-icon">🔍</span>
-                    <input 
-                        type="text" className="search-input" placeholder="Search by title or SKU..." 
-                        value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} disabled={isSelectionMode}
-                    />
-                    {searchTerm && (<button className="clear-search-btn" onClick={() => setSearchTerm('')}>✕</button>)}
-                </div>
-                <div className="filter-tabs-container">
-                    <button className={`filter-tab ${filterStatus === 'all' ? 'active' : ''}`} onClick={() => setFilterStatus('all')}>All</button>
-                    <button className={`filter-tab ${filterStatus === 'in_stock' ? 'active' : ''}`} onClick={() => setFilterStatus('in_stock')}>In Stock</button>
-                    <button className={`filter-tab ${filterStatus === 'out_of_stock' ? 'active' : ''}`} onClick={() => setFilterStatus('out_of_stock')}>Out of Stock</button>
-                </div>
-            </div>
-
-            <div className="products-scroll-area">
-                {isLoading ? (
-                    Array(10).fill(0).map((_, idx) => <ProductCardSkeleton key={idx} />)
-                ) : displayedProducts.length > 0 ? (
-                    <>
-                        {displayedProducts.map(product => (
-                            <ProductCard 
-                                key={product.id} 
-                                product={product} 
-                                onDelete={handleDelete}
-                                isSelectionMode={isSelectionMode}
-                                isSelected={selectedIds.has(product.id)}
-                                onToggleSelect={toggleSelection}
-                                onLongPress={handleLongPress}
-                            />
-                        ))}
-                        
-                        <div ref={loaderRef} className="list-footer-status">
-                            {!isReachingEnd ? (
-                                <div className="infinite-loader-text">
-                                    Loading more items<span>.</span><span>.</span><span>.</span>
-                                </div>
-                            ) : (
-                                <div className="end-of-list-msg">
-                                    <span className="end-icon">✓</span>
-                                    <p>End of Results</p>
-                                </div>
-                            )}
-                        </div>
-                    </>
-                ) : (
-                    <div className="no-products-message">
-                        <div className="empty-icon">📦</div>
-                        <h3>No products found</h3>
-                        <p>Your search or filter returned no results.</p>
+        <div className="pro-lux-container">
+            <header className="pro-lux-header">
+                <div className="pro-lux-top">
+                    <div className="pro-lux-title">
+                        <h1>Inventory</h1>
+                        <span className="pro-lux-total">{totalCount} items</span>
                     </div>
-                )}
-            </div>
+                    <div className="pro-lux-btns">
+                        {isSelectionMode && (
+                            <button className="pro-lux-sel-all" onClick={() => {
+                                if (selectedIds.size === products.length) {
+                                    setSelectedIds(new Set()); setIsSelectionMode(false);
+                                } else {
+                                    setSelectedIds(new Set(products.map(p => p.id))); setIsSelectionMode(true);
+                                }
+                            }}>
+                                {selectedIds.size === products.length ? <CheckSquare size={18}/> : <Square size={18}/>}
+                                <span>All</span>
+                            </button>
+                        )}
+                        <button className="pro-lux-add" onClick={() => navigate('/products/add')}>
+                            <Plus size={18}/> <span>Add</span>
+                        </button>
+                    </div>
+                </div>
 
-            <div className={`floating-bottom-bar ${isSelectionMode ? 'visible' : ''}`}>
-                <button className="fab-action" onClick={() => handleBulkAction('in_stock')}><span className="fab-icon">⚡</span><span className="fab-label">In Stock</span></button>
-                <button className="fab-action" onClick={() => handleBulkAction('out_stock')}><span className="fab-icon">🚫</span><span className="fab-label">Out Stock</span></button>
-                <button className="fab-action" onClick={() => handleBulkAction('delete')}><span className="fab-icon">🗑️</span><span className="fab-label">Delete</span></button>
-            </div>
+                <div className="pro-lux-search">
+                    <Search className="pro-lux-s-icon" size={18}/>
+                    <input type="text" placeholder="Search SKU or Title..." onChange={(e) => setSearchTerm(e.target.value)} />
+                </div>
+
+                <div className="pro-lux-tabs">
+                    {['all', 'in_stock', 'out_of_stock'].map(f => (
+                        <button key={f} className={`pro-lux-tab ${filterStatus === f ? 'active' : ''}`} onClick={() => setFilterStatus(f)}>
+                            {f.replace('_', ' ')}
+                        </button>
+                    ))}
+                </div>
+            </header>
+
+            <main className="pro-lux-grid">
+                {products.map(p => (
+                    <ProductCard 
+                        key={p.id} product={p} 
+                        onDelete={(id, shard) => handleAction('delete', id, shard)}
+                        isSelectionMode={isSelectionMode} isSelected={selectedIds.has(p.id)}
+                        onToggleSelect={(id) => {
+                            const next = new Set(selectedIds);
+                            if(next.has(id)) next.delete(id); else next.add(id);
+                            setSelectedIds(next);
+                            if (next.size === 0) setIsSelectionMode(false);
+                        }}
+                        onLongPress={(id) => { setIsSelectionMode(true); setSelectedIds(new Set([id])); }}
+                    />
+                ))}
+
+                <div ref={loaderRef} className="pro-lux-loader-trigger">
+                    {isValidating && !isReachingEnd ? (
+                        <div className="pro-lux-orbit">
+                            <Loader2 className="pro-lux-spin" size={24}/>
+                            <span>Fetching Items...</span>
+                        </div>
+                    ) : isReachingEnd && products.length > 0 ? (
+                        <div className="pro-lux-end">End of results</div>
+                    ) : null}
+                </div>
+            </main>
+
+            {isSelectionMode && (
+                <div className="pro-lux-bulk-bar animate-up">
+                    <div className="bulk-count-row">
+                        <span>{selectedIds.size} Selected</span>
+                        <button onClick={() => {setIsSelectionMode(false); setSelectedIds(new Set())}}><X size={18}/></button>
+                    </div>
+                    <div className="bulk-btns-grid">
+                        <button className="bulk-btn in" onClick={() => handleAction('in_stock')}>In Stock</button>
+                        <button className="bulk-btn out" onClick={() => handleAction('out_of_stock')}>Out Stock</button>
+                        <button className="bulk-btn del" onClick={() => handleAction('delete')}>Delete</button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
