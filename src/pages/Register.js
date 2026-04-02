@@ -1,239 +1,335 @@
-import React, { useState } from 'react'; // ✅ CORRECTED THIS LINE
-import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import PhoneInput from 'react-phone-input-2';
-import 'react-phone-input-2/lib/style.css';
+// src/pages/Register.js
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useGoogleLogin } from '@react-oauth/google';
 import Swal from 'sweetalert2';
 import authService from '../services/authService';
+
+// Beautiful Icons
 import { 
-  FaUser, FaEnvelope, FaLock, FaStore, FaEye, FaEyeSlash, 
-  FaCheckCircle, FaMapMarkerAlt, FaShoppingBag, FaShippingFast, FaShieldAlt
+  FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaPhone, 
+  FaCity, FaMapMarkerAlt, FaCamera, FaGoogle, FaStore, 
+  FaShoppingBag, FaChartLine, FaMailBulk
 } from 'react-icons/fa';
+
+import './Register.css';
+
+const CATEGORIES = ["Women's Fashion", "Men's Fashion", "Electronics", "Home Decor", "Watches", "Jewelry", "Health & Beauty", "Automotive", "Sports", "Groceries", "Furniture"];
+const BUSINESS_TYPES = ["Wholesaler", "Retailer", "Shop"];
+const STOCK_RANGES = ["1 – 100", "100 – 200", "200 – 500", "500 – 1000", "10,000+"];
+const GENDERS = ["Man", "Woman", "Not Specified"];
+
+const STEP_LABELS = { 1: "Account", 2: "Business", 3: "Location", 4: "Profile" };
+
+const stepVariants = {
+  enterForward: { x: 50, opacity: 0 },
+  enterBackward: { x: -50, opacity: 0 },
+  center: { x: 0, opacity: 1 },
+  exitForward: { x: -50, opacity: 0 },
+  exitBackward: { x: 50, opacity: 0 },
+};
 
 export default function Register() {
   const navigate = useNavigate();
-
-  // ✅ CORRECTED all instances of 'aoun.useState' to just 'useState'
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    password: '',
-    brandName: '',
-    city: '',
-    address: ''
-  });
-  const [phone, setPhone] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPass, setShowPass] = useState(false);
-  const [showConfirmPass, setShowConfirmPass] = useState(false);
+  const [step, setStep] = useState(1);
+  const [direction, setDirection] = useState('forward');
   const [loading, setLoading] = useState(false);
+  
+  // OTP States
+  const [showOTP, setShowOTP] = useState(false);
+  const [otpValues, setOtpValues] = useState(Array(6).fill(''));
+  const otpRefs = useRef(Array(6).fill(null).map(() => React.createRef()));
+  
+  // Form States
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [showPW, setShowPW] = useState(false);
+  const [showConfirmPW, setShowConfirmPW] = useState(false);
+  
+  const [form, setForm] = useState({
+    fullName: '', email: '', password: '', confirmPassword: '',
+    businessType: 'Retailer', stockRange: '1 – 100', category: '',
+    contactNumber: '', gender: 'Not Specified', age: '', city: '', address: '', profilePic: null,
+  });
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const updateField = (field, val) => setForm(prev => ({ ...prev, [field]: val }));
+  const handleInput = e => updateField(e.target.name, e.target.value);
+
+  // --- 🧠 GOOGLE SIGNUP HANDLER (Exactly like Login.js) ---
+  const handleSocialResponse = (res) => {
+    setLoading(false);
+    if (res.action === 'complete_profile' && res.tempToken) {
+        localStorage.setItem('tempAuthToken', res.tempToken);
+        Swal.fire({
+            icon: 'info', title: 'Almost Done!',
+            text: 'We just need a few more details to set up your shop.',
+            confirmButtonColor: '#2563eb'
+        }).then(() => navigate('/complete-profile'));
+    } else if (res.token) {
+        localStorage.setItem('supplierToken', res.token);
+        Swal.fire({ icon: 'success', title: 'Welcome Back!', text: 'Logged in successfully.', timer: 1500, showConfirmButton: false });
+        setTimeout(() => navigate('/dashboard'), 1500);
+    }
   };
 
-  const validateAndSubmit = async (e) => {
-    e.preventDefault();
+  const handleGoogleClick = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setLoading(true);
+      try {
+        const res = await authService.googleLogin(tokenResponse.access_token);
+        handleSocialResponse(res);
+      } catch (err) { 
+        setLoading(false);
+        Swal.fire('Error', err.response?.data?.message || 'Google Registration Failed', 'error'); 
+      }
+    },
+    onError: () => Swal.fire('Error', 'Google Connection Failed', 'error'),
+  });
 
-    // --- Client-Side Validation ---
-    if (formData.password !== confirmPassword) {
-      Swal.fire({ icon: 'error', title: 'Oops...', text: 'Passwords do not match.' });
-      return;
+  // --- VALIDATION & NAVIGATION ---
+  const validate = () => {
+    if (step === 1) {
+      if (!form.fullName.trim()) return Swal.fire('Error', 'Full name is required', 'error'), false;
+      if (!form.email.includes('@')) return Swal.fire('Error', 'Valid email required', 'error'), false;
+      if (form.password.length < 6) return Swal.fire('Error', 'Password min 6 characters', 'error'), false;
+      if (form.password !== form.confirmPassword) return Swal.fire('Error', 'Passwords do not match', 'error'), false;
     }
-    if (formData.password.length < 6) {
-      Swal.fire({ icon: 'error', title: 'Weak Password', text: 'Password must be at least 6 characters long.' });
-      return;
+    if (step === 2) {
+      if (!form.category) return Swal.fire('Error', 'Select business category', 'error'), false;
+      if (!form.contactNumber.trim()) return Swal.fire('Error', 'Contact number is required', 'error'), false;
     }
-    const forbidden = ['sj10', 'sj10 official', 'admin'];
-    if (forbidden.some(name => formData.brandName.toLowerCase().includes(name))) {
-      Swal.fire({ icon: 'error', title: 'Reserved Name', text: 'This brand name is reserved. Please choose another.' });
-      return;
+    if (step === 3) {
+      if (!form.city.trim() || !form.address.trim()) return Swal.fire('Error', 'Full location required', 'error'), false;
     }
+    return true;
+  };
 
+  const goNext = () => { if (validate()) { setDirection('forward'); setStep(s => s + 1); } };
+  const goBack = () => { setDirection('backward'); setStep(s => s - 1); };
+
+  const handlePic = e => {
+    const file = e.target.files[0];
+    if (file) { updateField('profilePic', file); setPreviewUrl(URL.createObjectURL(file)); }
+  };
+
+  const handleSubmit = async () => {
+    if (!validate()) return;
     setLoading(true);
     try {
-      await authService.register({
-          ...formData,
-          contactNumber: `+${phone}`
-      });
-      
-      Swal.fire({
-        icon: 'success',
-        title: 'Registration Submitted!',
-        text: 'Please check your email to verify your account. Your application is now under review.',
-        confirmButtonText: 'Go to Login',
-        confirmButtonColor: '#2563eb',
-        allowOutsideClick: false
-      }).then(() => navigate('/login'));
-
+      const formData = new FormData();
+      Object.entries(form).forEach(([k, v]) => { if (v !== null && k !== 'confirmPassword') formData.append(k, v); });
+      await authService.register(formData);
+      setShowOTP(true); 
     } catch (err) {
-      const msg = err.response?.data?.message || "Registration failed. Please try again.";
-      Swal.fire({ icon: 'error', title: 'Registration Failed', text: msg });
-    } finally {
-      setLoading(false);
-    }
+      Swal.fire('Error', err.response?.data?.message || 'Registration failed', 'error');
+    } finally { setLoading(false); }
   };
 
-  // --- Animation Variants ---
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
+  // --- OTP HANDLERS ---
+  const handleOTPChange = (idx, val) => {
+    if (!/^\d?$/.test(val)) return;
+    const next = [...otpValues]; next[idx] = val; setOtpValues(next);
+    if (val && idx < 5) otpRefs.current[idx + 1].current?.focus();
   };
 
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 120 } },
+  const handleOTPKey = (idx, e) => {
+    if (e.key === 'Backspace' && !otpValues[idx] && idx > 0) otpRefs.current[idx - 1].current?.focus();
   };
-
-  // --- STYLES ---
-  const styles = {
-    container: { 
-      minHeight: '100vh', display: 'flex', flexDirection: 'column',
-      justifyContent: 'center', alignItems: 'center', 
-      background: 'radial-gradient(at 0% 100%, hsla(213,94%,88%,1) 0, transparent 50%), radial-gradient(at 100% 100%, hsla(27,100%,92%,1) 0, transparent 50%), #ffffff',
-      fontFamily: "'Poppins', sans-serif", padding: '40px 20px'
-    },
-    header: { textAlign: 'center', marginBottom: '30px', zIndex: 2 },
-    iconsContainer: { display: 'flex', justifyContent: 'center', gap: '30px', marginBottom: '15px' },
-    heroTitle: {
-      fontSize: '2.5rem', fontWeight: '800', margin: '0 0 5px 0',
-      background: 'linear-gradient(to right, #1e3a8a, #ea580c)',
-      WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'
-    },
-    card: { 
-      backgroundColor: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(15px)',
-      padding: '40px', borderRadius: '32px', 
-      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.1)', 
-      width: '100%', maxWidth: '480px', textAlign: 'center',
-      border: '1px solid rgba(255, 255, 255, 0.6)', zIndex: 10
-    },
-    title: { fontSize: '1.8rem', fontWeight: '700', color: '#111827', marginBottom: '5px' },
-    subtitle: { fontSize: '1rem', color: '#6b7280', marginBottom: '25px' },
-    inputGroup: { position: 'relative', marginBottom: '18px' },
-    inputIcon: { position: 'absolute', top: '50%', left: '20px', transform: 'translateY(-50%)', color: '#9ca3af' },
-    eyeIcon: { position: 'absolute', top: '50%', right: '20px', transform: 'translateY(-50%)', color: '#9ca3af', cursor: 'pointer' },
-    input: { 
-      width: '100%', padding: '15px 50px', borderRadius: '16px', border: '2px solid #e5e7eb', 
-      fontSize: '1rem', outline: 'none', backgroundColor: '#f9fafb', boxSizing: 'border-box', 
-      transition: 'all 0.2s ease', color: '#1f2937'
-    },
-    button: { 
-      width: '100%', padding: '16px', backgroundColor: '#2563eb', color: 'white', border: 'none', 
-      borderRadius: '16px', fontSize: '1.05rem', fontWeight: '600', cursor: 'pointer', marginTop: '10px', 
-      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', 
-      transition: 'all 0.2s ease', boxShadow: '0 10px 20px -5px rgba(37, 99, 235, 0.3)'
-    },
-    footerText: { marginTop: '25px', color: '#6b7280', fontSize: '0.9rem' },
-    link: { color: '#2563eb', fontWeight: 700, textDecoration: 'none' },
-    spinner: { width: '20px', height: '20px', border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' },
+  
+  const verifyOTP = async () => {
+    const code = otpValues.join('');
+    if (code.length !== 6) return Swal.fire('Warning', 'Enter all 6 digits', 'warning');
+    setLoading(true);
+    try {
+      await authService.verifyEmail(form.email, code);
+      Swal.fire({
+        icon: 'success', title: 'Verified!',
+        text: 'Your email is verified. Redirecting to login...',
+        timer: 2000, showConfirmButton: false
+      });
+      setTimeout(() => navigate('/login'), 2000);
+    } catch (err) {
+      Swal.fire('Error', 'Invalid verification code.', 'error');
+    } finally { setLoading(false); }
   };
 
   return (
-    <>
-      <style>{`
-        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
-        .float-anim-1 { animation: float 6s ease-in-out infinite; }
-        .float-anim-2 { animation: float 6s ease-in-out infinite 2s; }
-        .float-anim-3 { animation: float 6s ease-in-out infinite 4s; }
-        .input-focus:focus { border-color: #2563eb !important; background-color: #fff !important; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
-        .button-hover:hover:not(:disabled) { background-color: #1d4ed8; transform: translateY(-2px); box-shadow: 0 12px 25px -5px rgba(37, 99, 235, 0.4); }
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
-      <div style={styles.container}>
+    <div className="register-wrapper">
+      {/* 🟦 LEFT DESKTOP PANEL */}
+      <div className="register-left">
+        <h1 className="panel-title">Join SJ10 Seller Center</h1>
+        <p className="panel-subtitle">Create your seller account in minutes and reach millions of buyers nationwide.</p>
         
-        <div style={styles.header}>
-            <div style={styles.iconsContainer}>
-                <FaShoppingBag size={32} color="#f97316" className="float-anim-1" />
-                <FaShieldAlt size={32} color="#2563eb" className="float-anim-2" />
-                <FaShippingFast size={32} color="#10b981" className="float-anim-3" />
-            </div>
-            <h1 style={styles.heroTitle}>Become a Supplier</h1>
-            <p style={{color: '#64748b'}}>Join Pakistan's Fastest Growing B2B Platform.</p>
+        <div className="feature-item">
+          <div className="feature-icon"><FaStore /></div>
+          <div className="feature-text"><h3>Set up your Digital Shop</h3><p>Customize your storefront easily.</p></div>
         </div>
-
-        <motion.div 
-          style={styles.card}
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
-        >
-          <div style={{marginBottom: '25px'}}>
-            <h1 style={styles.title}>Create Your Account</h1>
-            <p style={styles.subtitle}>Fill in the details to get started.</p>
-          </div>
-          
-          <motion.form 
-            onSubmit={validateAndSubmit}
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            <motion.div style={styles.inputGroup} variants={itemVariants}>
-              <FaUser style={styles.inputIcon} />
-              <input name="fullName" placeholder="Full Name" style={styles.input} className="input-focus" value={formData.fullName} onChange={handleChange} required />
-            </motion.div>
-
-            <motion.div style={styles.inputGroup} variants={itemVariants}>
-              <FaEnvelope style={styles.inputIcon} />
-              <input name="email" type="email" placeholder="Email Address" style={styles.input} className="input-focus" value={formData.email} onChange={handleChange} required />
-            </motion.div>
-            
-            <motion.div variants={itemVariants} style={{marginBottom: '18px'}}>
-                <PhoneInput 
-                    country={'pk'} 
-                    value={phone} 
-                    onChange={setPhone} 
-                    inputStyle={{...styles.input, paddingLeft: '58px', width: '100%', height: '54px'}} 
-                    placeholder="Enter phone number"
-                    inputProps={{ required: true }}
-                />
-            </motion.div>
-
-            <motion.div style={styles.inputGroup} variants={itemVariants}>
-              <FaLock style={styles.inputIcon} />
-              <input name="password" type={showPass ? 'text' : 'password'} placeholder="Password (min. 6 characters)" style={styles.input} className="input-focus" value={formData.password} onChange={handleChange} required />
-              <div style={styles.eyeIcon} onClick={() => setShowPass(!showPass)}>{showPass ? <FaEyeSlash /> : <FaEye />}</div>
-            </motion.div>
-
-            <motion.div style={styles.inputGroup} variants={itemVariants}>
-              <FaLock style={styles.inputIcon} />
-              <input type={showConfirmPass ? 'text' : 'password'} placeholder="Confirm Password" style={styles.input} className="input-focus" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
-               <div style={styles.eyeIcon} onClick={() => setShowConfirmPass(!showConfirmPass)}>{showConfirmPass ? <FaEyeSlash /> : <FaEye />}</div>
-            </motion.div>
-            
-            <motion.div style={styles.inputGroup} variants={itemVariants}>
-              <FaStore style={styles.inputIcon} />
-              <input name="brandName" placeholder="Brand / Shop Name" style={styles.input} className="input-focus" value={formData.brandName} onChange={handleChange} required />
-            </motion.div>
-
-            <motion.div style={styles.inputGroup} variants={itemVariants}>
-              <FaMapMarkerAlt style={styles.inputIcon} />
-              <input name="city" placeholder="City" style={styles.input} className="input-focus" value={formData.city} onChange={handleChange} required />
-            </motion.div>
-            
-            <motion.button 
-              type="submit" 
-              style={styles.button} 
-              className="button-hover" 
-              disabled={loading}
-              variants={itemVariants}
-            >
-              {loading ? (
-                <div style={styles.spinner}></div>
-              ) : (
-                <>
-                  <FaCheckCircle />
-                  <span>Submit Application</span>
-                </>
-              )}
-            </motion.button>
-          </motion.form>
-          
-          <p style={styles.footerText}>
-             Already have an account? <Link to="/login" style={styles.link}>Login Here</Link>
-          </p>
-        </motion.div>
+        <div className="feature-item">
+          <div className="feature-icon"><FaShoppingBag /></div>
+          <div className="feature-text"><h3>Manage Orders Seamlessly</h3><p>Track sales and manage inventory on the go.</p></div>
+        </div>
+        <div className="feature-item">
+          <div className="feature-icon"><FaChartLine /></div>
+          <div className="feature-text"><h3>Grow Your Business</h3><p>Use premium tools to scale your sales exponentially.</p></div>
+        </div>
       </div>
-    </>
+
+      {/* ⬜ RIGHT FORM PANEL */}
+      <div className="register-right">
+        <div className="register-card">
+          {!showOTP && (
+            <>
+              <div className="brand-label">SJ10 Platform</div>
+              <h1 className="reg-title">Register as a Seller</h1>
+              <p className="reg-subtitle">Follow the steps to configure your shop.</p>
+              
+              <div className="stepper">
+                {[1, 2, 3, 4].map(s => (
+                  <React.Fragment key={s}>
+                    <div className={`step-node ${step === s ? 'active' : ''} ${step > s ? 'completed' : ''}`}>
+                      <div className="step-circle">{s}</div>
+                      <div className="step-label">{STEP_LABELS[s]}</div>
+                    </div>
+                    {s < 4 && <div className={`step-line-wrap ${step > s ? 'filled' : ''}`}><div className="step-line-fill" /></div>}
+                  </React.Fragment>
+                ))}
+              </div>
+            </>
+          )}
+
+          {!showOTP ? (
+            <AnimatePresence mode="wait" initial={false}>
+              {step === 1 && (
+                <motion.div key="step1" custom={direction} variants={stepVariants} initial={direction === 'forward' ? "enterForward" : "enterBackward"} animate="center" exit={direction === 'forward' ? "exitForward" : "exitBackward"} transition={{duration: 0.3}}>
+                  
+                  <button type="button" className="social-btn" onClick={() => handleGoogleClick()} disabled={loading}>
+                    <FaGoogle color="#DB4437" size={20} /> Continue with Google
+                  </button>
+                  
+                  <div className="or-divider">Or register with email</div>
+
+                  <div className="input-group">
+                    <FaUser className="input-icon" />
+                    <input className="reg-input" name="fullName" value={form.fullName} onChange={handleInput} placeholder="Full Name (e.g. Ahmed Raza)" />
+                  </div>
+
+                  <div className="input-group">
+                    <FaEnvelope className="input-icon" />
+                    <input className="reg-input" type="email" name="email" value={form.email} onChange={handleInput} placeholder="Email Address" />
+                  </div>
+
+                  <div className="input-group pw-wrap">
+                    <FaLock className="input-icon" />
+                    <input className="reg-input" type={showPW ? 'text' : 'password'} name="password" value={form.password} onChange={handleInput} placeholder="Password (Min. 6 chars)" />
+                    <span className="pw-toggle" onClick={() => setShowPW(!showPW)}>{showPW ? <FaEyeSlash /> : <FaEye />}</span>
+                  </div>
+
+                  <div className="input-group pw-wrap">
+                    <FaLock className="input-icon" />
+                    <input className="reg-input" type={showConfirmPW ? 'text' : 'password'} name="confirmPassword" value={form.confirmPassword} onChange={handleInput} placeholder="Confirm Password" />
+                    <span className="pw-toggle" onClick={() => setShowConfirmPW(!showConfirmPW)}>{showConfirmPW ? <FaEyeSlash /> : <FaEye />}</span>
+                  </div>
+
+                  <button className="btn-primary" onClick={goNext}>Continue Setup</button>
+                  <p style={{textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#6b7280'}}>
+                    Already a seller? <Link to="/login" style={{color: '#2563eb', fontWeight: 600}}>Sign in</Link>
+                  </p>
+                </motion.div>
+              )}
+
+              {step === 2 && (
+                <motion.div key="step2" variants={stepVariants} initial={direction === 'forward' ? "enterForward" : "enterBackward"} animate="center" exit={direction === 'forward' ? "exitForward" : "exitBackward"} transition={{duration: 0.3}}>
+                  <div className="input-group">
+                    <label>Business Type</label>
+                    <select className="reg-input" style={{paddingLeft: '16px'}} name="businessType" value={form.businessType} onChange={handleInput}>
+                      {BUSINESS_TYPES.map(o => <option key={o}>{o}</option>)}
+                    </select>
+                  </div>
+                  <div className="input-group">
+                    <label>Main Category</label>
+                    <select className="reg-input" style={{paddingLeft: '16px'}} name="category" value={form.category} onChange={handleInput}>
+                      <option value="">Select Category</option>
+                      {CATEGORIES.map(o => <option key={o}>{o}</option>)}
+                    </select>
+                  </div>
+                  <div className="input-group">
+                    <label>Contact Number <span className="required-star">*</span></label>
+                    <FaPhone className="input-icon" />
+                    <input className="reg-input" name="contactNumber" value={form.contactNumber} onChange={handleInput} placeholder="03xx-xxxxxxx" type="tel" />
+                  </div>
+                  <div className="btn-row"><button className="btn-secondary" onClick={goBack}>Back</button><button className="btn-primary" onClick={goNext}>Next</button></div>
+                </motion.div>
+              )}
+
+              {step === 3 && (
+                <motion.div key="step3" variants={stepVariants} initial={direction === 'forward' ? "enterForward" : "enterBackward"} animate="center" exit={direction === 'forward' ? "exitForward" : "exitBackward"} transition={{duration: 0.3}}>
+                  <div className="two-col">
+                    <div className="input-group">
+                      <label>Gender</label>
+                      <select className="reg-input" style={{paddingLeft: '16px'}} name="gender" value={form.gender} onChange={handleInput}>
+                        {GENDERS.map(o => <option key={o}>{o}</option>)}
+                      </select>
+                    </div>
+                    <div className="input-group"><label>Age</label><input className="reg-input" style={{paddingLeft:'16px'}} name="age" type="number" value={form.age} onChange={handleInput} placeholder="Years" /></div>
+                  </div>
+                  <div className="input-group">
+                    <label>City <span className="required-star">*</span></label>
+                    <FaCity className="input-icon" />
+                    <input className="reg-input" name="city" value={form.city} onChange={handleInput} placeholder="Lahore, Karachi..." />
+                  </div>
+                  <div className="input-group">
+                    <label>Shop / Warehouse Address <span className="required-star">*</span></label>
+                    <FaMapMarkerAlt className="input-icon" />
+                    <input className="reg-input" name="address" value={form.address} onChange={handleInput} placeholder="Street, Sector..." />
+                  </div>
+                  <div className="btn-row"><button className="btn-secondary" onClick={goBack}>Back</button><button className="btn-primary" onClick={goNext}>Next</button></div>
+                </motion.div>
+              )}
+
+              {step === 4 && (
+                <motion.div key="step4" variants={stepVariants} initial={direction === 'forward' ? "enterForward" : "enterBackward"} animate="center" exit={direction === 'forward' ? "exitForward" : "exitBackward"} transition={{duration: 0.3}}>
+                  <div className="avatar-wrap">
+                    <div className="avatar-ring" onClick={() => document.getElementById('picInput').click()}>
+                      {previewUrl ? <img src={previewUrl} alt="Profile" /> : <FaCamera />}
+                    </div>
+                    <input id="picInput" type="file" accept="image/*" hidden onChange={handlePic} />
+                    <p style={{marginTop: '10px', fontSize: '14px', color: '#6b7280', fontWeight: 500}}>Upload shop logo (Optional)</p>
+                  </div>
+                  <div className="btn-row">
+                    <button className="btn-secondary" onClick={goBack}>Back</button>
+                    <button className="btn-primary" onClick={handleSubmit} disabled={loading}>
+                      {loading ? 'Creating Account...' : 'Complete Sign-up'}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          ) : (
+            /* ─── OTP VERIFICATION (Fully Fixed Layout) ─── */
+            <motion.div className="otp-container" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+              <FaMailBulk className="otp-icon" />
+              <h2 className="reg-title">Check your Email</h2>
+              <p className="reg-subtitle">Enter the 6-digit verification code sent to<br/><strong style={{color: '#111827'}}>{form.email}</strong></p>
+
+              <div className="otp-fields">
+                {otpValues.map((val, idx) => (
+                  <input
+                    key={idx} ref={otpRefs.current[idx]}
+                    className="otp-digit" maxLength={1} inputMode="numeric" value={val}
+                    onChange={e => handleOTPChange(idx, e.target.value)}
+                    onKeyDown={e => handleOTPKey(idx, e)}
+                  />
+                ))}
+              </div>
+
+              <button className="btn-primary" onClick={verifyOTP} disabled={loading}>
+                {loading ? 'Verifying...' : 'Verify & Finish'}
+              </button>
+            </motion.div>
+          )}
+
+        </div>
+      </div>
+    </div>
   );
 }

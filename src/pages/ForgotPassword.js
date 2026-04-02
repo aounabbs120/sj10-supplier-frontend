@@ -1,136 +1,177 @@
 // src/pages/ForgotPassword.js
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import Swal from 'sweetalert2';
 import authService from '../services/authService';
-import './FormStyles.css';
 
-const ForgotPassword = () => {
+// Beautiful Icons
+import { 
+  FaEnvelope, FaKey, FaUnlockAlt, FaShieldAlt, 
+  FaArrowLeft, FaPaperPlane 
+} from 'react-icons/fa';
+
+// Reuse the identical CSS from Register/Login for a consistent layout
+import './Register.css';
+
+export default function ForgotPassword() {
     const [email, setEmail] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    
-    // States: 'idle', 'success', 'error'
-    const [status, setStatus] = useState('idle'); 
-    const [errorMessage, setErrorMessage] = useState('');
+    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        if (!email) {
-            setStatus('error');
-            setErrorMessage('Please enter your email address.');
-            return;
+        if (!email.trim() || !email.includes('@')) {
+            return Swal.fire('Error', 'Please enter a valid email address.', 'error');
         }
 
-        setIsLoading(true);
-        setStatus('idle');
-        setErrorMessage('');
-
+        setLoading(true);
         try {
-            // Attempt to send the reset link
             await authService.forgotPassword(email);
             
-            // If successful (Backend returns 200 OK)
-            setStatus('success');
+            // Beautiful Success Alert instead of standard browser alert
+            Swal.fire({
+                icon: 'success',
+                title: 'OTP Sent Successfully!',
+                text: 'Please check your email inbox (and spam folder) for the 6-digit reset code.',
+                confirmButtonColor: '#2563eb',
+                confirmButtonText: 'Enter OTP Now'
+            }).then(() => {
+                navigate('/reset-password', { state: { email } });
+            });
             
-        } catch (error) {
-            console.error("Forgot Password Error:", error);
-            // If failed (Backend returns 400 or 500)
-            setStatus('error');
-            setErrorMessage(error.response?.data?.message || "Email didn't send. Please check your connection.");
-        } finally {
-            setIsLoading(false);
+        } catch (err) {
+            Swal.fire('Error', err.response?.data?.message || 'Error sending reset code. Please try again.', 'error');
+        } finally { 
+            setLoading(false); 
         }
     };
 
-    // --- RENDER: SUCCESS STATE ---
-    if (status === 'success') {
-        return (
-            <div className="form-container" style={{ textAlign: 'center', padding: '40px 20px' }}>
-                <div style={{ fontSize: '60px', marginBottom: '20px' }}>📧</div>
-                <h2 style={{ color: '#fff', marginBottom: '10px' }}>Check Your Inbox</h2>
-                <p style={{ color: '#ccc', lineHeight: '1.6' }}>
-                    We have sent a password reset link to: <br/>
-                    <strong style={{ color: '#4f46e5' }}>{email}</strong>
-                </p>
-                <p style={{ color: '#888', fontSize: '0.9em', marginTop: '10px' }}>
-                    Didn't receive it? Check your spam folder.
-                </p>
-
-                <Link to="/login" className="submit-btn" style={{ 
-                    marginTop: '30px', 
-                    display: 'inline-block', 
-                    textDecoration: 'none', 
-                    lineHeight: '45px' // Vertically center text in button
-                }}>
-                    Back to Login
-                </Link>
-            </div>
-        );
-    }
-
-    // --- RENDER: FORM STATE ---
     return (
-        <div className="form-container">
-            {/* SVG Lock Icon for visuals */}
-            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-                <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
-            </div>
+        <>
+            <style>{`
+                /* Custom Animations for Header Icons */
+                @keyframes floatLogin { 
+                    0% { transform: translateY(0px); } 
+                    50% { transform: translateY(-8px); } 
+                    100% { transform: translateY(0px); } 
+                }
+                .float-1 { animation: floatLogin 3s ease-in-out infinite; }
+                .float-2 { animation: floatLogin 3s ease-in-out infinite 0.4s; }
+                .float-3 { animation: floatLogin 3s ease-in-out infinite 0.8s; }
 
-            <h2 style={{ textAlign: 'center' }}>Forgot Password?</h2>
-            <p style={{ textAlign: 'center', color: '#ccc', marginBottom: '30px', fontSize: '0.95rem' }}>
-                Enter your registered email and we'll send you a link to get back into your account.
-            </p>
+                /* Gradient Text for Title */
+                .hero-gradient-text {
+                    background: linear-gradient(to right, #1e3a8a, #ea580c);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    font-size: 2.2rem;
+                    font-weight: 800;
+                    text-align: center;
+                    margin-bottom: 8px;
+                }
+            `}</style>
 
-            <form onSubmit={handleSubmit}>
-                <div className="input-group">
-                    <input 
-                        type="email" 
-                        placeholder="Enter your email address" 
-                        value={email} 
-                        onChange={(e) => setEmail(e.target.value)} 
-                        style={{ paddingLeft: '15px' }} // Simple adjustment
-                    />
+            <div className="register-wrapper">
+                
+                {/* 🟦 LEFT DESKTOP PANEL (Recovery Guide) */}
+                <div className="register-left">
+                    <h1 className="panel-title">Secure Account Recovery</h1>
+                    <p className="panel-subtitle">Don't worry! Follow these simple steps to get back into your SJ10 Seller Dashboard.</p>
+                    
+                    <div className="feature-item">
+                        <div className="feature-icon"><FaEnvelope /></div>
+                        <div className="feature-text">
+                            <h3>1. Enter your Email</h3>
+                            <p>Provide the exact email address associated with your seller account.</p>
+                        </div>
+                    </div>
+                    <div className="feature-item">
+                        <div className="feature-icon"><FaKey /></div>
+                        <div className="feature-text">
+                            <h3>2. Receive an OTP</h3>
+                            <p>We'll send a secure 6-digit verification code directly to your inbox.</p>
+                        </div>
+                    </div>
+                    <div className="feature-item">
+                        <div className="feature-icon"><FaUnlockAlt /></div>
+                        <div className="feature-text">
+                            <h3>3. Reset & Login</h3>
+                            <p>Create a strong new password and instantly access your store again.</p>
+                        </div>
+                    </div>
                 </div>
 
-                {status === 'error' && (
-                    <div className="error-message" style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center',
-                        gap: '8px'
-                    }}>
-                        <span>⚠️</span> {errorMessage}
-                    </div>
-                )}
+                {/* ⬜ RIGHT FORM PANEL */}
+                <div className="register-right">
+                    <motion.div 
+                        className="register-card"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, ease: 'easeOut' }}
+                    >
+                        
+                        {/* ─── ANIMATED HEADER SECTION ─── */}
+                        <div style={{ textAlign: 'center', marginBottom: '35px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'center', gap: '25px', marginBottom: '15px' }}>
+                                <FaShieldAlt size={34} color="#f97316" className="float-1" />
+                                <FaUnlockAlt size={34} color="#2563eb" className="float-2" />
+                                <FaKey size={34} color="#10b981" className="float-3" />
+                            </div>
+                            <h1 className="hero-gradient-text">Forgot Password?</h1>
+                            <p style={{ color: '#64748b', fontSize: '0.95rem', padding: '0 10px' }}>
+                                Enter your registered email below to receive a secure password reset code.
+                            </p>
+                        </div>
 
-                <button type="submit" className="submit-btn" disabled={isLoading}>
-                    {isLoading ? <div className="spinner"></div> : 'Send Reset Link'}
-                </button>
-            </form>
+                        {/* ─── RECOVERY FORM ─── */}
+                        <form onSubmit={handleSubmit}>
+                            
+                            <div className="input-group">
+                                <label>Email Address</label>
+                                <div className="input-icon-wrap">
+                                    <FaEnvelope className="input-icon" />
+                                    <input 
+                                        className="reg-input" 
+                                        type="email" 
+                                        placeholder="e.g. yourname@company.com"
+                                        value={email} 
+                                        onChange={(e) => setEmail(e.target.value)} 
+                                        required 
+                                    />
+                                </div>
+                            </div>
 
-            {/* Back Button */}
-            <div style={{ marginTop: '20px', textAlign: 'center' }}>
-                <Link to="/login" style={{ 
-                    color: '#ccc', 
-                    textDecoration: 'none', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    gap: '5px',
-                    fontSize: '0.9rem',
-                    transition: 'color 0.3s ease'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.color = 'white'}
-                onMouseOut={(e) => e.currentTarget.style.color = '#ccc'}
-                >
-                    <span>←</span> Back to Login
-                </Link>
+                            <button type="submit" className="btn-primary" disabled={loading} style={{ marginTop: '15px' }}>
+                                {loading ? (
+                                    'Sending Secure Code...'
+                                ) : (
+                                    <>
+                                        <FaPaperPlane /> Send Reset OTP
+                                    </>
+                                )}
+                            </button>
+
+                        </form>
+
+                        {/* ─── FOOTER LINK ─── */}
+                        <div style={{ textAlign: 'center', marginTop: '30px' }}>
+                            <Link to="/login" style={{ 
+                                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                                color: 'var(--text-muted)', fontSize: '15px', textDecoration: 'none',
+                                fontWeight: 500, transition: 'color 0.3s'
+                            }}
+                            onMouseOver={(e) => e.currentTarget.style.color = 'var(--primary)'}
+                            onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+                            >
+                                <FaArrowLeft /> Wait, I remember it! Back to Login
+                            </Link>
+                        </div>
+
+                    </motion.div>
+                </div>
             </div>
-        </div>
+        </>
     );
-};
-
-export default ForgotPassword;
+}

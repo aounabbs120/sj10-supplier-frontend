@@ -1,86 +1,70 @@
 // src/services/authService.js
-
 import axios from 'axios';
 
-// --- FIX #1: REMOVED the hardcoded localhost URL ---
-// const API_URL = 'http://localhost:4000/auth'; 
-// Instead, we use the environment variable. This is critical for deployment.
-// It will use the value you set in Netlify's build settings.
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+// Agar backend direct /auth use kar raha hai to hum base path yahi rakhenge
+const AUTH_URL = `${API_BASE_URL}/auth`;
 
 const register = async (userData) => {
-    // Use the environment variable for the URL
-    const response = await axios.post(`${API_BASE_URL}/auth/register`, userData);
+    const response = await axios.post(`${AUTH_URL}/register`, userData);
     return response.data;
 };
 
 const login = async (credentials) => {
-    const response = await axios.post(`${API_BASE_URL}/auth/login`, credentials);
+    const response = await axios.post(`${AUTH_URL}/login`, credentials);
     if (response.data.token) {
         localStorage.setItem('supplierToken', response.data.token);
     }
     return response.data;
 };
 
-const verifyEmail = async (token) => {
-    // Note: Your original file had a POST request here. If your VerifyEmail.js uses GET,
-    // you might need to align them. But for this fix, we keep your original service logic.
-    const response = await axios.post(`${API_BASE_URL}/auth/verify-email`, { token });
+// Naya OTP based verification
+const verifyEmail = async (email, otp) => {
+    const response = await axios.post(`${AUTH_URL}/verify-email`, { email, otp });
     return response.data;
 };
 
 const forgotPassword = async (email) => {
-    const response = await axios.post(`${API_BASE_URL}/auth/forgot-password`, { email });
+    const response = await axios.post(`${AUTH_URL}/forgot-password`, { email });
     return response.data;
 };
 
-const resetPassword = async (token, newPassword) => {
-    const response = await axios.put(`${API_BASE_URL}/auth/reset-password/${token}`, { password: newPassword });
+// Naya OTP based Reset
+const resetPassword = async (email, otp, newPassword) => {
+    const response = await axios.post(`${AUTH_URL}/reset-password`, { email, otp, newPassword });
+    return response.data;
+};
+
+const googleLogin = async (accessToken) => {
+    const response = await axios.post(`${AUTH_URL}/google`, { accessToken });
+    if (response.data.token) {
+        localStorage.setItem('supplierToken', response.data.token);
+    }
+    return response.data;
+};
+
+const completeProfile = async (profileData) => {
+    const token = localStorage.getItem('supplierToken');
+    const response = await axios.post(`${AUTH_URL}/complete-profile`, profileData, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
     return response.data;
 };
 
 const logout = () => {
     localStorage.removeItem('supplierToken');
+    localStorage.removeItem('tempAuthToken');
 };
 
-// --- NEW SOCIAL LOGIN FUNCTIONS ---
-const googleLogin = async (accessToken) => {
-    const response = await axios.post(`${API_BASE_URL}/auth/google`, { accessToken });
-    if (response.data.token) {
-        localStorage.setItem('supplierToken', response.data.token);
-    }
-    return response.data;
-};
-
-const facebookLogin = async (accessToken, userID) => {
-    const response = await axios.post(`${API_BASE_URL}/auth/facebook`, { accessToken, userID });
-    if (response.data.token) {
-        localStorage.setItem('supplierToken', response.data.token);
-    }
-    return response.data;
-};
-
-// --- NEW PROFILE COMPLETION FUNCTION ---
-const completeProfile = async (profileData) => {
-    const token = localStorage.getItem('supplierToken');
-    const response = await axios.post(`${API_BASE_URL}/auth/complete-profile`, profileData, {
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
-    return response.data;
-};
-// --- FIX #2: RESOLVED the Anonymous Export ESLint Error ---
-// Instead of exporting an anonymous object, we assign it to a named constant...
 const authService = {
     register,
     login,
     verifyEmail,
     forgotPassword,
     resetPassword,
-     googleLogin,
-    facebookLogin,
+    googleLogin,
     completeProfile,
     logout
 };
 
-// ...and then export the named constant as the default.
 export default authService;

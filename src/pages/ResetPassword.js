@@ -1,201 +1,232 @@
 // src/pages/ResetPassword.js
-import React, { useState } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import Swal from 'sweetalert2';
 import authService from '../services/authService';
-import './ResetPassword.css'; // Make sure to import the CSS we created above
 
-const ResetPassword = () => {
-    const [searchParams] = useSearchParams();
+// Beautiful Icons
+import { 
+    FaLock, FaKey, FaShieldAlt, FaEye, FaEyeSlash, 
+    FaCheckCircle, FaEnvelopeOpenText 
+} from 'react-icons/fa';
+
+// Reuse the identical CSS from Register/Login for a consistent beautiful layout
+import './Register.css';
+
+export default function ResetPassword() {
+    const location = useLocation();
     const navigate = useNavigate();
-    const token = searchParams.get('token');
-
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     
-    const [message, setMessage] = useState('');
-    const [error, setError] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    // States
+    const [otpValues, setOtpValues] = useState(Array(6).fill(''));
+    const [newPassword, setNewPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
+    
+    const email = location.state?.email;
+    const otpRefs = useRef(Array(6).fill(null).map(() => React.createRef()));
 
-    // Animation Variants
-    const containerVariants = {
-        hidden: { opacity: 0, y: 50, scale: 0.95 },
-        visible: { 
-            opacity: 1, 
-            y: 0, 
-            scale: 1,
-            transition: { duration: 0.6, ease: "easeOut" }
-        },
-        exit: { opacity: 0, scale: 0.9 }
+    // Redirect back to forgot-password if accessed directly without email
+    useEffect(() => {
+        if (!email) {
+            navigate('/forgot-password');
+        }
+    }, [email, navigate]);
+
+    // --- OTP HANDLERS (Smooth Auto-focus & Backspace) ---
+    const handleOTPChange = (idx, val) => {
+        if (!/^\d?$/.test(val)) return; // Only allow digits
+        const next = [...otpValues]; 
+        next[idx] = val; 
+        setOtpValues(next);
+        
+        // Auto-focus next input
+        if (val && idx < 5) otpRefs.current[idx + 1].current?.focus();
     };
 
-    const handleSubmit = async (e) => {
+    const handleOTPKey = (idx, e) => {
+        // Backspace to previous input
+        if (e.key === 'Backspace' && !otpValues[idx] && idx > 0) {
+            otpRefs.current[idx - 1].current?.focus();
+        }
+    };
+
+    const handleOTPPaste = (e) => {
         e.preventDefault();
-        setMessage('');
-        setError('');
+        const text = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+        const next = Array(6).fill('');
+        [...text].forEach((ch, i) => { next[i] = ch; });
+        setOtpValues(next);
+        const lastIdx = Math.min(text.length, 5);
+        if(otpRefs.current[lastIdx].current) otpRefs.current[lastIdx].current.focus();
+    };
 
-        if (!token) {
-            setError('Invalid or missing reset token.');
-            return;
+    // --- SUBMIT HANDLER ---
+    const handleVerifyAndReset = async (e) => {
+        e.preventDefault();
+        const code = otpValues.join('');
+        
+        if (code.length !== 6) {
+            return Swal.fire('Warning', 'Please enter all 6 digits of the OTP.', 'warning');
+        }
+        if (newPassword.length < 6) {
+            return Swal.fire('Warning', 'Password must be at least 6 characters long.', 'warning');
         }
 
-        if (password !== confirmPassword) {
-            setError("Passwords do not match.");
-            return;
-        }
-
-        if (password.length < 6) {
-            setError("Password must be at least 6 characters long.");
-            return;
-        }
-
-        setIsLoading(true);
-
+        setLoading(true);
         try {
-            await authService.resetPassword(token, password);
-            setMessage("Password reset successful! Redirecting...");
+            await authService.resetPassword(email, code, newPassword);
             
-            // Wait 2.5 seconds so user can see the success animation
-            setTimeout(() => {
+            Swal.fire({
+                icon: 'success',
+                title: 'Password Updated!',
+                text: 'Your password has been successfully reset. Please login with your new password.',
+                confirmButtonColor: '#2563eb',
+                timer: 2500
+            }).then(() => {
                 navigate('/login');
-            }, 2500);
+            });
 
         } catch (err) {
-            console.error(err);
-            setError(err.response?.data?.message || "Failed to reset password. Link might be expired.");
-        } finally {
-            setIsLoading(false);
+            Swal.fire('Error', err.response?.data?.message || "Invalid OTP or request expired.", 'error');
+            // Clear OTP fields on error for easy re-entry
+            setOtpValues(Array(6).fill(''));
+            otpRefs.current[0].current?.focus();
+        } finally { 
+            setLoading(false); 
         }
     };
 
-    // If no token, show invalid link state
-    if (!token) {
-        return (
-            <div className="reset-container">
-                <motion.div 
-                    className="reset-glass-card"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                >
-                    <div className="icon-wrapper" style={{background: 'rgba(239, 68, 68, 0.2)'}}>
-                        <span className="lock-icon">⚠️</span>
-                    </div>
-                    <h2 className="reset-title">Invalid Link</h2>
-                    <p className="reset-subtitle">This password reset link is invalid or has expired.</p>
-                    <Link to="/login" className="reset-btn" style={{display: 'inline-block', textDecoration:'none', width:'auto', padding:'10px 30px'}}>
-                        Return to Login
-                    </Link>
-                </motion.div>
-            </div>
-        );
-    }
+    if (!email) return null; // Prevent rendering while redirecting
 
     return (
-        <div className="reset-container">
-            <motion.div 
-                className="reset-glass-card"
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-            >
-                {/* Animated Lock Icon */}
-                <motion.div 
-                    className="icon-wrapper"
-                    animate={{ y: [0, -10, 0] }}
-                    transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                >
-                    <span className="lock-icon">🔐</span>
-                </motion.div>
+        <>
+            <style>{`
+                /* Custom Animations for Header Icons */
+                @keyframes floatLogin { 
+                    0% { transform: translateY(0px); } 
+                    50% { transform: translateY(-8px); } 
+                    100% { transform: translateY(0px); } 
+                }
+                .float-1 { animation: floatLogin 3s ease-in-out infinite; }
+                .float-2 { animation: floatLogin 3s ease-in-out infinite 0.4s; }
+                .float-3 { animation: floatLogin 3s ease-in-out infinite 0.8s; }
 
-                <h2 className="reset-title">Reset Password</h2>
-                <p className="reset-subtitle">Create a strong, new password for your account.</p>
+                /* Gradient Text */
+                .hero-gradient-text {
+                    background: linear-gradient(to right, #1e3a8a, #ea580c);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    font-size: 2.2rem;
+                    font-weight: 800;
+                    text-align: center;
+                    margin-bottom: 8px;
+                }
+            `}</style>
 
-                <form onSubmit={handleSubmit}>
+            <div className="register-wrapper">
+                
+                {/* 🟦 LEFT DESKTOP PANEL (Security Guide) */}
+                <div className="register-left">
+                    <h1 className="panel-title">Secure Your Shop</h1>
+                    <p className="panel-subtitle">You're almost there! Let's get your account securely recovered.</p>
                     
-                    {/* New Password Field */}
-                    <div className="input-group">
-                        <input
-                            type={showPassword ? 'text' : 'password'}
-                            className="input-field"
-                            placeholder="New Password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
-                        <span 
-                            className="password-toggle"
-                            onClick={() => setShowPassword(!showPassword)}
-                            title={showPassword ? "Hide Password" : "Show Password"}
-                        >
-                            {showPassword ? '🙈' : '👁️'}
-                        </span>
+                    <div className="feature-item">
+                        <div className="feature-icon"><FaEnvelopeOpenText /></div>
+                        <div className="feature-text">
+                            <h3>1. Verify Identity</h3>
+                            <p>Enter the 6-digit OTP code we just sent to your email inbox.</p>
+                        </div>
                     </div>
-
-                    {/* Confirm Password Field */}
-                    <div className="input-group">
-                        <input
-                            type={showConfirmPassword ? 'text' : 'password'}
-                            className="input-field"
-                            placeholder="Confirm New Password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            required
-                        />
-                        <span 
-                            className="password-toggle"
-                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                            title={showConfirmPassword ? "Hide Password" : "Show Password"}
-                        >
-                            {showConfirmPassword ? '🙈' : '👁️'}
-                        </span>
+                    <div className="feature-item">
+                        <div className="feature-icon"><FaKey /></div>
+                        <div className="feature-text">
+                            <h3>2. Strong Password</h3>
+                            <p>Create a password with at least 6 characters. Use letters and numbers.</p>
+                        </div>
                     </div>
+                    <div className="feature-item">
+                        <div className="feature-icon"><FaCheckCircle /></div>
+                        <div className="feature-text">
+                            <h3>3. Safe & Secure</h3>
+                            <p>Your shop's data is encrypted. We take your security seriously.</p>
+                        </div>
+                    </div>
+                </div>
 
-                    {/* Animations for Errors/Success */}
-                    <AnimatePresence>
-                        {error && (
-                            <motion.div 
-                                className="status-msg error"
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                            >
-                                <span>⚠️</span> {error}
-                            </motion.div>
-                        )}
-
-                        {message && (
-                            <motion.div 
-                                className="status-msg success"
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                            >
-                                <span>✅</span> {message}
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    <motion.button 
-                        type="submit" 
-                        className="reset-btn"
-                        disabled={isLoading}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                {/* ⬜ RIGHT FORM PANEL */}
+                <div className="register-right">
+                    <motion.div 
+                        className="register-card"
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, ease: 'easeOut' }}
                     >
-                        {isLoading ? <div className="spinner-small"></div> : 'Update Password'}
-                    </motion.button>
-                </form>
+                        
+                        {/* ─── ANIMATED HEADER SECTION ─── */}
+                        <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'center', gap: '25px', marginBottom: '15px' }}>
+                                <FaShieldAlt size={34} color="#10b981" className="float-1" />
+                                <FaLock size={34} color="#2563eb" className="float-2" />
+                                <FaKey size={34} color="#f97316" className="float-3" />
+                            </div>
+                            <h1 className="hero-gradient-text">New Password</h1>
+                            <p style={{ color: '#64748b', fontSize: '0.95rem' }}>
+                                Enter the verification code sent to <br/>
+                                <strong style={{color: '#111827'}}>{email}</strong>
+                            </p>
+                        </div>
 
-                <Link to="/login" className="back-link">
-                    ← Back to Login
-                </Link>
+                        {/* ─── OTP & PASSWORD FORM ─── */}
+                        <form onSubmit={handleVerifyAndReset}>
+                            
+                            {/* Beautiful OTP Input Wrapper */}
+                            <div className="otp-container" style={{ margin: '30px 0' }}>
+                                <div className="otp-fields" onPaste={handleOTPPaste}>
+                                    {otpValues.map((val, idx) => (
+                                        <input
+                                            key={idx}
+                                            ref={otpRefs.current[idx]}
+                                            className={`otp-digit ${val ? 'filled' : ''}`}
+                                            maxLength={1}
+                                            inputMode="numeric"
+                                            value={val}
+                                            onChange={(e) => handleOTPChange(idx, e.target.value)}
+                                            onKeyDown={(e) => handleOTPKey(idx, e)}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
 
-            </motion.div>
-        </div>
+                            {/* New Password Input */}
+                            <div className="input-group">
+                                <label>Create New Password</label>
+                                <div className="input-icon-wrap pw-wrap">
+                                    <FaLock className="input-icon" />
+                                    <input 
+                                        className="reg-input" 
+                                        type={showPassword ? 'text' : 'password'}
+                                        placeholder="Minimum 6 characters" 
+                                        value={newPassword} 
+                                        onChange={(e) => setNewPassword(e.target.value)} 
+                                        required 
+                                    />
+                                    <span className="pw-toggle" onClick={() => setShowPassword(!showPassword)}>
+                                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Submit Button */}
+                            <button type="submit" className="btn-primary" disabled={loading} style={{ marginTop: '15px' }}>
+                                {loading ? 'Updating Password...' : 'Reset & Login'}
+                            </button>
+
+                        </form>
+                    </motion.div>
+                </div>
+            </div>
+        </>
     );
-};
-
-export default ResetPassword;
+}

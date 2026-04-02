@@ -1,0 +1,169 @@
+/* src/pages/Register.css */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --primary-light: #eff6ff;
+  --success: #22c55e;
+  --error: #ef4444;
+  --text-dark: #111827;
+  --text-muted: #6b7280;
+  --border-color: #e5e7eb;
+  --bg-white: #ffffff;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--bg-white);
+  overflow-x: hidden;
+}
+
+/* ════════ LAYOUT ════════ */
+.register-wrapper {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  background: var(--bg-white);
+}
+
+.register-left {
+  display: none;
+}
+
+.register-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background: var(--bg-white);
+  min-height: 100vh;
+  overflow-y: auto;
+}
+
+@media (min-width: 992px) {
+  .register-wrapper {
+    height: 100vh;
+    overflow: hidden;
+  }
+  .register-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 45%;
+    max-width: 600px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    padding: 60px;
+    position: relative;
+    z-index: 1;
+  }
+  .register-left::before {
+    content: ''; position: absolute; width: 500px; height: 500px;
+    background: rgba(255,255,255,0.05); border-radius: 50%;
+    top: -150px; left: -150px; z-index: -1;
+  }
+  .register-right {
+    height: 100vh;
+  }
+}
+
+/* ════════ SELLER PANEL (LEFT SIDE) ════════ */
+.panel-title { font-size: 2.5rem; font-weight: 800; margin-bottom: 15px; line-height: 1.2; }
+.panel-subtitle { font-size: 1rem; color: #bfdbfe; margin-bottom: 40px; }
+.feature-item { display: flex; align-items: flex-start; gap: 15px; margin-bottom: 25px; }
+.feature-icon { width: 48px; height: 48px; background: rgba(255, 255, 255, 0.2); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.feature-text h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 5px; }
+.feature-text p { font-size: 0.9rem; color: #bfdbfe; }
+
+/* ════════ FORM CARD ════════ */
+.register-card {
+  width: 100%;
+  max-width: 520px; /* Fixed width prevents shrinking */
+  background: var(--bg-white);
+  padding: 20px;
+}
+
+.brand-label { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--primary); text-align: center; margin-bottom: 10px; letter-spacing: 1px; }
+.reg-title { font-size: 1.8rem; font-weight: 700; text-align: center; color: var(--text-dark); margin-bottom: 10px; }
+.reg-subtitle { font-size: 0.95rem; color: var(--text-muted); text-align: center; margin-bottom: 30px; }
+
+/* ════════ PROGRESS STEPPER ════════ */
+.stepper { display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; }
+.step-node { display: flex; flex-direction: column; align-items: center; position: relative; z-index: 2; width: 50px; }
+.step-circle { width: 40px; height: 40px; border-radius: 50%; background: var(--bg-white); border: 2px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; color: var(--text-muted); transition: all 0.3s; }
+.step-node.active .step-circle { border-color: var(--primary); background: var(--primary); color: white; box-shadow: 0 0 0 5px var(--primary-light); }
+.step-node.completed .step-circle { border-color: var(--success); background: var(--success); color: white; }
+.step-label { font-size: 11px; font-weight: 600; margin-top: 8px; color: var(--text-muted); position: absolute; top: 45px; white-space: nowrap; }
+.step-node.active .step-label { color: var(--primary); }
+.step-node.completed .step-label { color: var(--success); }
+.step-line-wrap { flex: 1; height: 3px; background: var(--border-color); margin: 0 10px; transform: translateY(-12px); position: relative; }
+.step-line-fill { position: absolute; left: 0; top: 0; height: 100%; background: var(--success); width: 0%; transition: width 0.4s ease; }
+.step-line-wrap.filled .step-line-fill { width: 100%; }
+
+/* ════════ INPUTS & DROPDOWNS ════════ */
+.input-group { margin-bottom: 20px; position: relative; }
+.input-group label { display: block; font-size: 0.9rem; font-weight: 600; color: var(--text-dark); margin-bottom: 8px; }
+.required-star { color: var(--error); }
+
+.input-icon-wrap { position: relative; }
+.input-icon { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 18px; z-index: 2; }
+
+.reg-input {
+  width: 100%; padding: 16px 16px 16px 48px; border-radius: 14px;
+  border: 2px solid var(--border-color); background: #f9fafb;
+  font-size: 1rem; font-family: 'Poppins', sans-serif; transition: all 0.3s;
+  outline: none; color: var(--text-dark); font-weight: 500;
+}
+.reg-input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1); }
+
+.pw-wrap { position: relative; }
+.pw-wrap .reg-input { padding-right: 48px; }
+.pw-toggle { position: absolute; right: 18px; top: 50%; transform: translateY(-50%); color: var(--text-muted); cursor: pointer; font-size: 18px; z-index: 2; }
+
+/* ════════ BUTTONS ════════ */
+.btn-primary { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; border: none; border-radius: 14px; font-size: 1.05rem; font-weight: 600; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3); }
+.btn-secondary { width: 100%; padding: 16px; background: #fff; color: var(--text-muted); border: 2px solid var(--border-color); border-radius: 14px; font-size: 1.05rem; font-weight: 600; cursor: pointer; transition: 0.3s; }
+.btn-secondary:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+.btn-row { display: flex; gap: 15px; margin-top: 10px; }
+
+.social-btn { width: 100%; padding: 16px; background: #fff; border: 2px solid var(--border-color); border-radius: 14px; font-size: 1rem; font-weight: 600; display: flex; justify-content: center; align-items: center; gap: 10px; cursor: pointer; transition: 0.3s; margin-bottom: 25px; color: var(--text-dark); }
+.social-btn:hover { background: #f9fafb; border-color: #d1d5db; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+
+/* ════════ OTP SCREEN (FIXED FOR OVERFLOW) ════════ */
+.otp-container { text-align: center; width: 100%; display: flex; flex-direction: column; align-items: center; }
+.otp-icon { font-size: 60px; color: var(--primary); margin-bottom: 20px; animation: float 3s infinite ease-in-out; }
+.otp-fields { display: flex; gap: 12px; justify-content: center; margin: 30px 0; width: 100%; flex-wrap: wrap; }
+.otp-digit {
+  width: 55px; height: 65px; border-radius: 14px; border: 2px solid var(--border-color); background: #f9fafb;
+  text-align: center; font-size: 24px; font-weight: 700; color: var(--primary); outline: none; transition: 0.3s;
+}
+.otp-digit:focus { border-color: var(--primary); background: #fff; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15); transform: translateY(-3px); }
+
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+/* ════════ UTILITIES ════════ */
+.two-col { display: flex; gap: 15px; }
+.two-col .input-group { flex: 1; }
+.or-divider { display: flex; alignItems: center; margin: 25px 0; color: var(--text-muted); font-size: 14px; font-weight: 500; }
+.or-divider::before, .or-divider::after { content: ''; flex: 1; height: 1px; background: var(--border-color); margin: 0 15px; }
+
+/* Profile Photo */
+.avatar-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 30px; }
+.avatar-ring { width: 120px; height: 120px; border-radius: 50%; border: 2px dashed var(--primary); display: flex; justify-content: center; align-items: center; font-size: 30px; color: var(--primary); background: var(--primary-light); cursor: pointer; overflow: hidden; transition: 0.3s; }
+.avatar-ring:hover { transform: scale(1.05); }
+.avatar-ring img { width: 100%; height: 100%; object-fit: cover; }
+
+@media (max-width: 600px) {
+  .reg-title { font-size: 1.5rem; }
+  .otp-digit { width: 45px; height: 55px; font-size: 20px; }
+  .two-col { flex-direction: column; gap: 0; }
+}
