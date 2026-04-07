@@ -1,42 +1,51 @@
 // src/services/authService.js
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
-// Agar backend direct /auth use kar raha hai to hum base path yahi rakhenge
-const AUTH_URL = `${API_BASE_URL}/auth`;
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:4007';
 
+// 🟢 FIX: Added '/api/auth' to all routes
 const register = async (userData) => {
-    const response = await axios.post(`${AUTH_URL}/register`, userData);
+    const response = await axios.post(`${API_BASE_URL}/api/auth/register`, userData);
     return response.data;
 };
 
 const login = async (credentials) => {
-    const response = await axios.post(`${AUTH_URL}/login`, credentials);
+    const response = await axios.post(`${API_BASE_URL}/api/auth/login`, credentials);
     if (response.data.token) {
         localStorage.setItem('supplierToken', response.data.token);
     }
     return response.data;
 };
 
-// Naya OTP based verification
-const verifyEmail = async (email, otp) => {
-    const response = await axios.post(`${AUTH_URL}/verify-email`, { email, otp });
+const verifyEmail = async (token) => {
+    const response = await axios.post(`${API_BASE_URL}/api/auth/verify-email`, { token });
     return response.data;
 };
 
 const forgotPassword = async (email) => {
-    const response = await axios.post(`${AUTH_URL}/forgot-password`, { email });
+    const response = await axios.post(`${API_BASE_URL}/api/auth/forgot-password`, { email });
     return response.data;
 };
 
-// Naya OTP based Reset
-const resetPassword = async (email, otp, newPassword) => {
-    const response = await axios.post(`${AUTH_URL}/reset-password`, { email, otp, newPassword });
+const resetPassword = async (token, newPassword) => {
+    const response = await axios.put(`${API_BASE_URL}/api/auth/reset-password/${token}`, { password: newPassword });
     return response.data;
+};
+
+const logout = () => {
+    localStorage.removeItem('supplierToken');
 };
 
 const googleLogin = async (accessToken) => {
-    const response = await axios.post(`${AUTH_URL}/google`, { accessToken });
+    const response = await axios.post(`${API_BASE_URL}/api/auth/google`, { accessToken });
+    if (response.data.token) {
+        localStorage.setItem('supplierToken', response.data.token);
+    }
+    return response.data;
+};
+
+const facebookLogin = async (accessToken, userID) => {
+    const response = await axios.post(`${API_BASE_URL}/api/auth/facebook`, { accessToken, userID });
     if (response.data.token) {
         localStorage.setItem('supplierToken', response.data.token);
     }
@@ -45,26 +54,14 @@ const googleLogin = async (accessToken) => {
 
 const completeProfile = async (profileData) => {
     const token = localStorage.getItem('supplierToken');
-    const response = await axios.post(`${AUTH_URL}/complete-profile`, profileData, {
+    const response = await axios.post(`${API_BASE_URL}/api/auth/complete-profile`, profileData, {
         headers: { 'Authorization': `Bearer ${token}` }
     });
     return response.data;
 };
 
-const logout = () => {
-    localStorage.removeItem('supplierToken');
-    localStorage.removeItem('tempAuthToken');
-};
-
 const authService = {
-    register,
-    login,
-    verifyEmail,
-    forgotPassword,
-    resetPassword,
-    googleLogin,
-    completeProfile,
-    logout
+    register, login, verifyEmail, forgotPassword, resetPassword, googleLogin, facebookLogin, completeProfile, logout
 };
 
 export default authService;

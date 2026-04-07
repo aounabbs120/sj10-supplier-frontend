@@ -33,6 +33,7 @@ const Icons = {
 
 // --- CONSTANTS ---
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:4000';
+const UPLOAD_API_URL = process.env.REACT_APP_UPLOAD_API_URL || API_BASE_URL;
 
 const initialProductState = {
     title: '', description: '', price: '', discounted_price: '',
@@ -1386,7 +1387,7 @@ const ProductForm = ({ setIsLoading }) => {
 
             // 5. Send Request
             const token = localStorage.getItem('supplierToken');
-            const response = await axios.post(`${API_BASE_URL}/api/supplier/products/upload`, formData, {
+          const response = await axios.post(`${UPLOAD_API_URL}/api/upload`, formData, {
                 headers: { 
                     'Content-Type': 'multipart/form-data', 
                     'Authorization': `Bearer ${token}` 
@@ -1443,7 +1444,7 @@ const ProductForm = ({ setIsLoading }) => {
             const formData = new FormData();
             formData.append('video', file);
             const token = localStorage.getItem('supplierToken');
-            const response = await axios.post(`${API_BASE_URL}/api/supplier/products/upload-video`, formData, {
+           const response = await axios.post(`${UPLOAD_API_URL}/api/upload-video`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data', 'Authorization': `Bearer ${token}` },
                 onUploadProgress: (p) => setVideoProgress(Math.round((p.loaded * 100) / p.total))
             });

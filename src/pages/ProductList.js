@@ -24,10 +24,12 @@ const ProductList = ({ setIsLoading }) => {
         return () => clearTimeout(handler);
     }, [searchTerm]);
 
-    const getKey = (pageIndex, previousPageData) => {
-        if (previousPageData && !previousPageData.hasMore) return null;
-        return `/supplier/products/paginated?page=${pageIndex + 1}&limit=40&search=${encodeURIComponent(debouncedSearch)}&status=${filterStatus}`;
-    };
+   const getKey = (pageIndex, previousPageData) => {
+    if (previousPageData && !previousPageData.hasMore) return null;
+    
+    // Yahan '/supplier' ko badal kar '/suppliers' kar dein
+    return `/suppliers/products/paginated?page=${pageIndex + 1}&limit=40&search=${encodeURIComponent(debouncedSearch)}&status=${filterStatus}`;
+};
 
     const { data, size, setSize, mutate, isValidating, isLoading } = useSWRInfinite(
         getKey, (url) => supplierService.genericGet(url), { 
