@@ -29,11 +29,15 @@ const forgotPassword = async (email) => {
     return response.data;
 };
 
-const resetPassword = async (token, newPassword) => {
-    const response = await axios.put(`${API_BASE_URL}/api/auth/reset-password/${token}`, { password: newPassword });
+const resetPassword = async (email, otp, newPassword) => {
+    // 🟢 Body-based request bhejni hai, URL param nahi
+    const response = await axios.post(`${API_BASE_URL}/api/auth/reset-password`, { 
+        email, 
+        otp, 
+        newPassword 
+    });
     return response.data;
 };
-
 const logout = () => {
     localStorage.removeItem('supplierToken');
 };
