@@ -17,10 +17,12 @@ const login = async (credentials) => {
     return response.data;
 };
 
-const verifyEmail = async (token) => {
-    const response = await axios.post(`${API_BASE_URL}/api/auth/verify-email`, { token });
+const verifyEmail = async (email, otp) => {
+    // Backend ko dono cheezein chahiye: email aur otp
+    const response = await axios.post(`${API_BASE_URL}/api/auth/verify-email`, { email, otp });
     return response.data;
 };
+
 
 const forgotPassword = async (email) => {
     const response = await axios.post(`${API_BASE_URL}/api/auth/forgot-password`, { email });
