@@ -42,7 +42,7 @@ const supplierService = {
     getProductById: async (productId) => (await api.get(`/suppliers/products/${productId}`)).data,
     createProduct: async (productData) => (await api.post('/suppliers/products', productData)).data,
     updateProduct: async (productId, productData) => (await api.put(`/suppliers/products/${productId}`, productData)).data,
-    deleteProduct: async (productId) => (await api.delete(`/suppliers/products/${productId}`)).data,
+    deleteProduct: async (productId, shardKey) => (await api.delete(`/suppliers/products/${productId}`, { data: { shardKey } })).data,
     getCategories: async () => (await api.get('/suppliers/categories')).data,
     addVariantsInBatch: async (productId, variantsArray) => (await api.post(`/suppliers/products/${productId}/variants/batch`, { variants: variantsArray })).data,
     

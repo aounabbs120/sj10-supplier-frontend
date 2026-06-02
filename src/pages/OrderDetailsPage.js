@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, MapPin, Copy, CheckCircle, Truck, Package, Lock, DollarSign, BarChart2, User as UserIcon, Calendar, Printer } from 'lucide-react';
+import { ArrowLeft, MapPin, Copy, CheckCircle, Truck, Package, Lock, BarChart2, User as UserIcon, Calendar, Printer } from 'lucide-react';
 import supplierService from '../services/supplierService';
 import PaymentModal from '../components/PaymentModal';
 import CourierDropdown from '../components/CourierDropdown';
@@ -35,23 +35,19 @@ const OrderDetailsPage = () => {
     const [trackingError, setTrackingError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // --- Hooks must be at the top ---
-    const financialTotals = useMemo(() => {
-        if (!order) return { products: 0, delivery: 0, commission: 0, profit: 0, subtotal: 0, net: 0 };
-        const totals = order.order_items.reduce((acc, item) => {
-            acc.products += (parseFloat(item.price_at_purchase) || 0) * item.quantity;
-            acc.delivery += (parseFloat(item.delivery_charge) || 0); // Calculated for display (Dummy)
-            acc.commission += (parseFloat(item.system_commission) || 0);
-            acc.profit += (parseFloat(item.profit) || 0);
-            return acc;
-        }, { products: 0, delivery: 0, commission: 0, profit: 0 });
-
-        // MODIFIED: Exclude delivery from subtotal calculation as requested
-        // totals.delivery is treated as a dummy value for display only.
-        totals.subtotal = totals.products + totals.profit + totals.commission;
+    // --- 🟢 NEW: STRICT DB VALUE AGGREGATION (NO CUSTOM MATH) ---
+    // We only sum up what the backend already calculated and saved.
+    const dbTotals = useMemo(() => {
+        if (!order) return { products: 0, profit: 0, commission: 0, supplierFixedFee: 0 };
         
-        totals.net = totals.products + totals.delivery - totals.commission;
-        return totals;
+        return order.order_items.reduce((acc, item) => {
+            acc.products += (parseFloat(item.price_at_purchase) || 0) * item.quantity;
+            acc.profit += parseFloat(item.profit) || 0; 
+            // Note: system_commission & supplier_fixed_fee are saved by backend as TOTAL per item (fee * qty)
+            acc.commission += parseFloat(item.system_commission) || 0;
+            acc.supplierFixedFee += parseFloat(item.supplier_fixed_fee) || 0;
+            return acc;
+        }, { products: 0, profit: 0, commission: 0, supplierFixedFee: 0 });
     }, [order]);
 
     const isTrackable = useMemo(() => {
@@ -78,6 +74,14 @@ const OrderDetailsPage = () => {
             try {
                 const data = await supplierService.getMyOrderDetails(orderId);
                 setOrder(data);
+
+                // --- 🟢 NEW: MARK AS SEEN LOGIC ---
+                // If the order is unread, hit the API to mark it as read in the DB
+                if (data.shipment_details && data.shipment_details.is_seen === 0) {
+                    // Suppress errors silently so it doesn't break the UI if it fails
+                    supplierService.markOrderAsSeen(orderId).catch(err => console.log("Mark seen error", err));
+                }
+
             } catch (err) {
                 console.error("Fetch Details Error:", err);
                 setError("Failed to load order details.");
@@ -132,14 +136,19 @@ const OrderDetailsPage = () => {
     if (error) return <div className="error-state">{error}</div>;
     if (!order) return <div className="error-state">Order not found.</div>;
     
-    const { order_details, order_items, shipment_details, is_locked, unpaid_commission, is_new } = order;
+    const { order_details, order_items, shipment_details, is_locked, unpaid_commission } = order;
+    
+    // We check if it WAS new before we marked it as read. 
+    // This makes the UI badge show up when first opened, but disappear on refresh.
+    const isOrderNew = shipment_details.is_seen === 0; 
+    
     const isAccountLocked = is_locked || false;
     const isOrderProcessing = shipment_details.current_status === 'processing';
     const showSensitiveDetails = !isAccountLocked || !isOrderProcessing;
 
-    // MODIFIED: Calculate Final Total by subtracting 200 as requested
-    const deliveryDeduction = 200;
-    const finalTotalDisplay = (order_details.total_price || 0) - deliveryDeduction;
+    // 🟢 EXTRACT DB VALUES FOR GRAND TOTAL AND FEES
+    const DB_GRAND_TOTAL = parseFloat(order_details.total_price) || 0;
+    const DB_DELIVERY_FEE = parseFloat(order_details.total_delivery_charge) || 0;
 
     return (
         <div className="order-details-page">
@@ -147,7 +156,7 @@ const OrderDetailsPage = () => {
                 <button className="back-btn" onClick={() => navigate('/orders')}><ArrowLeft size={18} /> Back to Orders</button>
                 <div className="od-title-group">
                     <h1>Order #{order_details.id.substring(0, 8).toUpperCase()}</h1>
-                    {is_new && <span className="new-tag-detail">NEW</span>}
+                    {isOrderNew && <span className="new-tag-detail">NEW</span>}
                     <span className={`status-badge-lg status-${shipment_details.current_status}`}>{shipment_details.current_status.replace(/_/g, ' ')}</span>
                 </div>
                 <div className="od-meta">
@@ -186,16 +195,22 @@ const OrderDetailsPage = () => {
                         </div>
                     </motion.div>
                     
-                    <motion.div className="od-card" variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} initial="hidden" animate="visible" transition={{ delay: 0.1 }}>
+                   <motion.div className="od-card" variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} initial="hidden" animate="visible" transition={{ delay: 0.1 }}>
                         <div className="card-header"><BarChart2 size={20} className="icon-green"/><h3>Price Calculation</h3></div>
                         <div className="od-summary">
-                            <div className="summary-row"><span>Product(s) Price</span><span>PKR {financialTotals.products.toLocaleString()}</span></div>
-                            <div className="summary-row profit"><span>User (Reseller) Profit</span><span>+ PKR {financialTotals.profit.toLocaleString()}</span></div>
-                            {/* MODIFIED: Delivery Fee is shown but treated as dummy/not added to calculation */}
-                            <div className="summary-row"><span>Delivery Fee (Paid by User)</span><span>PKR {financialTotals.delivery.toLocaleString()}</span></div>
-                            <div className="summary-row"><span>SJ10 Fee (Commission)</span><span>+ PKR {financialTotals.commission.toLocaleString()}</span></div>
-                            {/* MODIFIED: Total Amount subtracted by 200 */}
-                            <div className="summary-row total"><span>Total Amount from Customer</span><span>PKR {finalTotalDisplay.toLocaleString()}</span></div>
+                            <div className="summary-row"><span>Product(s) Price</span><span>PKR {dbTotals.products.toLocaleString()}</span></div>
+                            
+                            <div className="summary-row"><span>Delivery Fee</span><span>+ PKR {DB_DELIVERY_FEE.toLocaleString()}</span></div>
+                            
+                            {dbTotals.profit > 0 && (
+                                <div className="summary-row profit"><span>User (Reseller) Profit</span><span>+ PKR {dbTotals.profit.toLocaleString()}</span></div>
+                            )}
+
+                            {/* 🟢 Now shown as an addition (+) because the customer paid it */}
+                            <div className="summary-row"><span>SJ10 Fee (Commission)</span><span>+ PKR {dbTotals.commission.toLocaleString()}</span></div>
+                            
+                            {/* 🟢 Direct Grand Total from DB (Will show exactly 6130) */}
+                            <div className="summary-row total"><span>Customer Payable (Grand Total)</span><span>PKR {DB_GRAND_TOTAL.toLocaleString()}</span></div>
                         </div>
                     </motion.div>
                 </div>

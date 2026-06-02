@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { 
     ArrowLeft, Package, CheckCircle, Clock, MapPin, 
     Truck, Home, Box, AlertCircle, Calendar, User, FileText,
-    Activity, ChevronRight, Anchor
+    Activity, Anchor
 } from 'lucide-react';
 import supplierService from '../services/supplierService';
 import './TrackOrderPage.css';
@@ -50,9 +50,9 @@ const TrackOrderPage = () => {
     const getEventIcon = (description) => {
         const text = description?.toLowerCase() || '';
         if (text.includes('delivered')) return <Home size={20} />;
-        if (text.includes('out for delivery')) return <Truck size={20} />;
-        if (text.includes('transit') || text.includes('way')) return <Anchor size={20} />;
-        if (text.includes('packed') || text.includes('warehouse')) return <Box size={20} />;
+        if (text.includes('out for delivery') || text.includes('enroute')) return <Truck size={20} />;
+        if (text.includes('transit') || text.includes('way') || text.includes('departed') || text.includes('arrived')) return <Anchor size={20} />;
+        if (text.includes('packed') || text.includes('warehouse') || text.includes('received')) return <Box size={20} />;
         if (text.includes('ordered') || text.includes('placed')) return <FileText size={20} />;
         if (text.includes('processing')) return <Activity size={20} />;
         if (text.includes('fail') || text.includes('exception')) return <AlertCircle size={20} />;
@@ -71,6 +71,19 @@ const TrackOrderPage = () => {
 
     const meta = shipment.meta_data || {};
 
+    // Helper safely parse event list if stored as JSON string
+    const getEventsArray = () => {
+        if (!shipment.events) return [];
+        if (Array.isArray(shipment.events)) return shipment.events;
+        try {
+            return JSON.parse(shipment.events);
+        } catch (e) {
+            return [];
+        }
+    };
+
+    const eventsList = getEventsArray();
+
     return (
         <div className="track-order-page">
             
@@ -81,7 +94,6 @@ const TrackOrderPage = () => {
                     <span>Back</span>
                 </button>
                 <div className="brand-logo-container">
-                    {/* Ensure logo.gif exists in your public folder */}
                     <img src="/logo.gif" alt="SJ10 Supplier Panel" className="brand-logo" />
                 </div>
             </div>
@@ -151,38 +163,43 @@ const TrackOrderPage = () => {
                     {/* The Infinite Loop Line */}
                     <div className="timeline-line"></div>
 
-                    {shipment.events && shipment.events.length > 0 ? (
-                        shipment.events.map((event, index) => (
-                            <motion.div 
-                                key={index} 
-                                className={`timeline-item ${index === 0 ? 'current' : ''}`}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.4, delay: index * 0.1 }}
-                            >
-                                {/* Left: Icon Node */}
-                                <div className="timeline-marker">
-                                    <div className="icon-node">
-                                        {getEventIcon(event.description || event.event)}
-                                    </div>
-                                </div>
+                    {eventsList && eventsList.length > 0 ? (
+                        eventsList.map((event, index) => {
+                            // 🟢 FIX: Extract Track123 nested parameters dynamically
+                            const eventTitle = event.eventDetail || event.description || event.event || "Status Update";
+                            const eventTime = event.eventTime || event.time || event.date;
 
-                                {/* Right: Content Card */}
-                                <div className="timeline-content">
-                                    <div className="event-card">
-                                        <div className="event-header">
-                                            <h4 className="event-title">{event.description || event.event}</h4>
-                                            {index === 0 && <span className="now-badge">LATEST</span>}
-                                        </div>
-                                        <div className="event-time-row">
-                                            <Clock size={14} />
-                                            {/* Formatted Date: December 23, 2026 | 10:30 AM */}
-                                            <span>{formatEventDate(event.time || event.date)}</span>
+                            return (
+                                <motion.div 
+                                    key={index} 
+                                    className={`timeline-item ${index === 0 ? 'current' : ''}`}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ duration: 0.4, delay: index * 0.1 }}
+                                >
+                                    {/* Left: Icon Node */}
+                                    <div className="timeline-marker">
+                                        <div className="icon-node">
+                                            {getEventIcon(eventTitle)}
                                         </div>
                                     </div>
-                                </div>
-                            </motion.div>
-                        ))
+
+                                    {/* Right: Content Card */}
+                                    <div className="timeline-content">
+                                        <div className="event-card">
+                                            <div className="event-header">
+                                                <h4 className="event-title">{eventTitle}</h4>
+                                                {index === 0 && <span className="now-badge">LATEST</span>}
+                                            </div>
+                                            <div className="event-time-row">
+                                                <Clock size={14} />
+                                                <span>{formatEventDate(eventTime)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            );
+                        })
                     ) : (
                         <div className="empty-state">
                             <Box size={40} />
