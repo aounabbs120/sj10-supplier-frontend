@@ -1,236 +1,464 @@
 /* src/pages/InvoicePage.css */
 
 .invoice-page-wrapper {
-    background-color: #eef2f5;
+    background-color: #f1f5f9;
     min-height: 100vh;
-    padding: 30px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    -webkit-print-color-adjust: exact;
+    padding: 30px 15px;
+    font-family: 'Outfit', 'Inter', sans-serif;
+    color: #1e293b;
 }
 
+/* --- ACTIONS HEADER --- */
 .invoice-actions {
-    width: 100%;
-    max-width: 850px;
     display: flex;
     justify-content: space-between;
-    margin-bottom: 25px;
+    align-items: center;
+    max-width: 850px;
+    margin: 0 auto 20px auto;
 }
 
 .btn-action {
-    padding: 10px 24px;
-    border-radius: 6px;
-    border: none;
-    font-size: 14px;
-    cursor: pointer;
+    padding: 10px 18px;
+    border-radius: 8px;
     font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    border: 1px solid transparent;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
-.btn-action:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
-.btn-back { background: #fff; color: #555; border: 1px solid #ddd; }
-.btn-download { background: #27ae60; color: white; margin-right: 12px; }
-.btn-print { background: #2980b9; color: white; }
 
-/* --- INVOICE PAPER --- */
+.btn-back {
+    background: white;
+    border-color: #cbd5e1;
+    color: #475569;
+}
+.btn-back:hover {
+    background: #f8fafc;
+    transform: translateX(-3px);
+}
+
+.action-right {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-download {
+    background: white;
+    border-color: #4f46e5;
+    color: #4f46e5;
+}
+.btn-download:hover {
+    background: #f5f3ff;
+}
+
+.btn-print {
+    background: #4f46e5;
+    color: white;
+}
+.btn-print:hover {
+    background: #3730a3;
+}
+
+/* --- INVOICE PAPER BODY --- */
 .invoice-paper {
     background: white;
-    width: 100%;
     max-width: 850px;
-    padding: 45px;
-    border-radius: 8px; /* Look good on screen */
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-    color: #333;
-    box-sizing: border-box;
-    position: relative;
+    margin: 0 auto;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
 }
 
 /* 1. Header */
 .inv-header-row {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 45px;
-    border-bottom: 2px solid #f0f0f0;
+    align-items: center;
+    border-bottom: 3px double #cbd5e1;
     padding-bottom: 20px;
+    margin-bottom: 20px;
 }
-.header-brand-section { font-size: 26px; text-transform: uppercase; letter-spacing: 0.5px; }
-.brand-sj10 { font-weight: 900; color: #b0b0b0; }
-.brand-center { font-weight: 700; color: #555; margin-left: 8px; }
 
-.header-summary-section { text-align: right; color: #444; }
-.summary-title { font-weight: 800; font-size: 15px; margin-bottom: 6px; color: #2c3e50; }
-.summary-id { font-weight: 600; font-size: 14px; margin-bottom: 4px; color: #555; }
-.summary-date { font-size: 13px; color: #888; }
+.header-brand-section {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
 
-/* 2. Supplier Section */
+.brand-sj10 {
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #4f46e5;
+    letter-spacing: 1px;
+}
+
+.brand-center {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #475569;
+    letter-spacing: 0.5px;
+}
+
+.header-summary-section {
+    text-align: right;
+}
+
+.summary-title {
+    font-size: 1rem;
+    font-weight: 800;
+    color: #0f172a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.summary-id {
+    font-family: monospace;
+    font-weight: 700;
+    color: #4f46e5;
+    font-size: 1.1rem;
+    margin: 4px 0;
+}
+
+.summary-date {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+/* 2. Supplier Row */
 .inv-supplier-styled {
     display: flex;
     align-items: center;
-    margin-bottom: 35px;
+    gap: 15px;
+    background: #f8fafc;
+    padding: 15px;
+    border-radius: 10px;
     position: relative;
-    padding: 15px 20px;
-    background-color: #fafafa;
-    border-radius: 0 6px 6px 0;
+    overflow: hidden;
+    margin-bottom: 25px;
 }
+
 .supplier-blue-bar {
     position: absolute;
     left: 0;
     top: 0;
     bottom: 0;
-    width: 6px;
-    background-color: #3498db;
-    border-radius: 4px 0 0 4px;
+    width: 4px;
+    background: #4f46e5;
 }
+
 .inv-logo-box {
-    width: 65px;
-    height: 65px;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #e2e8f0;
+    border: 1px solid #cbd5e1;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid #e0e0e0;
-    border-radius: 50%;
-    padding: 4px;
-    margin-right: 18px;
-    background: #fff;
-    overflow: hidden;
 }
-.inv-logo { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
-.inv-supp-details { display: flex; flex-direction: column; }
-.supp-name-tag { font-weight: 700; font-size: 18px; color: #2c3e50; }
-.supp-id-tag { font-size: 13px; color: #7f8c8d; margin-top: 3px; font-family: monospace; }
 
-/* 3. Grid Container */
-.inv-grid-container { 
-    border: 1px solid #e0e0e0; 
-    margin-bottom: 35px; 
-    border-radius: 4px; 
-    overflow: hidden;
+.inv-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
-.inv-grid-row { display: flex; border-bottom: 1px solid #e0e0e0; }
-.inv-grid-row:last-child { border-bottom: none; }
 
-.inv-cell { padding: 12px 15px; font-size: 13px; line-height: 1.5; }
-.label-cell { 
-    background-color: #f8f9fa; 
-    font-weight: 600; 
-    width: 20%; 
-    border-right: 1px solid #e0e0e0; 
-    color: #555;
+.fallback-avatar-circle {
+    width: 100%;
+    height: 100%;
+    background: #4f46e5;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-.value-cell { width: 30%; border-right: 1px solid #e0e0e0; color: #2c3e50; }
-.value-cell:last-child { border-right: none; }
-.address-text { white-space: pre-wrap; color: #333; }
+
+.inv-supp-details .supp-name-tag {
+    font-weight: 800;
+    font-size: 1.05rem;
+    color: #0f172a;
+}
+
+.inv-supp-details .supp-id-tag {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-weight: 600;
+    margin-top: 2px;
+}
+
+/* 3. Grid Table Details */
+.inv-grid-container {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 25px;
+}
+
+.inv-grid-row {
+    display: grid;
+    grid-template-columns: 1.2fr 2fr 1.2fr 2fr;
+    border-bottom: 1px solid #cbd5e1;
+}
+
+.inv-grid-row:last-child {
+    border-bottom: none;
+}
+
+.inv-cell {
+    padding: 10px 12px;
+    font-size: 0.85rem;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+}
+
+.inv-cell.label-cell {
+    background: #f8fafc;
+    font-weight: 700;
+    color: #475569;
+    border-right: 1px solid #cbd5e1;
+}
+
+.inv-cell.value-cell {
+    color: #1e293b;
+    font-weight: 600;
+    border-right: 1px solid #cbd5e1;
+}
+
+.inv-cell.value-cell:last-child {
+    border-right: none;
+}
+
+.address-row-container {
+    grid-template-columns: 1.2fr 2fr 1.2fr 2fr !important;
+}
+
+.address-text {
+    line-height: 1.5;
+    font-size: 0.8rem !important;
+    display: block !important;
+    padding: 10px 12px !important;
+}
 
 /* 4. Items Table */
-.items-header { font-weight: 700; font-size: 16px; margin-bottom: 12px; color: #2c3e50; }
+.inv-items-container {
+    margin-bottom: 25px;
+}
+
+.items-header {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: #475569;
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+}
+
+/* 🟢 HORIZONTAL TABLE SCROLL FOR MOBILE */
+.inv-items-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+}
+
 .inv-items-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 12px;
-    border: 1px solid #e0e0e0;
-    margin-bottom: 35px;
+    min-width: 650px; /* Forces stable column sizing during scroll */
 }
+
 .inv-items-table th {
-    background-color: #f8f9fa;
-    border: 1px solid #e0e0e0;
-    padding: 12px 10px;
-    text-align: left;
+    background: #0f172a;
+    color: white;
+    padding: 10px 8px;
+    font-size: 0.75rem;
+    text-transform: uppercase;
     font-weight: 700;
-    color: #444;
+    text-align: left;
 }
-.inv-items-table td { 
-    border: 1px solid #e0e0e0; 
-    padding: 12px 10px; 
-    vertical-align: middle; 
-    color: #333; 
-}
-.item-name-cell { font-weight: 600; color: #2c3e50; }
-.text-right { text-align: right; }
 
-/* 5. Totals */
-.inv-totals-section { display: flex; justify-content: flex-end; }
-.inv-totals-box { width: 320px; }
-.t-row { 
-    display: flex; 
-    justify-content: space-between; 
-    padding: 8px 0; 
-    font-size: 14px; 
-    color: #555; 
-    border-bottom: 1px solid #eee;
+.inv-items-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #cbd5e1;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #334155;
+    line-height: 1.4;
 }
+
+.item-name-cell {
+    font-weight: 700 !important;
+    color: #0f172a !important;
+}
+
+.inv-variants-box {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.75rem;
+}
+
+.inv-variants-box strong {
+    color: #475569;
+}
+
+.text-right {
+    text-align: right !important;
+}
+
+/* 5. Totals Box */
+.inv-totals-section {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.inv-totals-box {
+    width: 320px;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.t-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #475569;
+}
+
 .t-row.grand {
-    font-weight: 800; 
-    font-size: 18px; 
-    color: #2c3e50;
-    margin-top: 10px; 
-    padding-top: 15px;
-    border-bottom: none;
-    border-top: 2px solid #333;
+    margin-top: 8px;
+    border-top: 1.5px solid #cbd5e1;
+    padding-top: 8px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #4f46e5;
 }
 
-/* --- MOBILE SPECIFIC: Shrink to fit (No Horizontal Scroll) --- */
-@media (max-width: 600px) {
+/* Branding footer */
+.inv-footer-branding {
+    margin-top: 50px;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    line-height: 1.5;
+}
+
+.inv-footer-branding p {
+    margin: 4px 0;
+}
+
+/* --- 🟢 MOBILE VIEWPORT PORT MEDIA QUERIES --- */
+@media (max-width: 768px) {
     .invoice-page-wrapper {
-        padding: 10px;
+        padding: 15px 10px;
+    }
+
+    .invoice-actions {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+
+    .action-right {
+        justify-content: stretch;
+    }
+
+    .action-right .btn-action {
+        flex: 1;
     }
 
     .invoice-paper {
         padding: 15px;
-        min-width: 100%;
-        width: 100%;
-        /* Force font reduction to fit everything */
-        font-size: 10px !important;
     }
 
-    /* Actions */
-    .btn-action { padding: 8px 12px; font-size: 12px; }
-    .header-brand-section { font-size: 18px; }
-    .header-summary-section { font-size: 10px; }
-    .summary-title { font-size: 12px; }
-
-    /* Supplier Section */
-    .inv-logo-box { width: 40px; height: 40px; margin-right: 10px; }
-    .supp-name-tag { font-size: 14px; }
-    .supp-id-tag { font-size: 10px; }
-
-    /* Grid */
-    .inv-cell { padding: 6px; font-size: 9px; }
-    .label-cell { width: 25%; }
-    .value-cell { width: 25%; }
-
-    /* Items Table: Aggressive shrinking */
-    .inv-items-table th, .inv-items-table td {
-        padding: 4px 2px;
-        font-size: 8px; /* Very small to prevent overflow */
+    .inv-header-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
     }
-    .items-header { font-size: 12px; }
 
-    /* Hide less critical columns if absolutely necessary, 
-       but here we just shrink text to fit 7 columns */
-    
-    /* Totals */
-    .inv-totals-box { width: 100%; max-width: 200px; }
-    .t-row { font-size: 10px; }
-    .t-row.grand { font-size: 14px; }
+    .header-summary-section {
+        text-align: left;
+    }
+
+    /* 🟢 Stack grid boxes vertically on mobile to prevent squishing */
+    .inv-grid-row {
+        grid-template-columns: 1fr !important;
+    }
+
+    .inv-cell {
+        border-right: none !important;
+        border-bottom: 1px solid #cbd5e1;
+    }
+
+    .inv-cell:last-child {
+        border-bottom: none;
+    }
+
+    .inv-cell.label-cell {
+        background: #f8fafc;
+        font-weight: 800;
+    }
+
+    .address-row-container {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Totals stretch full width on mobile */
+    .inv-totals-section {
+        justify-content: stretch;
+    }
+
+    .inv-totals-box {
+        width: 100% !important;
+    }
 }
 
-/* --- PRINT --- */
+/* --- 🟢 POWERFUL UNIVERSAL PRINT SYSTEM MEDIA RULES --- */
 @media print {
-    @page { size: A4; margin: 0; }
-    body { background: white; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    .no-print { display: none !important; }
-    
-    .invoice-page-wrapper { 
-        padding: 0; margin: 0; background: white; 
-        display: block; 
+    body * {
+        visibility: hidden !important;
     }
-    
-    .invoice-paper { 
-        box-shadow: none; border: none; radius: 0;
-        padding: 30px 40px; 
-        width: 100%; max-width: 100%;
+
+    .invoice-paper, .invoice-paper * {
+        visibility: visible !important;
+    }
+
+    .invoice-paper {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Keep table full scale when printing */
+    .inv-items-table-wrapper {
+        overflow-x: visible !important;
+        border: none !important;
+    }
+
+    .inv-items-table {
+        min-width: 100% !important;
+    }
+
+    @page {
+        size: auto;
+        margin: 15mm 10mm 15mm 10mm; 
     }
 }

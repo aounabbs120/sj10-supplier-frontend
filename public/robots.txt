@@ -1,3 +1,26 @@
-# https://www.robotstxt.org/robotstxt.html
+# public/robots.txt
+
 User-agent: *
-Disallow:
+
+# 🟢 ALLOW INDEXING (Google in public aur login/register pages ko search par dikhayega)
+Allow: /$
+Allow: /about
+Allow: /privacy
+Allow: /terms
+Allow: /shipping-policy
+Allow: /login
+Allow: /register
+
+# ❌ DISALLOW INDEXING (Google sirf in private dashboard pages ko index nahi karega)
+Disallow: /dashboard
+Disallow: /orders/
+Disallow: /products/
+Disallow: /reviews/
+Disallow: /promotions/
+Disallow: /social/
+Disallow: /verification/
+Disallow: /settings/
+Disallow: /api/
+
+# Hostname & Sitemap Location
+Sitemap: https://sj10seller.online/sitemap.xml

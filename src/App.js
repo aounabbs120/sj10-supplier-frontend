@@ -5,7 +5,6 @@ import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'r
 import * as THREE from 'three';
 import Waves from 'vanta/dist/vanta.waves.min';
 import { AnimatePresence } from 'framer-motion';
-// --- 1. IMPORT THE PROVIDER ---
 import { GoogleOAuthProvider } from '@react-oauth/google'; 
 
 import supplierService from './services/supplierService';
@@ -40,8 +39,9 @@ import OrderDetailsPage from './pages/OrderDetailsPage';
 import TrackOrderPage from './pages/TrackOrderPage';
 import FollowersPage from './pages/FollowersPage';
 import CreatePromotion from './pages/CreatePromotion';
-import CompleteProfile from './pages/CompleteProfile'; // <-- Import the new page
-import TermsConditions from './pages/TermsConditions'; // <-- 1. IMPORT THIS
+import CompleteProfile from './pages/CompleteProfile';
+import TermsConditions from './pages/TermsConditions';
+import LandingPage from './pages/LandingPage';
 import './App.css';
 
 const VantaBackground = () => {
@@ -55,9 +55,6 @@ const VantaBackground = () => {
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
-  
-  // You need to get this ID from Google Cloud Console
-  // If you don't have one yet, put a placeholder string like "test" to stop the crash temporarily
   const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID_HERE";
 
   useEffect(() => {
@@ -66,7 +63,6 @@ function App() {
   }, []);
 
   return (
-    // --- 2. WRAP THE APP WITH THE PROVIDER ---
     <GoogleOAuthProvider clientId={googleClientId}>
       <Router>
         <AppLayout isLoading={isLoading} setIsLoading={setIsLoading} />
@@ -79,12 +75,20 @@ const AppLayout = ({ isLoading, setIsLoading }) => {
     const location = useLocation();
     const [showNotificationBanner, setShowNotificationBanner] = useState(false);
 
+    // List of public pages for SEO and crawlers
+    const publicStaticPages = [
+        '/', '/privacy-policy', '/shipping-policy', 
+        '/about-us', '/terms-conditions'
+    ];
+
     const isAuthPage = ['/login', '/register', '/forgot-password', '/verify-email']
         .includes(location.pathname) || location.pathname.startsWith('/reset-password');
 
+    const isPublicStaticPage = publicStaticPages.includes(location.pathname);
+
     useEffect(() => {
         const token = localStorage.getItem('supplierToken');
-        if (!token || isAuthPage) {
+        if (!token || isAuthPage || isPublicStaticPage) {
             setShowNotificationBanner(false);
             return; 
         }
@@ -99,8 +103,9 @@ const AppLayout = ({ isLoading, setIsLoading }) => {
             }
         };
         checkNotificationPermission();
-    }, [isAuthPage, location.pathname]);
+    }, [isAuthPage, isPublicStaticPage, location.pathname]);
 
+    // 🟢 FIXED: Re-added missing functions
     const handleDismissBanner = () => {
         sessionStorage.setItem('notificationBannerDismissed', 'true');
         setShowNotificationBanner(false);
@@ -124,7 +129,7 @@ const AppLayout = ({ isLoading, setIsLoading }) => {
             alert('✅ Notifications Enabled!');
         } catch (error) {
             console.error("Notification Setup Failed:", error);
-            alert('Could not enable notifications. Check console.');
+            alert('Could not enable notifications.');
         }
     };
 
@@ -142,17 +147,26 @@ const AppLayout = ({ isLoading, setIsLoading }) => {
                 )}
             </AnimatePresence>
             
-            <div className={isAuthPage ? "auth-content-wrapper" : "main-content-wrapper"}>
+            <div className={isAuthPage ? "auth-content-wrapper" : (isPublicStaticPage ? "public-content-wrapper" : "main-content-wrapper")}>
                 <Routes>
+                    {/* 🟢 PUBLIC ROUTES (SEO Optimized & Crawlable) */}
+                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/privacy-policy" element={<PrivacyPolicy setIsLoading={setIsLoading} />} />
+                    <Route path="/shipping-policy" element={<ShippingPolicy setIsLoading={setIsLoading} />} />
+                    <Route path="/terms-conditions" element={<TermsConditions setIsLoading={setIsLoading} />} />
+                    <Route path="/about-us" element={<AboutUs setIsLoading={setIsLoading} />} />
+
+                    {/* AUTH ROUTES */}
                     <Route path="/login" element={<Login />} />
-                    <Route path="/complete-profile" element={<CompleteProfile />} />
                     <Route path="/register" element={<Register />} />
+                    <Route path="/complete-profile" element={<CompleteProfile />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/verify-email" element={<VerifyEmail />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
+
+                    {/* 🔴 PROTECTED ROUTES */}
                     <Route element={<ProtectedRoute />}>
                         <Route element={<MainLayout />}>
-                       
                             <Route path="/dashboard" element={<Dashboard setIsLoading={setIsLoading} />} />
                             <Route path="/tools" element={<Tools setIsLoading={setIsLoading} />} />
                             <Route path="/reviews" element={<Reviews setIsLoading={setIsLoading} />} />
@@ -167,19 +181,15 @@ const AppLayout = ({ isLoading, setIsLoading }) => {
                             <Route path="/account" element={<AccountPage />} />
                             <Route path="/account-settings" element={<AccountSettingsPage />} />
                             <Route path="/feedback" element={<Feedback setIsLoading={setIsLoading} />} />
-                            <Route path="/shipping-policy" element={<ShippingPolicy setIsLoading={setIsLoading} />} />
-                            <Route path="/terms-conditions" element={<TermsConditions setIsLoading={setIsLoading} />} />
-                            <Route path="/privacy-policy" element={<PrivacyPolicy setIsLoading={setIsLoading} />} />
-                            <Route path="/about-us" element={<AboutUs setIsLoading={setIsLoading} />} />
                             <Route path="/verification-center" element={<VerificationCenter setIsLoading={setIsLoading} />} />
                             <Route path="/sj10-university" element={<SJ10University setIsLoading={setIsLoading} />} />
                             <Route path="/orders/track/:orderId" element={<TrackOrderPage setIsLoading={setIsLoading} />} />
-                             <Route path="/followers" element={<FollowersPage />} />
-                           <Route path="/promotions/create" element={<CreatePromotion />} />
+                            <Route path="/followers" element={<FollowersPage />} />
+                            <Route path="/promotions/create" element={<CreatePromotion />} />
                             <Route path="/sj10-university/:videoId" element={<VideoPlayer setIsLoading={setIsLoading} />} />
                         </Route>
                     </Route>
-                    <Route path="*" element={<Navigate to="/login" />} />
+                    <Route path="*" element={<Navigate to="/" />} />
                 </Routes>
             </div>
         </>

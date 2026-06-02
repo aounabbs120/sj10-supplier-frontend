@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <!-- 1. Home / Landing Page -->
+    <url>
+        <loc>https://sj10seller.online/</loc>
+        <lastmod>2026-06-02</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>1.0</priority>
+    </url>
+    <!-- 2. Login Page -->
+    <url>
+        <loc>https://sj10seller.online/login</loc>
+        <lastmod>2026-06-02</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <!-- 3. Register Page -->
+    <url>
+        <loc>https://sj10seller.online/register</loc>
+        <lastmod>2026-06-02</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <!-- 4. About Us Page -->
+    <url>
+        <loc>https://sj10seller.online/about</loc>
+        <lastmod>2026-06-02</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.7</priority>
+    </url>
+    <!-- 5. Privacy Policy Page -->
+    <url>
+        <loc>https://sj10seller.online/privacy</loc>
+        <lastmod>2026-06-02</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+    <!-- 6. Terms and Conditions Page -->
+    <url>
+        <loc>https://sj10seller.online/terms</loc>
+        <lastmod>2026-06-02</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+    <!-- 7. Shipping Policy Page -->
+    <url>
+        <loc>https://sj10seller.online/shipping-policy</loc>
+        <lastmod>2026-06-02</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.5</priority>
+    </url>
+</urlset>

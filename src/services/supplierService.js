@@ -35,7 +35,8 @@ api.interceptors.response.use(
 
 // 🟢 FIX: Ensure all routes match your new Vercel server.js structure
 const supplierService = {
-    getDashboardStats: async () => (await api.get('/suppliers/dashboard-stats')).data,
+  // 🟢 services/supplierService.js mein is line ko replace karein:
+getDashboardStats: (range = 'WEEK', chartOnly = false) => api.get(`/suppliers/dashboard-stats?range=${range}&chartOnly=${chartOnly}`).then(res => res.data),
     getMyProfile: async () => (await api.get('/suppliers/profile')).data,
     updateMyProfile: async (profileData) => (await api.put('/suppliers/profile', profileData)).data,
     getMyProducts: async () => (await api.get('/suppliers/products')).data,

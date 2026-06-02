@@ -1,74 +1,102 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, Coffee } from 'lucide-react';
+import { AlertTriangle, Coffee, RefreshCw } from 'lucide-react';
 import supplierService from '../services/supplierService';
 import OrderCard from '../components/OrderCard';
 import './Orders.css';
 
 const Orders = ({ setIsLoading }) => {
-    const [allOrders, setAllOrders] = useState([]);
-    const [isLoadingPage, setIsLoadingPage] = useState(true);
+    // 🟢 SWR CACHING: Memory/LocalStorage se instant initial load
+    const [allOrders, setAllOrders] = useState(() => {
+        const cached = localStorage.getItem('swr_all_orders');
+        return cached ? JSON.parse(cached) : [];
+    });
+    
+    // Agar cache mein data majood hai, to page-level spinner nahi chalega (SWR strategy)
+    const [isLoadingPage, setIsLoadingPage] = useState(!allOrders.length);
+    const [isSilentRefreshing, setIsSilentRefreshing] = useState(false);
     const [isAccountLocked, setIsAccountLocked] = useState(false);
     const [lockDetails, setLockDetails] = useState({ unpaid_amount: 0 });
     const [error, setError] = useState('');
     const [activeTab, setActiveTab] = useState('Processing');
     const [newOrderIds, setNewOrderIds] = useState(new Set());
 
-    useEffect(() => {
-        const fetchOrders = async () => {
+    const fetchOrders = async (isSilent = false) => {
+        if (!isSilent) {
             if (setIsLoading) setIsLoading(true);
             setIsLoadingPage(true);
-            try {
-                const data = await supplierService.getMyOrders();
-                setAllOrders(data);
+        } else {
+            setIsSilentRefreshing(true);
+        }
+        
+        try {
+            const data = await supplierService.getMyOrders();
+            setAllOrders(data);
+            
+            // Cache save for next instant load
+            localStorage.setItem('swr_all_orders', JSON.stringify(data));
 
-                if (data.length > 0) {
-                    const firstOrder = data[0];
-                    if (firstOrder.is_locked) {
-                        setIsAccountLocked(true);
-                        setLockDetails({ unpaid_amount: parseFloat(firstOrder.unpaid_commission) || 0 });
-                    }
-                    const newIds = new Set(data.filter(o => o.shipment_details.is_new).map(o => o.order_details.id));
-                    setNewOrderIds(newIds);
+            if (data.length > 0) {
+                const firstOrder = data[0];
+                if (firstOrder.is_locked) {
+                    setIsAccountLocked(true);
+                    setLockDetails({ unpaid_amount: parseFloat(firstOrder.unpaid_commission) || 0 });
+                } else {
+                    setIsAccountLocked(false);
                 }
-            } catch (err) {
-                setError('Failed to fetch orders. Please refresh.');
-            } finally {
-                setIsLoadingPage(false);
-                if (setIsLoading) setIsLoading(false);
+                const newIds = new Set(data.filter(o => o.shipment_details.is_new).map(o => o.order_details.id));
+                setNewOrderIds(newIds);
             }
-        };
-        fetchOrders();
+        } catch (err) {
+            console.error("Orders sync failed:", err);
+            if (!allOrders.length) setError('Failed to fetch orders. Please refresh.');
+        } finally {
+            setIsLoadingPage(false);
+            setIsSilentRefreshing(false);
+            if (setIsLoading) setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        // First initial load (will be silent if cache is present)
+        fetchOrders(allOrders.length > 0);
     }, [setIsLoading]);
 
     const categorizedOrders = useMemo(() => {
-    if (!allOrders.length) return { Processing: [], Shipping: [], Delivered: [], Cancelled: [], Returned: [] };
+        if (!allOrders.length) return { Processing: [], Shipping: [], Delivered: [], Cancelled: [], Returned: [] };
 
-    // 1. Normalize status to lowercase for safer comparison
-    const getStatus = (o) => (o.shipment_details.current_status || '').toLowerCase();
+        const getStatus = (o) => (o.shipment_details.current_status || '').toLowerCase();
 
-    // 2. Define specific buckets
-    const Processing = allOrders.filter(o => getStatus(o) === 'processing');
-    const Delivered = allOrders.filter(o => getStatus(o) === 'delivered');
-    const Returned = allOrders.filter(o => getStatus(o) === 'returned');
-    const Cancelled = allOrders.filter(o => ['cancelled', 'refused', 'failedattempt', 'exception'].includes(getStatus(o)));
+        const Processing = allOrders.filter(o => getStatus(o) === 'processing');
+        const Delivered = allOrders.filter(o => getStatus(o) === 'delivered');
+        const Returned = allOrders.filter(o => getStatus(o) === 'returned');
+        const Cancelled = allOrders.filter(o => ['cancelled', 'refused', 'failedattempt', 'exception'].includes(getStatus(o)));
 
-    // 3. THE FIX: The Shipping tab catches EVERYTHING else (InTransit, OutForDelivery, Dispatched, etc.)
-    const Shipping = allOrders.filter(o => {
-        const s = getStatus(o);
-        return s !== 'processing' && s !== 'delivered' && s !== 'returned' && !['cancelled', 'refused', 'failedattempt', 'exception'].includes(s);
-    });
+        const Shipping = allOrders.filter(o => {
+            const s = getStatus(o);
+            return s !== 'processing' && s !== 'delivered' && s !== 'returned' && !['cancelled', 'refused', 'failedattempt', 'exception'].includes(s);
+        });
 
-    return { Processing, Shipping, Delivered, Cancelled, Returned };
-}, [allOrders]);
+        return { Processing, Shipping, Delivered, Cancelled, Returned };
+    }, [allOrders]);
+
     const tabs = ['Processing', 'Shipping', 'Delivered', 'Cancelled', 'Returned'];
 
+    // Animations Config
     const containerVariants = {
         hidden: { opacity: 0 },
-        visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+        visible: { 
+            opacity: 1, 
+            transition: { staggerChildren: 0.05 } 
+        }
     };
 
-    if (error) return <div className="error-state">{error}</div>;
+    const cardMotionVariants = {
+        hidden: { opacity: 0, y: 15 },
+        visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 260, damping: 25 } }
+    };
+
+    if (error && !allOrders.length) return <div className="error-state">{error}</div>;
 
     return (
         <div className="orders-page-container">
@@ -77,6 +105,7 @@ const Orders = ({ setIsLoading }) => {
                     className="account-lock-banner"
                     initial={{ y: -50, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                 >
                     <AlertTriangle size={24} color="white" fill="#ef4444" style={{flexShrink: 0}} />
                     <span>
@@ -85,6 +114,16 @@ const Orders = ({ setIsLoading }) => {
                     </span>
                 </motion.div>
             )}
+
+            {/* Header displaying SWR status silently */}
+            <div className="orders-list-meta-row">
+                <h2>Manage Orders</h2>
+                {isSilentRefreshing && (
+                    <span className="silent-loader">
+                        <RefreshCw size={14} className="spin-icon" /> Syncing data...
+                    </span>
+                )}
+            </div>
 
             <div className="orders-tabs">
                 {tabs.map(tab => (
@@ -110,7 +149,10 @@ const Orders = ({ setIsLoading }) => {
 
             <div className="orders-list-content">
                 {isLoadingPage ? (
-                    <div className="loading-state">Loading...</div>
+                    <div className="loading-state">
+                        <div className="spinner"></div>
+                        <p>Fetching Orders...</p>
+                    </div>
                 ) : (
                     <AnimatePresence mode='wait'>
                         {categorizedOrders[activeTab]?.length > 0 ? (
@@ -122,13 +164,14 @@ const Orders = ({ setIsLoading }) => {
                                 exit={{ opacity: 0, y: 10 }}
                             >
                                 {categorizedOrders[activeTab].map(order => (
-                                    <OrderCard 
-                                        key={order.shipment_details.id} 
-                                        order={order}
-                                        isAccountLocked={isAccountLocked} 
-                                        unpaidAmount={lockDetails.unpaid_amount || 0}
-                                        isNew={newOrderIds.has(order.order_details.id)}
-                                    />
+                                    <motion.div key={order.shipment_details.id} variants={cardMotionVariants}>
+                                        <OrderCard 
+                                            order={order}
+                                            isAccountLocked={isAccountLocked} 
+                                            unpaidAmount={lockDetails.unpaid_amount || 0}
+                                            isNew={newOrderIds.has(order.order_details.id)}
+                                        />
+                                    </motion.div>
                                 ))}
                             </motion.div>
                         ) : (

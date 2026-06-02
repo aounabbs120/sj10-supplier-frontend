@@ -1,16 +1,49 @@
 /* src/pages/Tools.css */
 
 .tools-container {
-    padding: 15px; /* Less padding on mobile */
-    animation: fadeIn 0.5s ease-in-out;
+    padding: 15px; 
+    animation: toolsFadeIn 0.4s ease-out;
+    font-family: 'Outfit', 'Inter', sans-serif;
+}
+
+@keyframes toolsFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 🟢 MODERN LOADING SCREEN */
+.tools-loading-screen {
+    height: 70vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    font-size: 1rem;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.tools-spinner {
+    width: 35px;
+    height: 35px;
+    border: 3px solid #e2e8f0;
+    border-top: 3px solid #4f46e5;
+    border-radius: 50%;
+    animation: toolsSpin 0.8s linear infinite;
+}
+
+@keyframes toolsSpin {
+    to { transform: rotate(360deg); }
 }
 
 .tools-header {
-    font-size: 24px; /* Slightly smaller font for mobile */
-    font-weight: bold;
-    text-align: center;
-    color: #111827;
+    font-size: 1.6rem;
+    font-weight: 800;
+    text-align: left;
+    color: #0f172a;
     margin-bottom: 25px;
+    letter-spacing: -0.5px;
 }
 
 .tool-card {
@@ -18,21 +51,23 @@
     border-radius: 18px;
     padding: 20px;
     margin-bottom: 20px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    border: 1px solid #f1f5f9;
 }
 
 .tool-card-header {
-    font-size: 16px;
-    font-weight: 600;
-    color: #1f2937;
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #475569;
     margin: 0 0 20px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
 }
 
 .tool-card-content {
     display: grid;
-    /* This creates a responsive grid that fits as many items as possible */
-    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-    gap: 15px; /* Smaller gap for mobile */
+    grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+    gap: 15px; 
 }
 
 .tool-item {
@@ -40,65 +75,86 @@
     flex-direction: column;
     align-items: center;
     text-decoration: none;
-    color: #374151;
+    color: #334155;
     text-align: center;
+    transition: all 0.2s ease;
 }
 
 .tool-icon-wrapper {
     position: relative;
-    width: 60px; /* Slightly smaller icons for mobile */
-    height: 60px;
-    border-radius: 16px;
+    width: 62px; 
+    height: 62px;
+    border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 10px;
-    transition: transform 0.3s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.02);
+    transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.tool-icon-wrapper:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
+.tool-item:hover .tool-icon-wrapper {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.12);
 }
 
 .tool-icon-wrapper svg {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
+    transition: transform 0.2s;
 }
 
-/* Icon Colors */
+.tool-item:hover .tool-icon-wrapper svg {
+    transform: scale(1.08);
+}
+
+/* Premium Icon Colors & Gradients */
 .tool-icon-wrapper.purple { background-color: #f5f3ff; color: #7c3aed; }
 .tool-icon-wrapper.orange { background-color: #fff7ed; color: #f97316; }
 .tool-icon-wrapper.blue { background-color: #eff6ff; color: #3b82f6; }
-.tool-icon-wrapper.green { background-color: #f0fdf4; color: #22c55e; }
+.tool-icon-wrapper.green { background-color: #f0fdf4; color: #10b981; }
+.tool-icon-wrapper.pink { background-color: #fdf2f8; color: #ec4899; }
 
 .tool-title {
-    font-size: 13px; /* Smaller text for mobile for better fit */
-    font-weight: 500;
+    font-size: 0.8rem; 
+    font-weight: 700;
+    color: #475569;
 }
 
+.tool-item:hover .tool-title {
+    color: #0f172a;
+}
+
+/* 🟢 PREMIUM GLOWING PULSING BADGE */
 .new-badge {
     position: absolute;
-    top: -5px;
-    right: -10px;
+    top: -4px;
+    right: -6px;
     background-color: #ef4444;
     color: white;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: bold;
-    padding: 3px 6px;
+    padding: 3px 7px;
     border-radius: 12px;
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+    animation: toolsBadgePulse 2s infinite;
+}
+
+@keyframes toolsBadgePulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45); }
+    70% { transform: scale(1.05); box-shadow: 0 0 0 5px rgba(239, 68, 68, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
 
 
 /* --- RESPONSIVE DESIGN --- */
-/* For tablets and larger screens (768px and up) */
 @media (min-width: 768px) {
     .tools-container {
-        padding: 30px; /* More padding on larger screens */
+        padding: 30px; 
     }
 
     .tools-header {
-        font-size: 32px; /* Larger header text */
+        font-size: 2.1rem; 
         margin-bottom: 40px;
     }
     
@@ -107,24 +163,25 @@
     }
 
     .tool-card-header {
-        font-size: 18px;
+        font-size: 1rem;
     }
 
     .tool-card-content {
-        gap: 25px; /* More space between items */
+        gap: 25px; 
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     }
 
     .tool-icon-wrapper {
-        width: 70px; /* Slightly larger icons */
-        height: 70px;
+        width: 72px; 
+        height: 72px;
     }
 
     .tool-icon-wrapper svg {
-        width: 35px;
-        height: 35px;
+        width: 32px;
+        height: 32px;
     }
     
     .tool-title {
-        font-size: 14px; /* Standard font size */
+        font-size: 0.9rem; 
     }
 }
