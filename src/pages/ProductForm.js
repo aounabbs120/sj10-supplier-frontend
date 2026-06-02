@@ -22,7 +22,7 @@ const Icons = {
     Camera: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>,
     Video: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>,
     Trash: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>,
-    Close: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
+    Close: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
     ChevronDown: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>,
     Back: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>,
     Next: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>,
@@ -35,7 +35,9 @@ const Icons = {
     Palette: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="13.5" cy="6.5" r=".5"></circle><circle cx="17.5" cy="10.5" r=".5"></circle><circle cx="8.5" cy="7.5" r=".5"></circle><circle cx="6.5" cy="12.5" r=".5"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path></svg>,
     Ruler: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h20"></path><path d="M6 12v-2"></path><path d="M10 12v-4"></path><path d="M14 12v-4"></path><path d="M18 12v-2"></path></svg>,
     Edit: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>,
-    Sun: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2"></path><path d="M12 21v2"></path><path d="M4.22 4.22l1.42 1.42"></path><path d="M18.36 18.36l1.42 1.42"></path><path d="M1 12h2"></path><path d="M21 12h2"></path><path d="M4.22 19.78l1.42-1.42"></path><path d="M18.36 5.64l1.42-1.42"></path></svg>
+    Sun: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2"></path><path d="M12 21v2"></path><path d="M4.22 4.22l1.42 1.42"></path><path d="M18.36 18.36l1.42 1.42"></path><path d="M1 12h2"></path><path d="M21 12h2"></path><path d="M4.22 19.78l1.42-1.42"></path><path d="M18.36 5.64l1.42-1.42"></path></svg>,
+    Info: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>,
+    Warning: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ea580c" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
 };
 
 // --- CONSTANTS ---
@@ -115,7 +117,7 @@ const CategoryOverlay = ({ isOpen, onClose, categories, onSelect }) => {
     );
 };
 
-// --- REGION SELECTOR (Custom with Flags) ---
+// --- REGION SELECTOR (Responsive with tight bounds on Flag images) ---
 const RegionSelector = ({ value, onChange }) => {
     const [isOpen, setIsOpen] = useState(false);
     const regions = [
@@ -129,7 +131,7 @@ const RegionSelector = ({ value, onChange }) => {
         <div className="custom-flag-dropdown">
             <div className="flag-trigger" onClick={() => setIsOpen(!isOpen)}>
                 <div className="flag-info">
-                    <img src={selected.img} alt="" className="flag-icon" />
+                    <img src={selected.img} alt="" className="selector-custom-flag-icon" />
                     <span>{selected.label}</span>
                 </div>
                 <Icons.ChevronDown />
@@ -139,7 +141,7 @@ const RegionSelector = ({ value, onChange }) => {
                     {regions.map(r => (
                         <div key={r.id} className={`flag-opt ${value === r.id ? 'active' : ''}`}
                             onClick={() => { onChange(r.id); setIsOpen(false); }}>
-                            <img src={r.img} alt="" className="flag-icon" />
+                            <img src={r.img} alt="" className="selector-custom-flag-icon" />
                             <span>{r.label}</span>
                         </div>
                     ))}
@@ -172,7 +174,7 @@ const WarrantyOverlay = ({ isOpen, onClose, onSave, initialData }) => {
             <div className="overlay-body">
                 <div className="warranty-card fade-in-up">
                     <div className="w-input-group">
-                        <label>Warranty Duration <span className="red">*</span></label>
+                        <label>Warranty Duration</label>
                         <input type="text" placeholder="e.g. 12 Months, 2 Years..."
                             value={duration} onChange={e => setDuration(e.target.value)}
                             className="pro-input" autoFocus />
@@ -334,7 +336,7 @@ const SizeBankOverlay = ({ isOpen, onClose, onSelect, sizeGroups }) => {
     );
 };
 
-// --- SEASON SELECTOR ---
+// --- SEASON SELECTOR (Resized earth/globe fix) ---
 const SeasonSelector = ({ value, onChange }) => {
     const [isOpen, setIsOpen] = useState(false);
     const seasons = [
@@ -350,7 +352,7 @@ const SeasonSelector = ({ value, onChange }) => {
         <div className="custom-flag-dropdown">
             <div className="flag-trigger" onClick={() => setIsOpen(!isOpen)}>
                 <div className="flag-info">
-                    <img src={selected.img} alt="" className="flag-icon" />
+                    <img src={selected.img} alt="" className="selector-custom-season-icon" />
                     <span>{selected.label}</span>
                 </div>
                 <Icons.ChevronDown />
@@ -360,7 +362,7 @@ const SeasonSelector = ({ value, onChange }) => {
                     {seasons.map(s => (
                         <div key={s.id} className={`flag-opt ${value === s.id ? 'active' : ''}`} 
                              onClick={() => { onChange(s.id); setIsOpen(false); }}>
-                            <img src={s.img} alt="" className="flag-icon" />
+                            <img src={s.img} alt="" className="selector-custom-season-icon" />
                             <span>{s.label}</span>
                         </div>
                     ))}
@@ -391,6 +393,13 @@ const ProductForm = ({ setIsLoading }) => {
 
     // Drag-and-Drop state
     const [isDragging, setIsDragging] = useState(false);
+
+    // Dynamic Alert Popup state
+    const [validationErrors, setValidationErrors] = useState([]);
+    const [showErrorPopup, setShowErrorPopup] = useState(false);
+    
+    // Toggle for Shipping guidance
+    const [showShippingGuide, setShowShippingGuide] = useState(true);
 
     // Overlay States
     const [showAttributes, setShowAttributes] = useState(false);
@@ -675,21 +684,39 @@ const ProductForm = ({ setIsLoading }) => {
         return "Select Category";
     };
 
-    // Submit Handling
+    // Form Submission & Advanced Custom Validation Checks
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!product.title || !product.price || !product.category_id) {
-            window.scrollTo(0, 0);
-            return setError("Please fill Title, Price, and Category.");
+        const errors = [];
+
+        if (!product.title.trim()) errors.push("Product Title is required.");
+        if (!product.description.trim()) errors.push("Product Description is required.");
+        if (!product.category_id) errors.push("Category selection is required.");
+
+        const hasVariants = product.variants && product.variants.length > 0;
+        if (!hasVariants) {
+            if (!product.main_color) errors.push("Main Color is required (No Variants added).");
+            if (!product.main_size) errors.push("Main Size is required (No Variants added).");
         }
 
-        const hasVariants = product.variants.length > 0;
-        if (!hasVariants) {
-            if (!product.main_color || !product.main_size) {
-                alert("⚠️ Since you have added NO Variants, you MUST select a main Color and Size from the Specifications section.");
-                return;
-            }
+        if (!product.imported_region || (product.imported_region === 'Custom' && !product.custom_region.trim())) {
+            errors.push("Imported Region selection is required.");
+        }
+
+        if (!product.price || parseFloat(product.price) <= 0) errors.push("Valid Product Price is required.");
+        if (!product.quantity || parseInt(product.quantity, 10) < 0) errors.push("Valid Stock Quantity is required.");
+
+        if (!product.pkg_weight || parseFloat(product.pkg_weight) <= 0) errors.push("Package Weight must be greater than 0.");
+        if (!product.pkg_length || parseFloat(product.pkg_length) <= 0) errors.push("Package Length must be greater than 0.");
+        if (!product.pkg_width || parseFloat(product.pkg_width) <= 0) errors.push("Package Width must be greater than 0.");
+        if (!product.pkg_height || parseFloat(product.pkg_height) <= 0) errors.push("Package Height must be greater than 0.");
+
+        if (errors.length > 0) {
+            setValidationErrors(errors);
+            setShowErrorPopup(true);
+            window.scrollTo(0, 0);
+            return;
         }
         
         if (activeImages.some(i => i.isUploading) || isVideoUploading) return alert("Wait for uploads to finish.");
@@ -740,11 +767,34 @@ const ProductForm = ({ setIsLoading }) => {
             
             <WarrantyOverlay isOpen={showWarranty} onClose={() => setShowWarranty(false)} initialData={{ type: product.warranty_type, info: product.warranty_details }} onSave={(type, info) => setProduct(p => ({...p, warranty_type: type, warranty_details: info}))} />
 
+            {/* CUSTOM VALIDATION ERROR POPUP (REPLACES NATIVE ALERTS) */}
+            {showErrorPopup && (
+                <div className="custom-error-popup-overlay">
+                    <div className="custom-error-popup scale-in-entry">
+                        <div className="popup-warning-header">
+                            <Icons.Warning />
+                            <h4>Action Required</h4>
+                        </div>
+                        <p className="popup-desc-text">Please resolve the following required fields before saving:</p>
+                        <ul className="popup-error-list-view">
+                            {validationErrors.map((err, i) => (
+                                <li key={i}>{err}</li>
+                            ))}
+                        </ul>
+                        <button type="button" className="popup-understand-btn" onClick={() => setShowErrorPopup(false)}>
+                            Understood
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <div className="form-header">
                 <h1>{isEditMode ? 'Edit Product' : 'Add New Product'}</h1>
             </div>
 
             <form onSubmit={handleSubmit} className="product-form">
+                
+                {/* 1. BASIC DETAILS */}
                 <div className="form-card">
                     <h3>Basic Details</h3>
                     <div className="form-group full-width">
@@ -803,7 +853,7 @@ const ProductForm = ({ setIsLoading }) => {
                     </div>
 
                     <div className="form-group full-width mt-20">
-                        <label>Description</label>
+                        <label>Description <span className="red">*</span></label>
                         <div className="rich-text-wrapper">
                             <div className="rich-toolbar">
                                 <button type="button" onClick={() => insertTag('b')} title="Bold"><Icons.Bold /></button>
@@ -817,48 +867,48 @@ const ProductForm = ({ setIsLoading }) => {
                     </div>
                 </div>
 
-                {/* ProductForm.js ke andar Category & Specs Card */}
-<div className="form-card">
-    <h3>Category & Specs</h3>
-    <div className="form-group full-width">
-        <label>Category <span className="red">*</span></label>
-        <div className="cat-select-btn" onClick={() => setShowCategories(true)}>
-            <span>{getCatNames()}</span> <button type="button">Change</button>
-        </div>
-    </div>
-    <div className="btn-row">
-        {/* NAYA INTERACTIVE ATTRIBUTES BUTTON */}
-        <button 
-            type="button" 
-            className={`action-btn ${!product.category_id ? 'attr-disabled-btn' : ''}`} 
-            onClick={() => {
-                if (!product.category_id) {
-                    alert("⚠️ Please select a Category first to unlock Specifications/Attributes!");
-                } else {
-                    setShowAttributes(true);
-                }
-            }}
-        >
-            {!product.category_id 
-                ? 'Select Category First' 
-                : (Object.keys(product.attributes).length > 0 
-                    ? `✓ ${Object.keys(product.attributes).length} Attributes` 
-                    : 'Add Attributes'
-                  )
-            }
-        </button>
-        <button type="button" className="action-btn" onClick={() => setShowVariants(true)}>
-            {product.variants.length > 0 ? `✓ ${product.variants.length} Variants` : 'Add Variants'}
-        </button>
-    </div>
-</div>
+                {/* 2. CATEGORY & SPECS */}
+                <div className="form-card">
+                    <h3>Category & Specs</h3>
+                    <div className="form-group full-width">
+                        <label>Category <span className="red">*</span></label>
+                        <div className="cat-select-btn" onClick={() => setShowCategories(true)}>
+                            <span>{getCatNames()}</span> <button type="button">Change</button>
+                        </div>
+                    </div>
+                    <div className="btn-row">
+                        <button 
+                            type="button" 
+                            className={`action-btn ${!product.category_id ? 'attr-disabled-btn' : ''}`} 
+                            onClick={() => {
+                                if (!product.category_id) {
+                                    alert("⚠️ Please select a Category first to unlock Specifications/Attributes!");
+                                } else {
+                                    setShowAttributes(true);
+                                }
+                            }}
+                        >
+                            {!product.category_id 
+                                ? 'Select Category First' 
+                                : (Object.keys(product.attributes).length > 0 
+                                    ? `✓ ${Object.keys(product.attributes).length} Attributes` 
+                                    : 'Add Attributes'
+                                  )
+                            }
+                        </button>
+                        <button type="button" className="action-btn" onClick={() => setShowVariants(true)}>
+                            {product.variants.length > 0 ? `✓ ${product.variants.length} Variants` : 'Add Variants'}
+                        </button>
+                    </div>
+                </div>
 
+                {/* 3. SPECIFICATIONS */}
                 <div className="form-card">
                     <h3>Specifications</h3>
 
                     {/* Import Region */}
                     <div className="form-group full-width">
-                        <label>Imported Region</label>
+                        <label>Imported Region <span className="red">*</span></label>
                         <RegionSelector
                             value={product.imported_region}
                             onChange={(val) => setProduct(p => ({ ...p, imported_region: val, custom_region: '' }))}
@@ -914,7 +964,7 @@ const ProductForm = ({ setIsLoading }) => {
 
                     <div className="form-grid mt-10">
                         <div className="form-group">
-                            <label><Icons.Palette /> Main Color <span className="red">*</span></label>
+                            <label><Icons.Palette /> Main Color {product.variants.length === 0 && <span className="red">*</span>}</label>
                             <div className="bank-select-trigger" onClick={() => setShowColorBank(true)}>
                                 {product.main_color ? (
                                     <span className="selected-val">
@@ -927,7 +977,7 @@ const ProductForm = ({ setIsLoading }) => {
                         </div>
 
                         <div className="form-group">
-                            <label><Icons.Ruler /> Main Size <span className="red">*</span></label>
+                            <label><Icons.Ruler /> Main Size {product.variants.length === 0 && <span className="red">*</span>}</label>
                             <div className="bank-select-trigger" onClick={() => setShowSizeBank(true)}>
                                 <span className={product.main_size ? "selected-val" : "placeholder"}>
                                     {product.main_size || "Select Size..."}
@@ -938,31 +988,99 @@ const ProductForm = ({ setIsLoading }) => {
                     </div>
                 </div>
 
+                {/* 4. PRICING & INVENTORY */}
                 <div className="form-card">
                     <h3>Pricing & Inventory</h3>
                     <div className="form-grid">
-                        <div className="form-group"><label>Price (PKR) <span className="red">*</span></label><input type="number" name="price" value={product.price} onChange={handleChange} placeholder="e.g. 2499" /></div>
-                        <div className="form-group"><label>Discount Price (PKR)</label><input type="number" name="discounted_price" value={product.discounted_price} onChange={handleChange} placeholder="e.g. 1999" /></div>
-                        <div className="form-group"><label>Stock <span className="red">*</span></label><input type="number" name="quantity" value={product.quantity} onChange={handleChange} placeholder="e.g. 50" /></div>
-                        <div className="form-group"><label>Status</label><select name="status" value={product.status} onChange={handleChange}><option>In Stock</option><option>Out of Stock</option></select></div>
+                        <div className="form-group">
+                            <label>Price (PKR) <span className="red">*</span></label>
+                            <input type="number" name="price" value={product.price} onChange={handleChange} placeholder="e.g. 2499" />
+                        </div>
+                        <div className="form-group">
+                            <label>Discount Price (PKR)</label>
+                            <input type="number" name="discounted_price" value={product.discounted_price} onChange={handleChange} placeholder="e.g. 1999" />
+                        </div>
+                        <div className="form-group">
+                            <label>Stock Quantity <span className="red">*</span></label>
+                            <input type="number" name="quantity" value={product.quantity} onChange={handleChange} placeholder="e.g. 50" />
+                        </div>
+                        <div className="form-group">
+                            <label>Status</label>
+                            <select name="status" value={product.status} onChange={handleChange}>
+                                <option>In Stock</option>
+                                <option>Out of Stock</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
+                {/* 5. SHIPPING */}
                 <div className="form-card">
-                    <h3>Shipping</h3>
+                    <h3>Shipping Information</h3>
                     <div className="form-grid">
-                        <div className="form-group"><label>Type</label><select name="shipping_details" value={product.shipping_details} onChange={handleChange}><option>Standard</option><option>Express</option></select></div>
-                        <div className="form-group"><label>Weight</label><div className="flex-grp"><input type="number" name="pkg_weight" value={product.pkg_weight} onChange={handleChange} placeholder="e.g. 250" /><select name="pkg_weight_unit" value={product.pkg_weight_unit} onChange={handleChange}><option>g</option><option>kg</option></select></div></div>
-                    </div>
-                    <div className="form-group mt-10">
-                        <label>Dimensions (LxWxH)</label>
-                        <div className="dim-grp">
-                            <input type="number" name="pkg_length" placeholder="L" value={product.pkg_length} onChange={handleChange} />
-                            <input type="number" name="pkg_width" placeholder="W" value={product.pkg_width} onChange={handleChange} />
-                            <input type="number" name="pkg_height" placeholder="H" value={product.pkg_height} onChange={handleChange} />
-                            <select name="pkg_unit" value={product.pkg_unit} onChange={handleChange}><option>cm</option><option>in</option></select>
+                        <div className="form-group">
+                            <label>Shipping Type <span className="red">*</span></label>
+                            <select name="shipping_details" value={product.shipping_details} onChange={handleChange}>
+                                <option>Standard</option>
+                                <option>Express</option>
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label>Package Weight <span className="red">*</span></label>
+                            <div className="flex-grp">
+                                <input type="number" name="pkg_weight" value={product.pkg_weight} onChange={handleChange} placeholder="e.g. 250" />
+                                <select name="pkg_weight_unit" value={product.pkg_weight_unit} onChange={handleChange}>
+                                    <option>g</option>
+                                    <option>kg</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
+
+                    <div className="specs-divider"></div>
+
+                    {/* Volumetric dimensions section */}
+                    <label className="section-subtitle-shipping">Package Dimensions <span className="red">*</span></label>
+                    <div className="shipping-dimensions-row mt-10">
+                        <div className="dim-input-box">
+                            <label>Length <span className="red">*</span></label>
+                            <input type="number" name="pkg_length" placeholder="Length" value={product.pkg_length} onChange={handleChange} />
+                        </div>
+                        <div className="dim-input-box">
+                            <label>Width <span className="red">*</span></label>
+                            <input type="number" name="pkg_width" placeholder="Width" value={product.pkg_width} onChange={handleChange} />
+                        </div>
+                        <div className="dim-input-box">
+                            <label>Height <span className="red">*</span></label>
+                            <input type="number" name="pkg_height" placeholder="Height" value={product.pkg_height} onChange={handleChange} />
+                        </div>
+                        <div className="dim-input-box">
+                            <label>Unit</label>
+                            <select name="pkg_unit" value={product.pkg_unit} onChange={handleChange}>
+                                <option>cm</option>
+                                <option>in</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Dismissible Courier Guidance Box */}
+                    {showShippingGuide && (
+                        <div className="shipping-instructions-card mt-15">
+                            <Icons.Info />
+                            <div className="instruction-text-block">
+                                <strong>Detailed Courier Guidance:</strong>
+                                <p>Sahi dimensions (Length, Width, Height) aur accurate weight daalna intehai laazmi hai. Logistics companies (jaise TCS, Leopards, Trax) dynamically package ke volumetric weight par rate calculate karti hain. Agar galat measurements dali jayein toh courier hub par parcel delay, return, ya extra penalty charges lag sakte hain.</p>
+                            </div>
+                            <button 
+                                type="button" 
+                                className="dismiss-guide-btn" 
+                                onClick={() => setShowShippingGuide(false)}
+                                title="Dismiss guidelines"
+                            >
+                                <Icons.Close />
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 <div className="form-footer">
