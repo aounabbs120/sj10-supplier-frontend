@@ -1,0 +1,251 @@
+/* src/components/WarrantyOverlay.css */
+
+.warranty-root-theme {
+    font-family: 'Inter', sans-serif;
+    background-color: #f8fafc;
+}
+
+/* --- OVERLAY ANIMATIONS --- */
+.fade-in-overlay {
+    animation: fadeOverlay 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeOverlay {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.scale-in-entry {
+    animation: scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* --- HEADER NAVIGATION BUTTONS --- */
+.overlay-back-btn {
+    background: transparent;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #475569;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.overlay-back-btn:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+    transform: translateX(-2px);
+}
+
+.overlay-close-btn {
+    background: #f1f5f9;
+    border: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.overlay-close-btn:hover {
+    background: #fee2e2;
+    color: #ef4444;
+    transform: rotate(90deg);
+}
+
+/* --- TAP FEEDBACK (RIPPLE) --- */
+.ripple-click {
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ripple-click:active {
+    transform: scale(0.96);
+}
+
+/* --- WARRANTY MAIN CARD LAYOUT --- */
+.warranty-card {
+    background: white;
+    border: 1px solid #cbd5e1;
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 500px;
+    margin: 32px auto;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+    .warranty-card {
+        margin: 16px auto;
+        padding: 16px;
+        border-radius: 12px;
+    }
+}
+
+.w-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.w-input-group label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.w-input-group label svg {
+    color: #2563eb; /* Theme Blue icon highlight */
+}
+
+.w-input-group input.pro-input {
+    padding: 12px 14px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    font-size: 14px;
+    box-sizing: border-box;
+    transition: all 0.2s;
+}
+
+.w-input-group input.pro-input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    outline: none;
+}
+
+/* --- MODULAR TEXT-FORMATTING RICH EDITOR --- */
+.fake-rich-editor {
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #ffffff;
+    transition: border-color 0.2s;
+}
+
+.fake-rich-editor:focus-within {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.editor-toolbar {
+    background: #f8fafc;
+    border-bottom: 1.5px solid #cbd5e1;
+    padding: 6px;
+    display: flex;
+    gap: 6px;
+}
+
+.tb-btn {
+    background: white;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #475569;
+    transition: all 0.2s;
+}
+
+.tb-btn:hover {
+    background: #eff6ff;
+    color: #2563eb;
+    border-color: #2563eb;
+}
+
+.fake-rich-editor textarea {
+    border: none;
+    resize: none;
+    padding: 12px;
+    width: 100%;
+    height: 120px;
+    box-sizing: border-box;
+    font-size: 14px;
+    outline: none;
+    font-family: inherit;
+}
+
+.char-count {
+    font-size: 11px;
+    color: #94a3b8;
+    text-align: right;
+    padding: 4px 10px;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* Actions footer */
+.w-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.w-cancel {
+    background: white;
+    border: 1.5px solid #cbd5e1;
+    padding: 11px 22px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 13px;
+    color: #475569;
+    cursor: pointer;
+}
+
+.w-cancel:hover {
+    background: #f1f5f9;
+}
+
+.w-save {
+    background: #ea580c; /* Theme Orange Primary */
+    color: white;
+    border: none;
+    padding: 11px 26px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: 0 4px 6px -1px rgba(234, 88, 12, 0.2);
+}
+
+.w-save:hover {
+    background: #c2410c;
+}
+
+.mt-20 {
+    margin-top: 20px;
+}
+
+.mt-5 {
+    margin-top: 5px;
+}

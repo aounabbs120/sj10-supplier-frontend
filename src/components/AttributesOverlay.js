@@ -1,12 +1,28 @@
 // src/components/AttributesOverlay.js
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import './AttributesOverlay.css'; 
 
 // --- LOCAL ICONS ---
 const Icons = {
-    Close: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
+    Close: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>,
     ChevronDown: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>,
     Trash: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+};
+
+// Bulletproof Inline Layout Style
+const overlayInlineStyle = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100vw',
+    height: '100vh',
+    backgroundColor: '#f8fafc',
+    zIndex: 999999,
+    display: 'flex',
+    flexDirection: 'column',
+    boxSizing: 'border-box',
+    overflowY: 'auto'
 };
 
 // --- CUSTOM SELECT ---
@@ -72,8 +88,8 @@ const AttributesOverlay = ({ isOpen, onClose, onSave, subCategoryId, existingAtt
     if (!isOpen) return null;
     const attrsForCat = subCategoryId && attributeData ? (attributeData[String(subCategoryId)] || []) : [];
 
-    return (
-        <div className="fullscreen-overlay attr-overlay-theme fade-in-overlay" style={{ zIndex: 2001 }}>
+    return createPortal(
+        <div className="fullscreen-overlay attr-overlay-theme fade-in-overlay" style={overlayInlineStyle}>
             <div className="overlay-header">
                 <button type="button" className="overlay-back-btn" onClick={onClose}>
                      <span>Cancel</span>
@@ -124,7 +140,8 @@ const AttributesOverlay = ({ isOpen, onClose, onSave, subCategoryId, existingAtt
                     <button type="button" className="add-custom-btn" onClick={() => setCustomAttributes(p => [...p, { key: '', value: '' }])}>+ Add Custom Field</button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

@@ -1,0 +1,306 @@
+/* src/components/SizeBankOverlay.css */
+
+.size-bank-theme {
+    font-family: 'Inter', sans-serif;
+    background-color: #f8fafc;
+}
+
+/* --- ANIMATIONS --- */
+.fade-in-overlay {
+    animation: fadeOverlay 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeOverlay {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.scale-in-entry {
+    animation: scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* --- HEADER BUTTONS --- */
+.overlay-back-btn {
+    background: transparent;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #475569;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.overlay-back-btn:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+    transform: translateX(-2px);
+}
+
+.overlay-close-btn {
+    background: #f1f5f9;
+    border: none;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #475569;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.overlay-close-btn:hover {
+    background: #fee2e2;
+    color: #ef4444;
+    transform: rotate(90deg);
+}
+
+/* --- REUSABLE CLICK TRANSITION (RIPPLE EFFECT) --- */
+.ripple-click {
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ripple-click:active {
+    transform: scale(0.95);
+}
+
+/* --- TOP CUSTOM CREATOR SECTION --- */
+.top-custom-creator {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+    box-sizing: border-box;
+}
+
+.top-custom-creator h4 {
+    margin: 0 0 12px 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: #2563eb;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.top-custom-form {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+@media (max-width: 480px) {
+    .top-custom-form {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+}
+
+.top-custom-input {
+    flex: 1;
+    padding: 11px 14px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    font-size: 14px;
+    background: #ffffff;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.top-custom-input:focus {
+    border-color: #2563eb;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.top-custom-btn {
+    background: #ea580c; /* Accent Orange */
+    color: white;
+    border: none;
+    padding: 11px 22px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+
+.top-custom-btn:hover:not(:disabled) {
+    background: #c2410c;
+}
+
+.top-custom-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* --- LIVE SEARCH SECTION --- */
+.search-section-wrapper {
+    margin: 15px 0;
+}
+
+.search-input {
+    padding: 12px 16px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    font-size: 14px;
+    box-sizing: border-box;
+    transition: all 0.2s;
+}
+
+.search-input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* --- DYNAMIC NO RESULTS WARNING CARD --- */
+.no-sizes-found-alert {
+    display: flex;
+    gap: 12px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    border-radius: 12px;
+    padding: 16px;
+    margin: 20px 0;
+    box-sizing: border-box;
+}
+
+.no-sizes-found-alert svg {
+    color: #ea580c;
+    flex-shrink: 0;
+}
+
+.alert-content strong {
+    font-size: 13.5px;
+    color: #c2410c;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.alert-content p {
+    margin: 0;
+    font-size: 12px;
+    color: #9a3412;
+    line-height: 1.5;
+}
+
+/* --- DYNAMIC SIZE CHIPS AND CATEGORIES LIST --- */
+.size-group {
+    margin-bottom: 24px;
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+}
+
+.size-group h4 {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #2563eb; /* Brand Blue */
+    margin: 0 0 14px 0;
+    border-bottom: 1.5px solid #eff6ff;
+    padding-bottom: 8px;
+}
+
+.size-bank-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 8px;
+}
+
+@media (max-width: 480px) {
+    .size-bank-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+    }
+}
+
+.size-chip-item {
+    background: white;
+    border: 1.5px solid #e2e8f0;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.size-chip-item:hover {
+    border-color: #ea580c;
+    color: #ea580c;
+    background: #fff7ed;
+    transform: translateY(-1px);
+}
+
+.custom-btn-trigger {
+    background: #f8fafc;
+    border: 1.5px dashed #cbd5e1;
+    color: #2563eb;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 12.5px;
+    cursor: pointer;
+}
+
+.custom-btn-trigger:hover {
+    border-color: #2563eb;
+    background: #eff6ff;
+}
+
+.custom-size-mini-form {
+    display: flex;
+    gap: 4px;
+    grid-column: span 1;
+}
+
+.custom-size-mini-form input {
+    padding: 8px;
+    font-size: 12px;
+}
+
+.custom-size-mini-form button {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.specs-divider {
+    height: 1.5px;
+    background: #f1f5f9;
+    margin: 16px 0;
+}

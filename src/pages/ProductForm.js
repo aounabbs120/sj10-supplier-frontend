@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import imageCompression from 'browser-image-compression';
+import axios from 'axios'; 
+import imageCompression from 'browser-image-compression'; 
 import supplierService from '../services/supplierService';
 
 // --- DATA IMPORTS ---
@@ -11,9 +11,13 @@ import { categoryAttributes } from '../data/attributes';
 import { colorFamilies } from '../data/colors'; 
 import { sizeGroups } from '../data/sizes';     
 
-// --- COMPONENT IMPORTS ---
+// --- COMPONENT IMPORTS (CLEAN & MODULAR) ---
 import AttributesOverlay from '../components/AttributesOverlay';
 import VariantsOverlay from '../components/VariantsOverlay';
+import WarrantyOverlay from '../components/WarrantyOverlay';
+import ColorBankOverlay from '../components/ColorBankOverlay';
+import SizeBankOverlay from '../components/SizeBankOverlay';
+import CategoryOverlay from '../components/CategoryOverlay'; 
 
 import './ProductForm.css';
 
@@ -30,12 +34,12 @@ const Icons = {
     Italic: () => <span style={{ fontStyle: 'italic', fontSize: '14px', fontFamily: 'serif' }}>I</span>,
     H1: () => <span style={{ fontWeight: 'bold', fontSize: '12px' }}>H1</span>,
     H2: () => <span style={{ fontWeight: 'bold', fontSize: '11px' }}>H2</span>,
-    List: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>,
-    Warranty: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg>,
-    Palette: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="13.5" cy="6.5" r=".5"></circle><circle cx="17.5" cy="10.5" r=".5"></circle><circle cx="8.5" cy="7.5" r=".5"></circle><circle cx="6.5" cy="12.5" r=".5"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path></svg>,
-    Ruler: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h20"></path><path d="M6 12v-2"></path><path d="M10 12v-4"></path><path d="M14 12v-4"></path><path d="M18 12v-2"></path></svg>,
+    List: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line></svg>,
+    Warranty: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg>,
+    Palette: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="13.5" cy="6.5" r=".5"></circle><circle cx="17.5" cy="10.5" r=".5"></circle><circle cx="8.5" cy="7.5" r=".5"></circle><circle cx="6.5" cy="12.5" r=".5"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path></svg>,
+    Ruler: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h20"></path><path d="M6 12v-2"></path><path d="M10 12v-4"></path><path d="M14 12v-4"></path><path d="M18 12v-2"></path></svg>,
     Edit: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>,
-    Sun: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2"></path><path d="M12 21v2"></path><path d="M4.22 4.22l1.42 1.42"></path><path d="M18.36 18.36l1.42 1.42"></path><path d="M1 12h2"></path><path d="M21 12h2"></path><path d="M4.22 19.78l1.42-1.42"></path><path d="M18.36 5.64l1.42-1.42"></path></svg>,
+    Sun: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2"></path><path d="M12 21v2"></path><path d="M4.22 4.22l1.42 1.42"></path><path d="M18.36 18.36l1.42 1.42"></path><path d="M1 12h2"></path><path d="M21 12h2"></path><path d="M4.22 19.78l1.42-1.42"></path><path d="M18.36 5.64l1.42-1.42"></path></svg>,
     Info: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>,
     Warning: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ea580c" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
 };
@@ -60,64 +64,7 @@ const safeParseJSON = (jsonString, defaultValue) => {
     try { const parsed = JSON.parse(jsonString); return parsed === null ? defaultValue : parsed; } catch (e) { return defaultValue; }
 };
 
-// --- SHIMMER IMAGE ---
-const ShimmerImage = ({ src, alt, className }) => {
-    const [loaded, setLoaded] = useState(false);
-    return (
-        <div className={`shimmer-wrapper ${className}`}>
-            {!loaded && <div className="shimmer-effect"></div>}
-            <img
-                src={src}
-                alt={alt}
-                onLoad={() => setLoaded(true)}
-                style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.3s' }}
-            />
-        </div>
-    );
-};
-
-// --- CATEGORY OVERLAY ---
-const CategoryOverlay = ({ isOpen, onClose, categories, onSelect }) => {
-    const [view, setView] = useState('main');
-    const [selectedMain, setSelectedMain] = useState(null);
-
-    useEffect(() => { if (isOpen) { setView('main'); setSelectedMain(null); } }, [isOpen]);
-
-    const parentCategories = categories.filter(c => !c.parent_id);
-    const subCategories = selectedMain ? categories.filter(c => String(c.parent_id) === String(selectedMain.id)) : [];
-
-    if (!isOpen) return null;
-
-    return (
-        <div className="fullscreen-overlay">
-            <div className="overlay-header">
-                {view === 'sub' && <button className="overlay-back" onClick={() => setView('main')}><Icons.Back /> Back</button>}
-                <h3>{view === 'main' ? 'Select Main Category' : selectedMain.name}</h3>
-                <button className="overlay-close" onClick={onClose}><Icons.Close /></button>
-            </div>
-            <div className="overlay-body">
-                <p className="overlay-hint">Choose the most relevant category for your product.</p>
-                <div className="grid-layout">
-                    {view === 'main' ? parentCategories.map(cat => (
-                        <div key={cat.id} className="grid-card" onClick={() => { setSelectedMain(cat); setView('sub'); }}>
-                            <ShimmerImage src={cat.image_url || 'https://via.placeholder.com/80'} alt={cat.name} className="card-img-box" />
-                            <span>{cat.name}</span>
-                            <div className="card-arrow"><Icons.Next /></div>
-                        </div>
-                    )) : subCategories.length > 0 ? subCategories.map(sub => (
-                        <div key={sub.id} className="grid-card" onClick={() => { onSelect(selectedMain.id, sub.id); onClose(); }}>
-                            <ShimmerImage src={sub.image_url || 'https://via.placeholder.com/80'} alt={sub.name} className="card-img-box" />
-                            <span>{sub.name}</span>
-                            <div className="card-select">Select</div>
-                        </div>
-                    )) : <div className="empty-state">No sub-categories available.</div>}
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// --- REGION SELECTOR (Responsive with tight bounds on Flag images) ---
+// --- REGION SELECTOR (Custom with Flags) ---
 const RegionSelector = ({ value, onChange }) => {
     const [isOpen, setIsOpen] = useState(false);
     const regions = [
@@ -151,192 +98,7 @@ const RegionSelector = ({ value, onChange }) => {
     );
 };
 
-// --- ADVANCED WARRANTY OVERLAY ---
-const WarrantyOverlay = ({ isOpen, onClose, onSave, initialData }) => {
-    const [duration, setDuration] = useState('');
-    const [details, setDetails] = useState('');
-
-    useEffect(() => {
-        if (isOpen) {
-            setDuration(initialData.type || '');
-            setDetails(initialData.info || '');
-        }
-    }, [isOpen, initialData]);
-
-    if (!isOpen) return null;
-
-    return (
-        <div className="fullscreen-overlay glass-effect">
-            <div className="overlay-header">
-                <h3>Add Warranty</h3>
-                <button className="overlay-close" onClick={onClose}><Icons.Close /></button>
-            </div>
-            <div className="overlay-body">
-                <div className="warranty-card fade-in-up">
-                    <div className="w-input-group">
-                        <label>Warranty Duration</label>
-                        <input type="text" placeholder="e.g. 12 Months, 2 Years..."
-                            value={duration} onChange={e => setDuration(e.target.value)}
-                            className="pro-input" autoFocus />
-                    </div>
-
-                    <div className="w-input-group mt-20">
-                        <label>Warranty Terms & Details</label>
-                        <div className="fake-rich-editor">
-                            <div className="editor-toolbar">
-                                <Icons.Bold /> <Icons.Italic /> <Icons.List />
-                            </div>
-                            <textarea
-                                placeholder="Terms and conditions..."
-                                value={details}
-                                onChange={e => setDetails(e.target.value)}
-                                maxLength={200}
-                            ></textarea>
-                            <div className="char-count">{details.length}/200</div>
-                        </div>
-                    </div>
-
-                    <div className="w-actions">
-                        <button type="button" className="w-cancel" onClick={onClose}>Cancel</button>
-                        <button type="button" className="w-save" onClick={() => { onSave(duration, details); onClose(); }}>
-                            Save Warranty
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// --- COLOR BANK OVERLAY ---
-const ColorBankOverlay = ({ isOpen, onClose, onSelect, colorData }) => {
-    const [search, setSearch] = useState('');
-    const [customColorName, setCustomColorName] = useState('');
-
-    if (!isOpen) return null;
-
-    const handleCustomSubmit = (e) => {
-        e.preventDefault();
-        if (customColorName.trim()) {
-            onSelect(customColorName.trim());
-            onClose();
-            setCustomColorName('');
-        }
-    };
-
-    const multiColorObj = { name: 'Multicolor', hex: 'linear-gradient(135deg, #ff0000, #ffff00, #00ff00, #0000ff)' };
-    const allColors = [multiColorObj, ...colorData];
-    const filtered = allColors.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
-
-    return (
-        <div className="fullscreen-overlay">
-            <div className="overlay-header">
-                <h3>Select Color</h3>
-                <button className="overlay-close" onClick={onClose}><Icons.Close /></button>
-            </div>
-            <div className="overlay-body">
-                <div className="top-custom-creator">
-                    <h4>Add Custom Color</h4>
-                    <form onSubmit={handleCustomSubmit} className="top-custom-form">
-                        <input 
-                            type="text" 
-                            placeholder="Type Custom Color..." 
-                            value={customColorName} 
-                            onChange={e => setCustomColorName(e.target.value)}
-                            className="top-custom-input"
-                        />
-                        <button type="submit" className="top-custom-btn" disabled={!customColorName.trim()}>
-                            Add & Select
-                        </button>
-                    </form>
-                </div>
-
-                <div className="specs-divider"></div>
-
-                <input className="search-input" placeholder="Search Color..." value={search} onChange={e => setSearch(e.target.value)} />
-                <div className="color-grid-bank animate-grid">
-                    {filtered.map(c => (
-                        <div key={c.name} className="bank-item" onClick={() => { onSelect(c.name); onClose(); }}>
-                            <div className="bank-dot" style={{ background: c.hex }}></div>
-                            <span>{c.name}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-};
-
-// --- SIZE BANK OVERLAY ---
-const SizeBankOverlay = ({ isOpen, onClose, onSelect, sizeGroups }) => {
-    const [topCustomInput, setTopCustomInput] = useState('');
-    const [customInput, setCustomInput] = useState('');
-    const [activeCustomGroup, setActiveCustomGroup] = useState(null);
-
-    if (!isOpen) return null;
-
-    const handleTopCustomSubmit = (e) => {
-        e.preventDefault();
-        if (topCustomInput.trim()) {
-            onSelect(topCustomInput.trim());
-            onClose();
-            setTopCustomInput('');
-        }
-    };
-
-    const handleCustomSubmit = () => {
-        if (customInput) { onSelect(customInput); onClose(); }
-    };
-
-    return (
-        <div className="fullscreen-overlay">
-            <div className="overlay-header">
-                <h3>Select Size</h3>
-                <button className="overlay-close" onClick={onClose}><Icons.Close /></button>
-            </div>
-            <div className="overlay-body">
-                <div className="top-custom-creator">
-                    <h4>Add Custom Size</h4>
-                    <form onSubmit={handleTopCustomSubmit} className="top-custom-form">
-                        <input 
-                            type="text" 
-                            placeholder="Type Custom Size..." 
-                            value={topCustomInput} 
-                            onChange={e => setTopCustomInput(e.target.value)}
-                            className="top-custom-input"
-                        />
-                        <button type="submit" className="top-custom-btn" disabled={!topCustomInput.trim()}>
-                            Add & Select
-                        </button>
-                    </form>
-                </div>
-
-                <div className="specs-divider"></div>
-
-                {Object.entries(sizeGroups).map(([group, sizes], idx) => (
-                    <div key={group} className="size-group fade-in" style={{ animationDelay: `${idx * 0.1}s` }}>
-                        <h4>{group}</h4>
-                        <div className="size-bank-grid">
-                            {sizes.map(s => (
-                                <button key={s} type="button" onClick={() => { onSelect(s); onClose(); }}>{s}</button>
-                            ))}
-                            {activeCustomGroup === group ? (
-                                <div className="custom-size-mini-form">
-                                    <input autoFocus placeholder="Enter size" value={customInput} onChange={e => setCustomInput(e.target.value)} />
-                                    <button type="button" onClick={handleCustomSubmit}>OK</button>
-                                </div>
-                            ) : (
-                                <button className="custom-btn-trigger" type="button" onClick={() => setActiveCustomGroup(group)}>+ Custom</button>
-                            )}
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-};
-
-// --- SEASON SELECTOR (Resized earth/globe fix) ---
+// --- SEASON SELECTOR ---
 const SeasonSelector = ({ value, onChange }) => {
     const [isOpen, setIsOpen] = useState(false);
     const seasons = [
@@ -372,7 +134,7 @@ const SeasonSelector = ({ value, onChange }) => {
     );
 };
 
-// --- MAIN PRODUCT FORM COMPONENT ---
+// --- MAIN PRODUCT FORM ---
 const ProductForm = ({ setIsLoading }) => {
     const { productId } = useParams();
     const navigate = useNavigate();
@@ -391,14 +153,9 @@ const ProductForm = ({ setIsLoading }) => {
     const [uploadedVideoUrl, setUploadedVideoUrl] = useState('');
     const [youtubeUrl, setYoutubeUrl] = useState('');
 
-    // Drag-and-Drop state
     const [isDragging, setIsDragging] = useState(false);
-
-    // Dynamic Alert Popup state
     const [validationErrors, setValidationErrors] = useState([]);
     const [showErrorPopup, setShowErrorPopup] = useState(false);
-    
-    // Toggle for Shipping guidance
     const [showShippingGuide, setShowShippingGuide] = useState(true);
 
     // Overlay States
@@ -684,7 +441,7 @@ const ProductForm = ({ setIsLoading }) => {
         return "Select Category";
     };
 
-    // Form Submission & Advanced Custom Validation Checks
+    // Form Submission
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -756,18 +513,18 @@ const ProductForm = ({ setIsLoading }) => {
 
     return (
         <div className="product-form-container">
-            {/* OVERLAYS */}
+            {/* PORTAL OVERLAYS (IMPORTED DIRECTLY AS SINGLE MODULES) */}
             <CategoryOverlay isOpen={showCategories} onClose={() => setShowCategories(false)} categories={categories} onSelect={handleCategorySelect} />
+            
             <ColorBankOverlay isOpen={showColorBank} onClose={() => setShowColorBank(false)} colorData={colorFamilies} onSelect={(c) => setProduct(p => ({ ...p, main_color: c }))} />
             <SizeBankOverlay isOpen={showSizeBank} onClose={() => setShowSizeBank(false)} onSelect={(s) => setProduct(p => ({ ...p, main_size: s }))} sizeGroups={sizeGroups} />
             
-            {/* EXTERNAL SEPARATED COMPONENTS */}
             <AttributesOverlay isOpen={showAttributes} onClose={() => setShowAttributes(false)} onSave={(attrs) => setProduct(p => ({ ...p, attributes: attrs }))} subCategoryId={product.category_id} existingAttributes={product.attributes} attributeData={categoryAttributes} />
             <VariantsOverlay isOpen={showVariants} onClose={() => setShowVariants(false)} onSave={(vars) => setProduct(p => ({...p, variants: vars}))} existingVariants={product.variants} colorData={colorFamilies} uploadedImages={activeImages} />
             
             <WarrantyOverlay isOpen={showWarranty} onClose={() => setShowWarranty(false)} initialData={{ type: product.warranty_type, info: product.warranty_details }} onSave={(type, info) => setProduct(p => ({...p, warranty_type: type, warranty_details: info}))} />
 
-            {/* CUSTOM VALIDATION ERROR POPUP (REPLACES NATIVE ALERTS) */}
+            {/* CUSTOM VALIDATION ERROR POPUP */}
             {showErrorPopup && (
                 <div className="custom-error-popup-overlay">
                     <div className="custom-error-popup scale-in-entry">
@@ -1085,9 +842,7 @@ const ProductForm = ({ setIsLoading }) => {
 
                 <div className="form-footer">
                     <button type="button" className="cancel-btn" onClick={() => navigate('/products')}>Cancel</button>
-                    <button type="submit" className="save-btn" disabled={isSaving}>
-                        {isEditMode ? 'Update Product' : 'Save Product'}
-                    </button>
+                    <button type="submit" className="save-btn">Save Product</button>
                 </div>
                 {error && <p className="error-text">{error}</p>}
             </form>

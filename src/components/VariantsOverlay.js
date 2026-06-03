@@ -1,5 +1,6 @@
 // src/components/VariantsOverlay.js
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { colorFamilies } from '../data/colors'; 
 import { sizeGroups } from '../data/sizes';     
 import './VariantsOverlay.css'; 
@@ -13,10 +14,27 @@ const Icons = {
     Ruler: () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12h20"></path><path d="M6 12v-2"></path><path d="M10 12v-4"></path><path d="M14 12v-4"></path><path d="M18 12v-2"></path></svg>,
     Check: () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>,
     Sparkles: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path></svg>,
+    Palette: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="13.5" cy="6.5" r=".5"></circle><circle cx="17.5" cy="10.5" r=".5"></circle><circle cx="8.5" cy="7.5" r=".5"></circle><circle cx="6.5" cy="12.5" r=".5"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path></svg>,
+    Tag: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>,
     Info: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
 };
 
-// --- SUB-COMPONENT: NESTED SIZE PICKER ---
+// Bulletproof Inline Layout Style
+const overlayInlineStyle = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100vw',
+    height: '100vh',
+    backgroundColor: '#f8fafc',
+    zIndex: 999999,
+    display: 'flex',
+    flexDirection: 'column',
+    boxSizing: 'border-box',
+    overflowY: 'auto'
+};
+
+// --- SUB-COMPONENT: SIZE PICKER ---
 const VariantSizePicker = ({ isOpen, onClose, onSelect }) => {
     const [topCustomInput, setTopCustomInput] = useState('');
 
@@ -32,7 +50,7 @@ const VariantSizePicker = ({ isOpen, onClose, onSelect }) => {
     };
 
     return (
-        <div className="fullscreen-overlay picker-modal-appear" style={{ zIndex: 3100 }}>
+        <div className="fullscreen-overlay picker-modal-appear" style={overlayInlineStyle}>
             <div className="overlay-header">
                 <h3>Select Variant Size</h3>
                 <button type="button" className="overlay-close" onClick={onClose}><Icons.Close /></button>
@@ -78,6 +96,32 @@ const VariantSizePicker = ({ isOpen, onClose, onSelect }) => {
     );
 };
 
+// --- SUB-COMPONENT: IMAGE SELECTOR ---
+const VariantImageSelector = ({ isOpen, onClose, uploadedImages, onSelect }) => {
+    if (!isOpen) return null;
+    return (
+        <div className="fullscreen-overlay" style={overlayInlineStyle}>
+            <div className="overlay-header">
+                <h3>Link Image to Variant</h3>
+                <button type="button" className="overlay-close" onClick={onClose}><Icons.Close /></button>
+            </div>
+            <div className="overlay-body">
+                {uploadedImages.length === 0 ? (
+                    <div className="empty-state">Please upload product images first in the "Basic Details" section.</div>
+                ) : (
+                    <div className="variant-img-grid">
+                        {uploadedImages.map((img, idx) => (
+                            <div key={idx} className="v-img-card" onClick={() => { onSelect(img.url); onClose(); }}>
+                                <img src={img.url} alt="" />
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
 // --- MAIN COMPONENT ---
 const VariantsOverlay = ({ isOpen, onClose, onSave, existingVariants, uploadedImages }) => {
     const [variants, setVariants] = useState([]);
@@ -92,7 +136,9 @@ const VariantsOverlay = ({ isOpen, onClose, onSave, existingVariants, uploadedIm
     const [stock, setStock] = useState('');
     const [selectedImg, setSelectedImg] = useState('');
 
+    // Overlay states
     const [showSizePicker, setShowSizePicker] = useState(false);
+    const [showImgSelect, setShowImgSelect] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => { if (isOpen) setVariants(existingVariants || []); }, [isOpen, existingVariants]);
@@ -116,7 +162,7 @@ const VariantsOverlay = ({ isOpen, onClose, onSave, existingVariants, uploadedIm
             image: selectedImg 
         }]);
         
-        // Retain inputs, clear linked image for next variant
+        // Retain pricing inputs, reset image
         setSelectedImg(''); 
     };
 
@@ -134,12 +180,18 @@ const VariantsOverlay = ({ isOpen, onClose, onSave, existingVariants, uploadedIm
 
     if (!isOpen) return null;
 
-    return (
-        <div className="fullscreen-overlay variants-root-theme fade-in-overlay" style={{ zIndex: 2001 }}>
+    return createPortal(
+        <div className="fullscreen-overlay variants-root-theme fade-in-overlay" style={overlayInlineStyle}>
             <VariantSizePicker 
                 isOpen={showSizePicker} 
                 onClose={() => setShowSizePicker(false)} 
                 onSelect={(selectedSize) => setSize(selectedSize)} 
+            />
+            <VariantImageSelector 
+                isOpen={showImgSelect} 
+                onClose={() => setShowImgSelect(false)} 
+                uploadedImages={uploadedImages}
+                onSelect={(url) => setSelectedImg(url)}
             />
 
             <div className="overlay-header">
@@ -177,7 +229,9 @@ const VariantsOverlay = ({ isOpen, onClose, onSave, existingVariants, uploadedIm
                             
                             {/* STEP 1: COLOR SELECTION */}
                             <div className="wizard-step-section">
-                                <span className="wizard-step-tag">Step 1: Color Selection</span>
+                                <span className="wizard-step-tag">
+                                    <Icons.Palette /> <span>Step 1: Color Selection</span>
+                                </span>
                                 
                                 <input 
                                     className="search-input mt-10" 
@@ -226,7 +280,9 @@ const VariantsOverlay = ({ isOpen, onClose, onSave, existingVariants, uploadedIm
 
                             {/* STEP 2: SIZE SELECTION */}
                             <div className="wizard-step-section mt-15">
-                                <span className="wizard-step-tag">Step 2: Size Selection</span>
+                                <span className="wizard-step-tag">
+                                    <Icons.Ruler /> <span>Step 2: Size Selection</span>
+                                </span>
                                 <div className="mt-10">
                                     {size ? (
                                         <div className="selected-indicator-box ripple-click" onClick={() => setShowSizePicker(true)}>
@@ -246,7 +302,9 @@ const VariantsOverlay = ({ isOpen, onClose, onSave, existingVariants, uploadedIm
 
                             {/* STEP 3: LINK MEDIA */}
                             <div className="wizard-step-section mt-15">
-                                <span className="wizard-step-tag">Step 3: Link Media (1-Click Select)</span>
+                                <span className="wizard-step-tag">
+                                    <Icons.ImageIcon /> <span>Step 3: Link Media (1-Click Select)</span>
+                                </span>
                                 <div className="mt-10">
                                     {uploadedImages.length > 0 ? (
                                         <div className="horizontal-media-scroll">
@@ -276,7 +334,9 @@ const VariantsOverlay = ({ isOpen, onClose, onSave, existingVariants, uploadedIm
 
                             {/* STEP 4: PRICE & INVENTORY */}
                             <div className="wizard-step-section mt-15">
-                                <span className="wizard-step-tag">Step 4: Price & Inventory</span>
+                                <span className="wizard-step-tag">
+                                    <Icons.Tag /> <span>Step 4: Price & Inventory</span>
+                                </span>
                                 <div className="form-grid-v2 mt-10">
                                     <div className="form-group-v">
                                         <label>Price (PKR) *</label>
@@ -299,7 +359,7 @@ const VariantsOverlay = ({ isOpen, onClose, onSave, existingVariants, uploadedIm
                                 </div>
                             </div>
 
-                            {/* STEP 5: LIVE PREVIEW CONTAINER */}
+                            {/* STEP 5: LIVE PREVIEW */}
                             <div className="live-preview-container mt-15">
                                 <div className="live-preview-header">
                                     <Icons.Sparkles />
@@ -371,7 +431,8 @@ const VariantsOverlay = ({ isOpen, onClose, onSave, existingVariants, uploadedIm
 
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 
