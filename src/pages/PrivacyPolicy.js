@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import './LegalPages.css';
 
 const PrivacyPolicy = ({ setIsLoading }) => {
@@ -29,6 +30,12 @@ const PrivacyPolicy = ({ setIsLoading }) => {
     ];
 
     return (
+         <>
+            <Helmet>
+                <title>Privacy Policy | SJ10 Seller Center</title>
+                <meta name="description" content="Read the SJ10 Privacy Policy. We ensure your personal and financial data is completely secure while you sell on our B2B marketplace." />
+                <link rel="canonical" href="https://sj10seller.online/privacy-policy" />
+            </Helmet>
         <div className="legal-page-container">
             <div className="legal-hero-card legal-anim-fade-down">
                 <h1 className="legal-main-title">Privacy Policy</h1>
@@ -98,6 +105,7 @@ const PrivacyPolicy = ({ setIsLoading }) => {
                 </main>
             </div>
         </div>
+        </>
     );
 };
 

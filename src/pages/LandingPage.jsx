@@ -231,7 +231,7 @@ const LandingPage = () => {
 
                 <div className="order-engine-grid">
                     <motion.div className="engine-visual-side" initial="hidden" whileInView="visible" variants={fadeInLeft} viewport={{ once: true, margin: "-100px" }}>
-                        <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&q=80" alt="Order Dashboard" className="detailed-engine-img" />
+                       <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&q=80" alt="Order Dashboard" className="detailed-engine-img" loading="lazy" />
                         
                         <motion.div className="live-sales-notification" animate={{ y: [0, -10, 0] }} transition={{ duration: 3, repeat: Infinity }}>
                             <div className="live-pulse"></div>
@@ -285,7 +285,7 @@ const LandingPage = () => {
 
                 <motion.div className="benefits-detailed-grid" variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }}>
                     <motion.div className="benefit-large-card" variants={fadeInUp}>
-                        <img src="https://pub-b132cda8c8fb4e9391c446ca11a5f484.r2.dev/ecommerce/products/TEMP-SKU/20260602083330-i84k5j.webp" alt="Doorstep Courier" />
+                        <img src="https://pub-b132cda8c8fb4e9391c446ca11a5f484.r2.dev/ecommerce/products/TEMP-SKU/20260602083330-i84k5j.webp" alt="Doorstep Courier" loading="lazy" />
                         <div className="benefit-content">
                             <div className="b-icon"><Truck /></div>
                             <h3>Doorstep Courier Network</h3>
@@ -294,7 +294,7 @@ const LandingPage = () => {
                     </motion.div>
 
                     <motion.div className="benefit-large-card" variants={fadeInUp}>
-                        <img src="https://pub-b132cda8c8fb4e9391c446ca11a5f484.r2.dev/ecommerce/products/TEMP-SKU/20260602083342-sw32mr.webp" alt="Fast Payouts" />
+                       <img src="https://pub-b132cda8c8fb4e9391c446ca11a5f484.r2.dev/ecommerce/products/TEMP-SKU/20260602083342-sw32mr.webp" alt="Fast Payouts" loading="lazy" />
                         <div className="benefit-content">
                             <div className="b-icon"><DollarSign /></div>
                             <h3>Fast COD Payouts (Bank/JazzCash)</h3>
@@ -303,7 +303,7 @@ const LandingPage = () => {
                     </motion.div>
 
                     <motion.div className="benefit-large-card" variants={fadeInUp}>
-                        <img src="https://pub-b132cda8c8fb4e9391c446ca11a5f484.r2.dev/ecommerce/products/TEMP-SKU/20260602083840-nbnkun.webp" alt="Gold Supplier Badge" />
+                        <img src="https://pub-b132cda8c8fb4e9391c446ca11a5f484.r2.dev/ecommerce/products/TEMP-SKU/20260602083840-nbnkun.webp" alt="Gold Supplier Badge" loading="lazy" />
                         <div className="benefit-content">
                             <div className="b-icon"><ShieldCheck /></div>
                             <h3>Gold Supplier Trust Badge</h3>
@@ -312,7 +312,7 @@ const LandingPage = () => {
                     </motion.div>
 
                     <motion.div className="benefit-large-card" variants={fadeInUp}>
-                        <img src="https://pub-b132cda8c8fb4e9391c446ca11a5f484.r2.dev/ecommerce/products/TEMP-SKU/20260602084029-h6lid.webp" alt="Pan-Pakistan Reach" />
+                     <img src="https://pub-b132cda8c8fb4e9391c446ca11a5f484.r2.dev/ecommerce/products/TEMP-SKU/20260602084029-h6lid.webp" alt="Pan-Pakistan Reach" loading="lazy" />
                         <div className="benefit-content">
                             <div className="b-icon"><Globe /></div>
                             <h3>Pan-Pakistan Order Fulfillment</h3>
@@ -347,7 +347,7 @@ const LandingPage = () => {
                 <div className="footer-top-grid">
                     <div className="footer-brand-col">
                         <div className="footer-logo">
-                            <img src="/logo.gif" alt="SJ10" className="footer-logo-img"/>
+                            <img src="/logo.gif" alt="SJ10" className="footer-logo-img" loading="lazy" />
                             <span className="logo-bold">SJ10</span>
                             <span className="logo-light">SELLER CENTER</span>
                         </div>
@@ -388,11 +388,11 @@ const LandingPage = () => {
                         animate={{ y: [0, -5, 0] }}
                         transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
                     >
-                        <img src="data:image/png;base64,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" alt="Visa" className="pay-icon"/>
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="MasterCard" className="pay-icon"/>
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/a/a4/Paypal_2014_logo.png" alt="PayPal" className="pay-icon"/>
-                        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmBdqdNfo3NfVWn0GULI6-lJI4fm-AkzKAkQ&s=10" alt="JazzCash" className="pay-icon tall-icon"/>
-                        <img src="https://icon2.cleanpng.com/lnd/20250110/er/acded9d6362d497965c18a071cb9fd.webp" alt="EasyPaisa" className="pay-icon tall-icon"/>
+                        <img src="data:image/png;base64,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" alt="Visa" className="pay-icon" loading="lazy" />
+<img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="MasterCard" className="pay-icon" loading="lazy" />
+<img src="https://upload.wikimedia.org/wikipedia/commons/a/a4/Paypal_2014_logo.png" alt="PayPal" className="pay-icon" loading="lazy" />
+<img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRmBdqdNfo3NfVWn0GULI6-lJI4fm-AkzKAkQ&s=10" alt="JazzCash" className="pay-icon tall-icon" loading="lazy" />
+<img src="https://icon2.cleanpng.com/lnd/20250110/er/acded9d6362d497965c18a071cb9fd.webp" alt="EasyPaisa" className="pay-icon tall-icon" loading="lazy" />
                     </motion.div>
                 </div>
             </footer>

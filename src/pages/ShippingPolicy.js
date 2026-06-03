@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import './LegalPages.css';
 
 const ShippingPolicy = ({ setIsLoading }) => {
@@ -29,6 +30,12 @@ const ShippingPolicy = ({ setIsLoading }) => {
     ];
 
     return (
+        <>
+            <Helmet>
+                <title>Shipping & Fulfillment Policy | SJ10 Seller Center</title>
+                <meta name="description" content="Understand the SJ10 shipping policy, supported couriers (Leopards, PostEx, Trax), and how our self-fulfillment model works for Pakistani suppliers." />
+                <link rel="canonical" href="https://sj10seller.online/shipping-policy" />
+            </Helmet>
         <div className="legal-page-container">
             <div className="legal-hero-card legal-anim-fade-down">
                 <h1 className="legal-main-title">Shipping Policy</h1>
@@ -107,6 +114,7 @@ const ShippingPolicy = ({ setIsLoading }) => {
                 </main>
             </div>
         </div>
+        </>
     );
 };
 
