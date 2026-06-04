@@ -3,14 +3,15 @@ import axios from 'axios';
 import authService from './authService';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:4007';
-// 🟢 NEW: Separate URL specifically for heavy uploads (Oracle server)
 const UPLOAD_API_URL = process.env.REACT_APP_UPLOAD_API_URL || 'http://localhost:4000';
-const genericGet = async (url) => (await api.get(url)).data;
+
 const api = axios.create({
     baseURL: `${API_BASE_URL}/api`,
     headers: { 'Content-Type': 'application/json' },
 });
-const supplierApi = (endpoint) => `/suppliers${endpoint}`;
+
+const genericGet = async (url) => (await api.get(url)).data;
+
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('supplierToken');
@@ -33,21 +34,24 @@ api.interceptors.response.use(
     }
 );
 
-// 🟢 FIX: Ensure all routes match your new Vercel server.js structure
 const supplierService = {
-  // 🟢 services/supplierService.js mein is line ko replace karein:
-getDashboardStats: (range = 'WEEK', chartOnly = false) => api.get(`/suppliers/dashboard-stats?range=${range}&chartOnly=${chartOnly}`).then(res => res.data),
+    getDashboardStats: (range = 'WEEK', chartOnly = false) => api.get(`/suppliers/dashboard-stats?range=${range}&chartOnly=${chartOnly}`).then(res => res.data),
     getMyProfile: async () => (await api.get('/suppliers/profile')).data,
     updateMyProfile: async (profileData) => (await api.put('/suppliers/profile', profileData)).data,
     getMyProducts: async () => (await api.get('/suppliers/products')).data,
     getProductById: async (productId) => (await api.get(`/suppliers/products/${productId}`)).data,
     createProduct: async (productData) => (await api.post('/suppliers/products', productData)).data,
     updateProduct: async (productId, productData) => (await api.put(`/suppliers/products/${productId}`, productData)).data,
+    
+    // Single delete endpoint
     deleteProduct: async (productId, shardKey) => (await api.delete(`/suppliers/products/${productId}`, { data: { shardKey } })).data,
+    
+    // ✅ NEW: Bulk delete endpoint integration
+    bulkDeleteProducts: async (productsArray) => (await api.post('/suppliers/products/bulk-delete', { products: productsArray })).data,
+
     getCategories: async () => (await api.get('/suppliers/categories')).data,
     addVariantsInBatch: async (productId, variantsArray) => (await api.post(`/suppliers/products/${productId}/variants/batch`, { variants: variantsArray })).data,
     
-    // 🟢 FIX: UPLOAD routes now point directly to UPLOAD_API_URL (Oracle: 4000)
     uploadFiles: async (formData) => (await axios.post(`${UPLOAD_API_URL}/api/upload`, formData, { headers: { 'Content-Type': 'multipart/form-data', 'Authorization': `Bearer ${localStorage.getItem('supplierToken')}` }})).data,
     uploadVideo: async (formData) => (await axios.post(`${UPLOAD_API_URL}/api/upload-video`, formData, { headers: { 'Content-Type': 'multipart/form-data', 'Authorization': `Bearer ${localStorage.getItem('supplierToken')}` }})).data,
 
@@ -69,10 +73,10 @@ getDashboardStats: (range = 'WEEK', chartOnly = false) => api.get(`/suppliers/da
     getPromotionById: async (promotionId) => (await api.get(`/promotions/${promotionId}`)).data,
     submitVerificationDocuments: async (docUrls) => (await api.post(`/verification/submit`, docUrls)).data,
     getMyProductsPaginated: async (page = 1, search = '', status = 'all') => 
-    (await api.get(`/suppliers/products/paginated?page=${page}&search=${search}&status=${status}`)).data,
+        (await api.get(`/suppliers/products/paginated?page=${page}&search=${search}&status=${status}`)).data,
     getVapidPublicKey: async () => (await api.get('/suppliers/vapid-public-key')).data,
     saveSubscription: async (subscription) => (await api.post('/suppliers/subscribe', { subscription })).data,
-    genericGet, // 👈 Yeh yahan hona chahiye
+    genericGet,
     markOrderAsSeen: async (orderId) => (await api.put(`/orders/${orderId}/seen`)).data
 };
 

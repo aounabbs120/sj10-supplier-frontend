@@ -3,8 +3,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useSWRInfinite from 'swr/infinite';
 import { 
-    Search, Plus, Loader2, Trash2, CheckCircle, 
-    XCircle, CheckSquare, Square, X 
+    Search, Plus, Loader2, CheckSquare, Square, X 
 } from 'lucide-react';
 import supplierService from '../services/supplierService';
 import ProductCard from '../components/ProductCard';
@@ -24,14 +23,12 @@ const ProductList = ({ setIsLoading }) => {
         return () => clearTimeout(handler);
     }, [searchTerm]);
 
-   const getKey = (pageIndex, previousPageData) => {
-    if (previousPageData && !previousPageData.hasMore) return null;
-    
-    // Yahan '/supplier' ko badal kar '/suppliers' kar dein
-    return `/suppliers/products/paginated?page=${pageIndex + 1}&limit=40&search=${encodeURIComponent(debouncedSearch)}&status=${filterStatus}`;
-};
+    const getKey = (pageIndex, previousPageData) => {
+        if (previousPageData && !previousPageData.hasMore) return null;
+        return `/suppliers/products/paginated?page=${pageIndex + 1}&limit=40&search=${encodeURIComponent(debouncedSearch)}&status=${filterStatus}`;
+    };
 
-    const { data, size, setSize, mutate, isValidating, isLoading } = useSWRInfinite(
+    const { data, size, setSize, mutate, isValidating } = useSWRInfinite(
         getKey, (url) => supplierService.genericGet(url), { 
             revalidateOnFocus: false, 
             persistSize: true,
@@ -43,7 +40,6 @@ const ProductList = ({ setIsLoading }) => {
     const totalCount = data?.[0]?.totalCount || 0;
     const isReachingEnd = data && data[data.length - 1]?.hasMore === false;
 
-    // 🔥 FIXED: STABLE INTERSECTION OBSERVER 🔥
     useEffect(() => {
         const currentLoader = loaderRef.current;
         const observer = new IntersectionObserver(entries => {
@@ -56,14 +52,16 @@ const ProductList = ({ setIsLoading }) => {
         return () => {
             if (currentLoader) observer.unobserve(currentLoader);
         };
-        // Removed unnecessary dependencies that cause the size-change error
     }, [isValidating, isReachingEnd, products.length, setSize]);
 
     useEffect(() => { setSize(1); }, [debouncedSearch, filterStatus, setSize]);
 
+    // Handle single and bulk actions efficiently
     const handleAction = async (type, productId = null, shard = null) => {
         const ids = productId ? [productId] : [...selectedIds];
         if (ids.length === 0) return;
+
+        // Optimistic UI update (Hides deleted items immediately from UI list)
         const optimisticData = data.map(page => ({
             ...page,
             products: page.products.filter(p => !(type === 'delete' && ids.includes(p.id))).map(p => {
@@ -75,17 +73,47 @@ const ProductList = ({ setIsLoading }) => {
             })
         }));
         mutate(optimisticData, false);
+
         try {
-            const promises = ids.map(id => {
-                const p = products.find(item => item.id === id);
-                const s = shard || p?._shardKey;
-                if (type === 'delete') return supplierService.deleteProduct(id, s);
-                return supplierService.updateProduct(id, { quantity: type === 'in_stock' ? 10 : 0 }, s);
-            });
-            await Promise.all(promises);
-            if (!productId) { setIsSelectionMode(false); setSelectedIds(new Set()); }
+            if (type === 'delete') {
+                setIsLoading(true); // Main loader turns on during background processing
+
+                // Map standard properties with backup safety checks
+                const mappedProducts = ids.map(id => {
+                    const foundProd = products.find(p => p.id === id);
+                    return {
+                        productId: id,
+                        shardKey: shard || foundProd?._shardKey || 'shard_general'
+                    };
+                });
+
+                // Batch variables (50 maximum per payload to bypass Vercel serverless execution limits)
+                const BATCH_SIZE = 50;
+                for (let i = 0; i < mappedProducts.length; i += BATCH_SIZE) {
+                    const currentBatch = mappedProducts.slice(i, i + BATCH_SIZE);
+                    await supplierService.bulkDeleteProducts(currentBatch);
+                }
+
+                setIsLoading(false);
+            } else {
+                // Stock updates (Processing non-destructive stock statuses)
+                const promises = ids.map(id => {
+                    const p = products.find(item => item.id === id);
+                    const s = shard || p?._shardKey;
+                    return supplierService.updateProduct(id, { quantity: type === 'in_stock' ? 10 : 0 }, s);
+                });
+                await Promise.all(promises);
+            }
+
+            if (!productId) { 
+                setIsSelectionMode(false); 
+                setSelectedIds(new Set()); 
+            }
             mutate();
-        } catch (e) { mutate(); }
+        } catch (e) { 
+            setIsLoading(false);
+            mutate(); 
+        }
     };
 
     return (
@@ -166,7 +194,11 @@ const ProductList = ({ setIsLoading }) => {
                     <div className="bulk-btns-grid">
                         <button className="bulk-btn in" onClick={() => handleAction('in_stock')}>In Stock</button>
                         <button className="bulk-btn out" onClick={() => handleAction('out_of_stock')}>Out Stock</button>
-                        <button className="bulk-btn del" onClick={() => handleAction('delete')}>Delete</button>
+                        <button className="bulk-btn del" onClick={() => {
+                            if (window.confirm(`Are you sure you want to delete ${selectedIds.size} products and all associated media from R2 permanently?`)) {
+                                handleAction('delete');
+                            }
+                        }}>Delete</button>
                     </div>
                 </div>
             )}
