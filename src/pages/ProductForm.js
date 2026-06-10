@@ -47,7 +47,6 @@ const Icons = {
 // --- CONSTANTS ---
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:4000';
 const UPLOAD_API_URL = process.env.REACT_APP_UPLOAD_API_URL || API_BASE_URL;
-
 const initialProductState = {
     title: '', description: '', price: '', discounted_price: '',
     quantity: '', status: 'In Stock', category_id: '', main_category_id: '',
@@ -57,9 +56,9 @@ const initialProductState = {
     pkg_unit: 'cm', pkg_weight: '', pkg_weight_unit: 'g',
     main_color: '', main_size: '',
     imported_region: 'Pakistan', custom_region: '',
-    warranty_type: '', warranty_details: ''
+    warranty_type: '', warranty_details: '',
+    shardKey: '' // ✅ NEW: Added shardKey to initial state
 };
-
 const safeParseJSON = (jsonString, defaultValue) => {
     try { const parsed = JSON.parse(jsonString); return parsed === null ? defaultValue : parsed; } catch (e) { return defaultValue; }
 };
