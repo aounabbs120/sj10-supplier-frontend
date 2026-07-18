@@ -46,7 +46,7 @@ const supplierService = {
     // Single delete endpoint
     deleteProduct: async (productId, shardKey) => (await api.delete(`/suppliers/products/${productId}`, { data: { shardKey } })).data,
     
-    // ✅ NEW: Bulk delete endpoint integration
+    // Bulk delete endpoint integration
     bulkDeleteProducts: async (productsArray) => (await api.post('/suppliers/products/bulk-delete', { products: productsArray })).data,
 
     getCategories: async () => (await api.get('/suppliers/categories')).data,
@@ -69,6 +69,11 @@ const supplierService = {
     getMyReviews: async () => (await api.get('/reviews')).data,
     getMyPromotions: async () => (await api.get('/promotions')).data,
     getPromotionPricing: async () => (await api.get('/promotions/pricing')).data,
+    
+    // ✅ NEW: Endpoint for Infinite Scroll & Oracle Search in Promotions!
+    getProductsForPromotionSelect: async (page = 1, search = '') => 
+        (await api.get(`/promotions/select-products?page=${page}&search=${search}`)).data,
+    
     requestPromotion: async (promotionData) => (await api.post('/promotions/request', promotionData)).data,
     getPromotionById: async (promotionId) => (await api.get(`/promotions/${promotionId}`)).data,
     submitVerificationDocuments: async (docUrls) => (await api.post(`/verification/submit`, docUrls)).data,
