@@ -82,7 +82,9 @@ const supplierService = {
     getVapidPublicKey: async () => (await api.get('/suppliers/vapid-public-key')).data,
     saveSubscription: async (subscription) => (await api.post('/suppliers/subscribe', { subscription })).data,
     genericGet,
-    markOrderAsSeen: async (orderId) => (await api.put(`/orders/${orderId}/seen`)).data
+    markOrderAsSeen: async (orderId) => (await api.put(`/orders/${orderId}/seen`)).data,
+    // supplierService.js ke andar:
+cancelOrderBySupplier: async (orderId, reason) => (await api.put(`/orders/${orderId}/cancel`, { reason })).data,
 };
 
 export default supplierService;

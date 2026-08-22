@@ -1,23 +1,27 @@
 // src/pages/Register.js
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGoogleLogin } from '@react-oauth/google';
 import Swal from 'sweetalert2';
 import authService from '../services/authService';
 
-// Beautiful Icons
+// Beautiful & Modern Icons
 import { 
-  FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaPhone, 
+  FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, 
   FaCity, FaMapMarkerAlt, FaCamera, FaGoogle, FaStore, 
-  FaShoppingBag, FaChartLine, FaMailBulk
+  FaShoppingBag, FaChartLine, FaShieldAlt, FaWhatsapp, 
+  FaExclamationTriangle, FaCheckCircle
 } from 'react-icons/fa';
 
 import './Register.css';
 
-const CATEGORIES = ["Women's Fashion", "Men's Fashion", "Electronics", "Home Decor", "Watches", "Jewelry", "Health & Beauty", "Automotive", "Sports", "Groceries", "Furniture"];
+const CATEGORIES = [
+  "Women's Fashion", "Men's Fashion", "Electronics", "Home Decor", 
+  "Watches", "Jewelry", "Health & Beauty", "Automotive", 
+  "Sports", "Groceries", "Furniture"
+];
 const BUSINESS_TYPES = ["Wholesaler", "Retailer", "Shop"];
-const STOCK_RANGES = ["1 – 100", "100 – 200", "200 – 500", "500 – 1000", "10,000+"];
 const GENDERS = ["Man", "Woman", "Not Specified"];
 
 const STEP_LABELS = { 1: "Account", 2: "Business", 3: "Location", 4: "Profile" };
@@ -36,10 +40,14 @@ export default function Register() {
   const [direction, setDirection] = useState('forward');
   const [loading, setLoading] = useState(false);
   
-  // OTP States
+  // 🟢 DUAL OTP STATES
   const [showOTP, setShowOTP] = useState(false);
-  const [otpValues, setOtpValues] = useState(Array(6).fill(''));
-  const otpRefs = useRef(Array(6).fill(null).map(() => React.createRef()));
+  const [hasWhatsApp, setHasWhatsApp] = useState(true);
+  const [emailOtpValues, setEmailOtpValues] = useState(Array(6).fill(''));
+  const [whatsappOtpValues, setWhatsappOtpValues] = useState(Array(6).fill(''));
+  
+  const emailOtpRefs = useRef(Array(6).fill(null).map(() => React.createRef()));
+  const whatsappOtpRefs = useRef(Array(6).fill(null).map(() => React.createRef()));
   
   // Form States
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -47,27 +55,44 @@ export default function Register() {
   const [showConfirmPW, setShowConfirmPW] = useState(false);
   
   const [form, setForm] = useState({
-    fullName: '', email: '', password: '', confirmPassword: '',
-    businessType: 'Retailer', stockRange: '1 – 100', category: '',
-    contactNumber: '', gender: 'Not Specified', age: '', city: '', address: '', profilePic: null,
+    fullName: '', 
+    email: '', 
+    password: '', 
+    confirmPassword: '',
+    businessType: 'Retailer', 
+    stockRange: '1 – 100', 
+    category: '',
+    contactNumber: '', 
+    gender: 'Not Specified', 
+    age: '', 
+    city: '', 
+    address: '', 
+    profilePic: null,
   });
 
   const updateField = (field, val) => setForm(prev => ({ ...prev, [field]: val }));
   const handleInput = e => updateField(e.target.name, e.target.value);
 
-  // --- 🧠 GOOGLE SIGNUP HANDLER (Exactly like Login.js) ---
+  // --- 🧠 GOOGLE SIGNUP HANDLER ---
   const handleSocialResponse = (res) => {
     setLoading(false);
     if (res.action === 'complete_profile' && res.tempToken) {
         localStorage.setItem('tempAuthToken', res.tempToken);
         Swal.fire({
-            icon: 'info', title: 'Almost Done!',
-            text: 'We just need a few more details to set up your shop.',
+            icon: 'info', 
+            title: 'Almost Done! 🎉',
+            text: 'We just need your shop & WhatsApp details to activate your seller account.',
             confirmButtonColor: '#2563eb'
         }).then(() => navigate('/complete-profile'));
     } else if (res.token) {
         localStorage.setItem('supplierToken', res.token);
-        Swal.fire({ icon: 'success', title: 'Welcome Back!', text: 'Logged in successfully.', timer: 1500, showConfirmButton: false });
+        Swal.fire({ 
+          icon: 'success', 
+          title: 'Welcome Back!', 
+          text: 'Logged in successfully.', 
+          timer: 1500, 
+          showConfirmButton: false 
+        });
         setTimeout(() => navigate('/dashboard'), 1500);
     }
   };
@@ -86,20 +111,24 @@ export default function Register() {
     onError: () => Swal.fire('Error', 'Google Connection Failed', 'error'),
   });
 
-  // --- VALIDATION & NAVIGATION ---
+  // --- VALIDATIONS ---
   const validate = () => {
     if (step === 1) {
       if (!form.fullName.trim()) return Swal.fire('Error', 'Full name is required', 'error'), false;
       if (!form.email.includes('@')) return Swal.fire('Error', 'Valid email required', 'error'), false;
-      if (form.password.length < 6) return Swal.fire('Error', 'Password min 6 characters', 'error'), false;
+      if (form.password.length < 6) return Swal.fire('Error', 'Password must be at least 6 characters', 'error'), false;
       if (form.password !== form.confirmPassword) return Swal.fire('Error', 'Passwords do not match', 'error'), false;
     }
     if (step === 2) {
-      if (!form.category) return Swal.fire('Error', 'Select business category', 'error'), false;
-      if (!form.contactNumber.trim()) return Swal.fire('Error', 'Contact number is required', 'error'), false;
+      if (!form.category) return Swal.fire('Error', 'Please select a business category', 'error'), false;
+      
+      const cleanPhone = form.contactNumber.replace(/\D/g, '');
+      if (!cleanPhone || cleanPhone.length < 10) {
+        return Swal.fire('Error', 'Please enter a valid Pakistani WhatsApp number (e.g. 03357765489)', 'error'), false;
+      }
     }
     if (step === 3) {
-      if (!form.city.trim() || !form.address.trim()) return Swal.fire('Error', 'Full location required', 'error'), false;
+      if (!form.city.trim() || !form.address.trim()) return Swal.fire('Error', 'City and warehouse address are required', 'error'), false;
     }
     return true;
   };
@@ -112,45 +141,82 @@ export default function Register() {
     if (file) { updateField('profilePic', file); setPreviewUrl(URL.createObjectURL(file)); }
   };
 
+  // --- 🟢 FORM SUBMIT: TRIGGERS DUAL OTP DISPATCH ---
   const handleSubmit = async () => {
     if (!validate()) return;
     setLoading(true);
     try {
       const formData = new FormData();
-      Object.entries(form).forEach(([k, v]) => { if (v !== null && k !== 'confirmPassword') formData.append(k, v); });
-      await authService.register(formData);
+      Object.entries(form).forEach(([k, v]) => { 
+        if (v !== null && k !== 'confirmPassword') formData.append(k, v); 
+      });
+
+      const res = await authService.register(formData);
+      
+      // Check if WhatsApp exists from response
+      setHasWhatsApp(res.hasWhatsApp ?? true);
       setShowOTP(true); 
+
     } catch (err) {
-      Swal.fire('Error', err.response?.data?.message || 'Registration failed', 'error');
-    } finally { setLoading(false); }
+      Swal.fire('Registration Error', err.response?.data?.message || 'Registration failed. Please check your data.', 'error');
+    } finally { 
+      setLoading(false); 
+    }
   };
 
-  // --- OTP HANDLERS ---
-  const handleOTPChange = (idx, val) => {
+  // --- OTP INPUT HANDLERS ---
+  const handleOTPChange = (type, idx, val) => {
     if (!/^\d?$/.test(val)) return;
-    const next = [...otpValues]; next[idx] = val; setOtpValues(next);
-    if (val && idx < 5) otpRefs.current[idx + 1].current?.focus();
+    if (type === 'email') {
+      const next = [...emailOtpValues]; next[idx] = val; setEmailOtpValues(next);
+      if (val && idx < 5) emailOtpRefs.current[idx + 1].current?.focus();
+    } else {
+      const next = [...whatsappOtpValues]; next[idx] = val; setWhatsappOtpValues(next);
+      if (val && idx < 5) whatsappOtpRefs.current[idx + 1].current?.focus();
+    }
   };
 
-  const handleOTPKey = (idx, e) => {
-    if (e.key === 'Backspace' && !otpValues[idx] && idx > 0) otpRefs.current[idx - 1].current?.focus();
+  const handleOTPKey = (type, idx, e) => {
+    if (e.key === 'Backspace') {
+      if (type === 'email' && !emailOtpValues[idx] && idx > 0) {
+        emailOtpRefs.current[idx - 1].current?.focus();
+      } else if (type === 'whatsapp' && !whatsappOtpValues[idx] && idx > 0) {
+        whatsappOtpRefs.current[idx - 1].current?.focus();
+      }
+    }
   };
   
+  // --- 🟢 VERIFY DUAL OTP CODES ---
   const verifyOTP = async () => {
-    const code = otpValues.join('');
-    if (code.length !== 6) return Swal.fire('Warning', 'Enter all 6 digits', 'warning');
+    const emailCode = emailOtpValues.join('');
+    const whatsappCode = whatsappOtpValues.join('');
+
+    if (emailCode.length !== 6) {
+      return Swal.fire('Warning', 'Please enter the complete 6-digit Email verification code.', 'warning');
+    }
+
+    if (hasWhatsApp && whatsappCode.length !== 6) {
+      return Swal.fire('Warning', 'Please enter the complete 6-digit WhatsApp verification code.', 'warning');
+    }
+
     setLoading(true);
     try {
-      await authService.verifyEmail(form.email, code);
+      await authService.verifyEmail(form.email, emailCode, hasWhatsApp ? whatsappCode : null);
+      
       Swal.fire({
-        icon: 'success', title: 'Verified!',
-        text: 'Your email is verified. Redirecting to login...',
-        timer: 2000, showConfirmButton: false
+        icon: 'success', 
+        title: 'Account Verified! 🎉',
+        text: 'Your email and phone have been verified successfully. Redirecting to login...',
+        timer: 2200, 
+        showConfirmButton: false
       });
-      setTimeout(() => navigate('/login'), 2000);
+      setTimeout(() => navigate('/login'), 2200);
+
     } catch (err) {
-      Swal.fire('Error', 'Invalid verification code.', 'error');
-    } finally { setLoading(false); }
+      Swal.fire('Verification Failed', err.response?.data?.message || 'Incorrect verification code. Please try again.', 'error');
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   return (
@@ -158,19 +224,28 @@ export default function Register() {
       {/* 🟦 LEFT DESKTOP PANEL */}
       <div className="register-left">
         <h1 className="panel-title">Join SJ10 Seller Center</h1>
-        <p className="panel-subtitle">Create your seller account in minutes and reach millions of buyers nationwide.</p>
+        <p className="panel-subtitle">Create your verified wholesale shop in minutes and start receiving bulk orders nationwide.</p>
         
         <div className="feature-item">
           <div className="feature-icon"><FaStore /></div>
-          <div className="feature-text"><h3>Set up your Digital Shop</h3><p>Customize your storefront easily.</p></div>
+          <div className="feature-text">
+            <h3>Set up your Digital Shop</h3>
+            <p>Customize your catalog and list products with zero upfront investment.</p>
+          </div>
         </div>
         <div className="feature-item">
           <div className="feature-icon"><FaShoppingBag /></div>
-          <div className="feature-text"><h3>Manage Orders Seamlessly</h3><p>Track sales and manage inventory on the go.</p></div>
+          <div className="feature-text">
+            <h3>Automated Order Processing</h3>
+            <p>1-Click courier tracking with TCS, PostEx, Leopards, and Trax.</p>
+          </div>
         </div>
         <div className="feature-item">
           <div className="feature-icon"><FaChartLine /></div>
-          <div className="feature-text"><h3>Grow Your Business</h3><p>Use premium tools to scale your sales exponentially.</p></div>
+          <div className="feature-text">
+            <h3>Scale with 100,000+ Resellers</h3>
+            <p>Our dropshippers market your catalog on TikTok & WhatsApp 24/7.</p>
+          </div>
         </div>
       </div>
 
@@ -179,9 +254,9 @@ export default function Register() {
         <div className="register-card">
           {!showOTP && (
             <>
-              <div className="brand-label">SJ10 Platform</div>
-              <h1 className="reg-title">Register as a Seller</h1>
-              <p className="reg-subtitle">Follow the steps to configure your shop.</p>
+              <div className="brand-label">SJ10 Marketplace</div>
+              <h1 className="reg-title">Register as a Supplier</h1>
+              <p className="reg-subtitle">Follow the steps below to configure your seller profile.</p>
               
               <div className="stepper">
                 {[1, 2, 3, 4].map(s => (
@@ -199,9 +274,18 @@ export default function Register() {
 
           {!showOTP ? (
             <AnimatePresence mode="wait" initial={false}>
+              
+              {/* STEP 1: ACCOUNT CREDENTIALS */}
               {step === 1 && (
-                <motion.div key="step1" custom={direction} variants={stepVariants} initial={direction === 'forward' ? "enterForward" : "enterBackward"} animate="center" exit={direction === 'forward' ? "exitForward" : "exitBackward"} transition={{duration: 0.3}}>
-                  
+                <motion.div 
+                  key="step1" 
+                  custom={direction} 
+                  variants={stepVariants} 
+                  initial={direction === 'forward' ? "enterForward" : "enterBackward"} 
+                  animate="center" 
+                  exit={direction === 'forward' ? "exitForward" : "exitBackward"} 
+                  transition={{duration: 0.3}}
+                >
                   <button type="button" className="social-btn" onClick={() => handleGoogleClick()} disabled={loading}>
                     <FaGoogle color="#DB4437" size={20} /> Continue with Google
                   </button>
@@ -209,60 +293,113 @@ export default function Register() {
                   <div className="or-divider">Or register with email</div>
 
                   <div className="input-group">
-                    <FaUser className="input-icon" />
-                    <input className="reg-input" name="fullName" value={form.fullName} onChange={handleInput} placeholder="Full Name (e.g. Ahmed Raza)" />
+                    <label>Full Name <span className="required-star">*</span></label>
+                    <div className="input-icon-wrap">
+                      <FaUser className="input-icon" />
+                      <input className="reg-input" name="fullName" value={form.fullName} onChange={handleInput} placeholder="e.g. Ahmed Raza" required />
+                    </div>
                   </div>
 
                   <div className="input-group">
-                    <FaEnvelope className="input-icon" />
-                    <input className="reg-input" type="email" name="email" value={form.email} onChange={handleInput} placeholder="Email Address" />
+                    <label>Email Address <span className="required-star">*</span></label>
+                    <div className="input-icon-wrap">
+                      <FaEnvelope className="input-icon" />
+                      <input className="reg-input" type="email" name="email" value={form.email} onChange={handleInput} placeholder="e.g. seller@yourstore.com" required />
+                    </div>
                   </div>
 
-                  <div className="input-group pw-wrap">
-                    <FaLock className="input-icon" />
-                    <input className="reg-input" type={showPW ? 'text' : 'password'} name="password" value={form.password} onChange={handleInput} placeholder="Password (Min. 6 chars)" />
-                    <span className="pw-toggle" onClick={() => setShowPW(!showPW)}>{showPW ? <FaEyeSlash /> : <FaEye />}</span>
+                  <div className="input-group">
+                    <label>Password <span className="required-star">*</span></label>
+                    <div className="input-icon-wrap pw-wrap">
+                      <FaLock className="input-icon" />
+                      <input className="reg-input" type={showPW ? 'text' : 'password'} name="password" value={form.password} onChange={handleInput} placeholder="Min. 6 characters" required />
+                      <span className="pw-toggle" onClick={() => setShowPW(!showPW)}>{showPW ? <FaEyeSlash /> : <FaEye />}</span>
+                    </div>
                   </div>
 
-                  <div className="input-group pw-wrap">
-                    <FaLock className="input-icon" />
-                    <input className="reg-input" type={showConfirmPW ? 'text' : 'password'} name="confirmPassword" value={form.confirmPassword} onChange={handleInput} placeholder="Confirm Password" />
-                    <span className="pw-toggle" onClick={() => setShowConfirmPW(!showConfirmPW)}>{showConfirmPW ? <FaEyeSlash /> : <FaEye />}</span>
+                  <div className="input-group">
+                    <label>Confirm Password <span className="required-star">*</span></label>
+                    <div className="input-icon-wrap pw-wrap">
+                      <FaLock className="input-icon" />
+                      <input className="reg-input" type={showConfirmPW ? 'text' : 'password'} name="confirmPassword" value={form.confirmPassword} onChange={handleInput} placeholder="Re-enter password" required />
+                      <span className="pw-toggle" onClick={() => setShowConfirmPW(!showConfirmPW)}>{showConfirmPW ? <FaEyeSlash /> : <FaEye />}</span>
+                    </div>
                   </div>
 
-                  <button className="btn-primary" onClick={goNext}>Continue Setup</button>
+                  <button className="btn-primary" onClick={goNext} style={{ marginTop: '10px' }}>Continue Setup</button>
                   <p style={{textAlign: 'center', marginTop: '20px', fontSize: '14px', color: '#6b7280'}}>
                     Already a seller? <Link to="/login" style={{color: '#2563eb', fontWeight: 600}}>Sign in</Link>
                   </p>
                 </motion.div>
               )}
 
+              {/* STEP 2: BUSINESS & WHATSAPP NUMBER */}
               {step === 2 && (
-                <motion.div key="step2" variants={stepVariants} initial={direction === 'forward' ? "enterForward" : "enterBackward"} animate="center" exit={direction === 'forward' ? "exitForward" : "exitBackward"} transition={{duration: 0.3}}>
+                <motion.div 
+                  key="step2" 
+                  variants={stepVariants} 
+                  initial={direction === 'forward' ? "enterForward" : "enterBackward"} 
+                  animate="center" 
+                  exit={direction === 'forward' ? "exitForward" : "exitBackward"} 
+                  transition={{duration: 0.3}}
+                >
                   <div className="input-group">
                     <label>Business Type</label>
                     <select className="reg-input" style={{paddingLeft: '16px'}} name="businessType" value={form.businessType} onChange={handleInput}>
                       {BUSINESS_TYPES.map(o => <option key={o}>{o}</option>)}
                     </select>
                   </div>
+
                   <div className="input-group">
-                    <label>Main Category</label>
+                    <label>Main Category <span className="required-star">*</span></label>
                     <select className="reg-input" style={{paddingLeft: '16px'}} name="category" value={form.category} onChange={handleInput}>
                       <option value="">Select Category</option>
                       {CATEGORIES.map(o => <option key={o}>{o}</option>)}
                     </select>
                   </div>
+
+                  {/* 🟢 WHATSAPP / CONTACT NUMBER INPUT */}
                   <div className="input-group">
-                    <label>Contact Number <span className="required-star">*</span></label>
-                    <FaPhone className="input-icon" />
-                    <input className="reg-input" name="contactNumber" value={form.contactNumber} onChange={handleInput} placeholder="03xx-xxxxxxx" type="tel" />
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <FaWhatsapp color="#16a34a" size={16} />
+                      <span>WhatsApp Number <span className="required-star">*</span></span>
+                      <small style={{ color: '#6b7280', fontWeight: 500 }}>(For Order Alerts & OTP)</small>
+                    </label>
+                    <div className="input-icon-wrap">
+                      <FaWhatsapp className="input-icon" style={{ color: '#16a34a' }} />
+                      <input 
+                        className="reg-input" 
+                        name="contactNumber" 
+                        value={form.contactNumber} 
+                        onChange={handleInput} 
+                        placeholder="03XXXXXXXXX" 
+                        type="tel"
+                        style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: '15px' }}
+                        required 
+                      />
+                    </div>
+                    <span style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                      ℹ️ Hum is number par aapko verification code aur live order updates bhejenge.
+                    </span>
                   </div>
-                  <div className="btn-row"><button className="btn-secondary" onClick={goBack}>Back</button><button className="btn-primary" onClick={goNext}>Next</button></div>
+
+                  <div className="btn-row">
+                    <button className="btn-secondary" onClick={goBack}>Back</button>
+                    <button className="btn-primary" onClick={goNext}>Next</button>
+                  </div>
                 </motion.div>
               )}
 
+              {/* STEP 3: LOCATION & DETAILS */}
               {step === 3 && (
-                <motion.div key="step3" variants={stepVariants} initial={direction === 'forward' ? "enterForward" : "enterBackward"} animate="center" exit={direction === 'forward' ? "exitForward" : "exitBackward"} transition={{duration: 0.3}}>
+                <motion.div 
+                  key="step3" 
+                  variants={stepVariants} 
+                  initial={direction === 'forward' ? "enterForward" : "enterBackward"} 
+                  animate="center" 
+                  exit={direction === 'forward' ? "exitForward" : "exitBackward"} 
+                  transition={{duration: 0.3}}
+                >
                   <div className="two-col">
                     <div className="input-group">
                       <label>Gender</label>
@@ -270,61 +407,140 @@ export default function Register() {
                         {GENDERS.map(o => <option key={o}>{o}</option>)}
                       </select>
                     </div>
-                    <div className="input-group"><label>Age</label><input className="reg-input" style={{paddingLeft:'16px'}} name="age" type="number" value={form.age} onChange={handleInput} placeholder="Years" /></div>
+                    <div className="input-group">
+                      <label>Age <small style={{ color: '#9ca3af' }}>(Optional)</small></label>
+                      <input className="reg-input" style={{paddingLeft:'16px'}} name="age" type="number" value={form.age} onChange={handleInput} placeholder="e.g. 28" />
+                    </div>
                   </div>
+
                   <div className="input-group">
                     <label>City <span className="required-star">*</span></label>
-                    <FaCity className="input-icon" />
-                    <input className="reg-input" name="city" value={form.city} onChange={handleInput} placeholder="Lahore, Karachi..." />
+                    <div className="input-icon-wrap">
+                      <FaCity className="input-icon" />
+                      <input className="reg-input" name="city" value={form.city} onChange={handleInput} placeholder="Lahore, Karachi, Rawalpindi..." required />
+                    </div>
                   </div>
+
                   <div className="input-group">
                     <label>Shop / Warehouse Address <span className="required-star">*</span></label>
-                    <FaMapMarkerAlt className="input-icon" />
-                    <input className="reg-input" name="address" value={form.address} onChange={handleInput} placeholder="Street, Sector..." />
+                    <div className="input-icon-wrap">
+                      <FaMapMarkerAlt className="input-icon" />
+                      <input className="reg-input" name="address" value={form.address} onChange={handleInput} placeholder="Street, Sector, Shop/Plot No..." required />
+                    </div>
                   </div>
-                  <div className="btn-row"><button className="btn-secondary" onClick={goBack}>Back</button><button className="btn-primary" onClick={goNext}>Next</button></div>
+
+                  <div className="btn-row">
+                    <button className="btn-secondary" onClick={goBack}>Back</button>
+                    <button className="btn-primary" onClick={goNext}>Next</button>
+                  </div>
                 </motion.div>
               )}
 
+              {/* STEP 4: LOGO & SIGNUP SUBMIT */}
               {step === 4 && (
-                <motion.div key="step4" variants={stepVariants} initial={direction === 'forward' ? "enterForward" : "enterBackward"} animate="center" exit={direction === 'forward' ? "exitForward" : "exitBackward"} transition={{duration: 0.3}}>
+                <motion.div 
+                  key="step4" 
+                  variants={stepVariants} 
+                  initial={direction === 'forward' ? "enterForward" : "enterBackward"} 
+                  animate="center" 
+                  exit={direction === 'forward' ? "exitForward" : "exitBackward"} 
+                  transition={{duration: 0.3}}
+                >
                   <div className="avatar-wrap">
                     <div className="avatar-ring" onClick={() => document.getElementById('picInput').click()}>
                       {previewUrl ? <img src={previewUrl} alt="Profile" /> : <FaCamera />}
                     </div>
                     <input id="picInput" type="file" accept="image/*" hidden onChange={handlePic} />
-                    <p style={{marginTop: '10px', fontSize: '14px', color: '#6b7280', fontWeight: 500}}>Upload shop logo (Optional)</p>
+                    <p style={{marginTop: '10px', fontSize: '14px', color: '#6b7280', fontWeight: 500}}>
+                      Upload shop logo / profile pic <span style={{ color: '#9ca3af' }}>(Optional)</span>
+                    </p>
                   </div>
+
                   <div className="btn-row">
                     <button className="btn-secondary" onClick={goBack}>Back</button>
                     <button className="btn-primary" onClick={handleSubmit} disabled={loading}>
-                      {loading ? 'Creating Account...' : 'Complete Sign-up'}
+                      {loading ? 'Sending OTP Codes...' : 'Complete Sign-up'}
                     </button>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
           ) : (
-            /* ─── OTP VERIFICATION (Fully Fixed Layout) ─── */
+            
+            /* ─── 🟢 DUAL SECURITY OTP VERIFICATION SCREEN ─── */
             <motion.div className="otp-container" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-              <FaMailBulk className="otp-icon" />
-              <h2 className="reg-title">Check your Email</h2>
-              <p className="reg-subtitle">Enter the 6-digit verification code sent to<br/><strong style={{color: '#111827'}}>{form.email}</strong></p>
+              <div className="otp-shield-icon-wrapper">
+                  <FaShieldAlt className="otp-icon" />
+              </div>
+              <h2 className="reg-title">Security Verification</h2>
+              <p className="reg-subtitle">
+                {hasWhatsApp 
+                  ? "Enter the 6-digit codes sent to your Email & WhatsApp." 
+                  : "We sent a 6-digit verification code to your Email."}
+              </p>
 
-              <div className="otp-fields">
-                {otpValues.map((val, idx) => (
-                  <input
-                    key={idx} ref={otpRefs.current[idx]}
-                    className="otp-digit" maxLength={1} inputMode="numeric" value={val}
-                    onChange={e => handleOTPChange(idx, e.target.value)}
-                    onKeyDown={e => handleOTPKey(idx, e)}
-                  />
-                ))}
+              {/* ⚠️ Notice if WhatsApp was not found */}
+              {!hasWhatsApp && (
+                <div className="otp-no-whatsapp-banner">
+                  <FaExclamationTriangle size={18} color="#d97706" style={{ flexShrink: 0 }} />
+                  <span>WhatsApp was not detected on <strong>{form.contactNumber}</strong>. Please verify using your Email code only.</span>
+                </div>
+              )}
+
+              {/* 1. EMAIL OTP SECTION */}
+              <div className="otp-section-card">
+                <div className="otp-section-header">
+                  <FaEnvelope color="#2563eb" />
+                  <span>Email Verification Code <small>({form.email})</small></span>
+                </div>
+                <div className="otp-fields">
+                  {emailOtpValues.map((val, idx) => (
+                    <input
+                      key={idx} 
+                      ref={emailOtpRefs.current[idx]}
+                      className="otp-digit" 
+                      maxLength={1} 
+                      inputMode="numeric" 
+                      value={val}
+                      onChange={e => handleOTPChange('email', idx, e.target.value)}
+                      onKeyDown={e => handleOTPKey('email', idx, e)}
+                      autoFocus={idx === 0}
+                    />
+                  ))}
+                </div>
               </div>
 
-              <button className="btn-primary" onClick={verifyOTP} disabled={loading}>
-                {loading ? 'Verifying...' : 'Verify & Finish'}
+              {/* 2. WHATSAPP OTP SECTION (ONLY IF WHATSAPP FOUND) */}
+              {hasWhatsApp && (
+                <div className="otp-section-card">
+                  <div className="otp-section-header">
+                    <FaWhatsapp color="#16a34a" size={16} />
+                    <span>WhatsApp Verification Code <small>({form.contactNumber})</small></span>
+                  </div>
+                  <div className="otp-fields">
+                    {whatsappOtpValues.map((val, idx) => (
+                      <input
+                        key={idx} 
+                        ref={whatsappOtpRefs.current[idx]}
+                        className="otp-digit" 
+                        maxLength={1} 
+                        inputMode="numeric" 
+                        value={val}
+                        onChange={e => handleOTPChange('whatsapp', idx, e.target.value)}
+                        onKeyDown={e => handleOTPKey('whatsapp', idx, e)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <button className="btn-primary" onClick={verifyOTP} disabled={loading} style={{ marginTop: '20px' }}>
+                {loading ? 'Verifying Codes...' : 'Verify & Finish Registration'}
               </button>
+
+              <p style={{ marginTop: '15px', fontSize: '13px', color: '#64748b' }}>
+                Entered wrong details? <span style={{ color: '#2563eb', cursor: 'pointer', fontWeight: 600 }} onClick={() => setShowOTP(false)}>Change Info</span>
+              </p>
             </motion.div>
           )}
 

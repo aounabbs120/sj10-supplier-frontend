@@ -1,9 +1,11 @@
+// src/pages/OrderDetailsPage.js
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
     ArrowLeft, MapPin, Copy, CheckCircle, Truck, Package, Lock, 
-    BarChart2, User as UserIcon, Calendar, Printer, ExternalLink, Activity 
+    BarChart2, User as UserIcon, Calendar, Printer, AlertCircle, 
+    Clock, XCircle, X, ShieldAlert 
 } from 'lucide-react';
 import supplierService from '../services/supplierService';
 import PaymentModal from '../components/PaymentModal';
@@ -24,11 +26,20 @@ const COURIER_LIST = [
     { code: 'fedex', name: 'FedEx', logo: '/logos/fedex.png' },
 ];
 
+const CANCEL_REASONS = [
+    "Item Out of Stock / Sold Out",
+    "Item Damaged / Quality Issue",
+    "Delivery Area Unserviceable / Address Incomplete",
+    "Pricing / Inventory Discrepancy",
+    "Supplier Warehouse Delayed / Emergency",
+    "Other"
+];
+
 const OrderDetailsPage = () => {
     const { orderId } = useParams();
     const navigate = useNavigate();
 
-    // 🟢 SWR CACHING: Memory/LocalStorage se instant initial load
+    // SWR CACHING: Memory/LocalStorage instant load
     const [order, setOrder] = useState(() => {
         const cached = localStorage.getItem(`swr_order_detail_${orderId}`);
         return cached ? JSON.parse(cached) : null;
@@ -43,9 +54,14 @@ const OrderDetailsPage = () => {
     const [trackingError, setTrackingError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // 🟢 CANCEL MODAL STATES
+    const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+    const [selectedReason, setSelectedReason] = useState(CANCEL_REASONS[0]);
+    const [isCancelling, setIsCancelling] = useState(false);
+
     // --- STRICT DB VALUE AGGREGATION ---
     const dbTotals = useMemo(() => {
-        if (!order) return { products: 0, profit: 0, commission: 0, supplierFixedFee: 0 };
+        if (!order || !order.order_items) return { products: 0, profit: 0, commission: 0, supplierFixedFee: 0 };
         
         return order.order_items.reduce((acc, item) => {
             acc.products += (parseFloat(item.price_at_purchase) || 0) * item.quantity;
@@ -56,18 +72,25 @@ const OrderDetailsPage = () => {
         }, { products: 0, profit: 0, commission: 0, supplierFixedFee: 0 });
     }, [order]);
 
+    // 🟢 RESOLVE UNCONFIRMED STATUS
+    const isPendingWhatsApp = useMemo(() => {
+        if (!order || !order.order_details) return false;
+        return order.order_details.confirmation_status === 'pending_whatsapp' || 
+               order.order_details.is_pending_whatsapp === true;
+    }, [order]);
+
     const isTrackable = useMemo(() => {
-        if (!order?.shipment_details) return false;
+        if (!order?.shipment_details || isPendingWhatsApp) return false;
         const { shipment_details } = order;
         const trackableStatuses = ['Order Dispatched', 'InTransit', 'OutForDelivery', 'FailedAttempt'];
         if (trackableStatuses.includes(shipment_details.current_status)) return true;
         if (shipment_details.current_status === 'Delivered') {
-            const deliveryDate = new Date(shipment_details.updated_at);
+            const deliveryDate = new Date(shipment_details.updated_at || shipment_details.created_at);
             const twoDaysLater = new Date(deliveryDate.getTime() + 2 * 24 * 60 * 60 * 1000);
             return new Date() < twoDaysLater;
         }
         return false;
-    }, [order]);
+    }, [order, isPendingWhatsApp]);
 
     const fetchOrderDetails = useCallback(async () => {
         if (!orderId) {
@@ -78,13 +101,10 @@ const OrderDetailsPage = () => {
         try {
             const data = await supplierService.getMyOrderDetails(orderId);
             setOrder(data);
-            
-            // Background Cache update
             localStorage.setItem(`swr_order_detail_${orderId}`, JSON.stringify(data));
 
-            // Mark as seen logic (silenced background)
             if (data.shipment_details && data.shipment_details.is_seen === 0) {
-                supplierService.markOrderAsSeen(orderId).catch(err => console.log("Mark seen error", err));
+                supplierService.markOrderAsSeen(orderId).catch(() => {});
             }
         } catch (err) {
             console.error("Fetch Details Error:", err);
@@ -104,8 +124,13 @@ const OrderDetailsPage = () => {
         setTimeout(() => setCopyState({}), 2000);
     };
 
+    // 🟢 DISPATCH HANDLER
     const handleDispatch = async (e) => {
         e.preventDefault();
+        if (isPendingWhatsApp) {
+            alert("Customer confirmation is pending. You cannot dispatch this order yet.");
+            return;
+        }
         const validation = validateTrackingNumber(selectedCourier?.code, trackingNumber);
         if (!validation.isValid) {
             setTrackingError(validation.message);
@@ -117,11 +142,12 @@ const OrderDetailsPage = () => {
                 tracking_number: trackingNumber,
                 courier_name: selectedCourier.code
             });
-            await fetchOrderDetails(); // Refresh Page State
+            await fetchOrderDetails();
             setTrackingNumber('');
             setSelectedCourier(null);
+            alert("Order dispatched successfully!");
         } catch (error) {
-            alert("Failed to dispatch order.");
+            alert(error.response?.data?.message || "Failed to dispatch order.");
         } finally {
             setIsSubmitting(false);
         }
@@ -134,11 +160,30 @@ const OrderDetailsPage = () => {
         setTrackingError(newTrackingNumber ? (validation.isValid ? '' : validation.message) : '');
     };
 
-    const handleTrackOrder = () => {
-        navigate(`/orders/track/${orderId}`);
+    // 🟢 SUPPLIER CANCEL ORDER HANDLER
+    const handleCancelOrderSubmit = async (e) => {
+        e.preventDefault();
+        if (!selectedReason) return alert("Please select a cancellation reason.");
+
+        setIsCancelling(true);
+        try {
+            // Cancel API Call
+            if (supplierService.cancelOrderBySupplier) {
+                await supplierService.cancelOrderBySupplier(orderId, selectedReason);
+            } else {
+                await supplierService.genericGet(`/orders/${orderId}/cancel`); // fallback
+            }
+
+            setIsCancelModalOpen(false);
+            await fetchOrderDetails();
+            alert("Order has been cancelled. Inventory and customer have been updated.");
+        } catch (err) {
+            alert(err.response?.data?.message || "Cancellation failed. Please try again.");
+        } finally {
+            setIsCancelling(false);
+        }
     };
 
-    // --- 🟢 BEAUTIFUL CREATIVE LOADER (SAME AS TRACK ORDER PAGE) ---
     if (isPageLoading && !order) return (
         <div className="order-loading-container">
             <div className="loader-logo"><img src="/logo.gif" alt="Loading..." /></div>
@@ -149,16 +194,19 @@ const OrderDetailsPage = () => {
     if (error && !order) return <div className="error-state">{error}</div>;
     if (!order) return <div className="error-state">Order not found.</div>;
     
-    const { order_details, order_items, shipment_details, is_locked, unpaid_commission } = order;
+    const { order_details = {}, order_items = [], shipment_details = {}, is_locked, unpaid_commission } = order;
     const isOrderNew = shipment_details.is_seen === 0; 
     const isAccountLocked = is_locked || false;
-    const isOrderProcessing = shipment_details.current_status === 'processing';
-    const showSensitiveDetails = !isAccountLocked || !isOrderProcessing;
+    
+    const currentStatusLower = (shipment_details.current_status || order_details.status || '').toLowerCase();
+    const isOrderCancelled = currentStatusLower === 'cancelled' || currentStatusLower === 'auto_cancelled';
+    const isOrderProcessing = currentStatusLower === 'processing' || currentStatusLower === 'pending_confirmation';
+    const showSensitiveDetails = (!isAccountLocked || !isOrderProcessing) && !isPendingWhatsApp;
 
     const DB_GRAND_TOTAL = parseFloat(order_details.total_price) || 0;
     const DB_DELIVERY_FEE = parseFloat(order_details.total_delivery_charge) || 0;
+    const cancellationReason = shipment_details.cancellation_reason || order_details.cancellation_reason;
 
-    // Creative Framer Motion Variants for page entry
     const pageTransitionVariants = {
         initial: { opacity: 0, scale: 0.98, y: 15 },
         animate: { opacity: 1, scale: 1, y: 0, transition: { type: 'spring', stiffness: 100, damping: 15 } }
@@ -171,35 +219,91 @@ const OrderDetailsPage = () => {
             initial="initial"
             animate="animate"
         >
+            {/* 🔴 CANCELLED ORDER BANNER */}
+            {isOrderCancelled && (
+                <div className="cancelled-alert-banner">
+                    <AlertCircle size={22} color="#dc2626" />
+                    <div>
+                        <strong>Order Cancelled</strong>
+                        <span>This order was cancelled. {cancellationReason ? `Reason: "${cancellationReason}"` : ''}</span>
+                    </div>
+                </div>
+            )}
+
+            {/* HEADER */}
             <div className="od-header">
-                <button className="back-btn" onClick={() => navigate('/orders')}><ArrowLeft size={18} /> Back to Orders</button>
+                <button className="back-btn" onClick={() => navigate('/orders')}>
+                    <ArrowLeft size={18} /> Back to Orders
+                </button>
+                
                 <div className="od-title-group">
                     <h1>Order #{order_details.id.substring(0, 8).toUpperCase()}</h1>
                     {isOrderNew && <span className="new-tag-detail">NEW</span>}
-                    <span className={`status-badge-lg status-${shipment_details.current_status}`}>{shipment_details.current_status.replace(/_/g, ' ')}</span>
+                    
+                    {isPendingWhatsApp ? (
+                        <span className="status-badge-lg status-pending-wa">
+                            <Clock size={13} style={{ display: 'inline', marginRight: 4 }} /> 
+                            Awaiting Customer WhatsApp Reply
+                        </span>
+                    ) : (
+                        <span className={`status-badge-lg status-${shipment_details.current_status || 'processing'}`}>
+                            {(shipment_details.current_status || 'Processing').replace(/_/g, ' ')}
+                        </span>
+                    )}
                 </div>
+
                 <div className="od-meta">
                     <span><Calendar size={14}/> {new Date(order_details.created_at).toLocaleString()}</span>
-                    <button className="print-btn" onClick={() => navigate('/orders/invoice', { state: { order } })}><Printer size={14}/> Print Invoice</button>
+                    
+                    <div className="od-header-actions-group">
+                        <button className="print-btn" onClick={() => navigate('/orders/invoice', { state: { order } })}>
+                            <Printer size={14}/> Print Invoice
+                        </button>
+
+                        {/* 🟢 RED CANCEL ORDER BUTTON (Only for active un-dispatched orders) */}
+                        {!isOrderCancelled && (
+                            <button className="cancel-order-header-btn" onClick={() => setIsCancelModalOpen(true)}>
+                                <XCircle size={14}/> Cancel Order
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
 
+            {/* MAIN GRID */}
             <div className="od-grid">
+                
+                {/* LEFT: PRODUCTS & BILLING */}
                 <div className="od-col-main">
                     <div className="od-card">
-                        <div className="card-header"><Package size={20} /><h3>Ordered Items ({order_items.length})</h3></div>
+                        <div className="card-header">
+                            <Package size={20} />
+                            <h3>Ordered Items ({order_items.length})</h3>
+                        </div>
                         <div className="product-list">
                             {order_items.map(item => {
                                 const options = (item.options && typeof item.options === 'string') ? JSON.parse(item.options) : item.options || {};
-                                const productTitle = item.product_details.title || 'N/A';
-                                const productSKU = item.product_details.sku || 'N/A';
+                                const productTitle = item.product_details?.title || 'N/A';
+                                const productSKU = item.product_details?.sku || 'N/A';
                                 return (
                                 <div key={item.id} className="od-product-item">
-                                    <div className="od-prod-img-box"><img src={item.product_details.image || 'https://via.placeholder.com/70'} alt={productTitle} /></div>
+                                    <div className="od-prod-img-box">
+                                        <img src={item.product_details?.image || 'https://via.placeholder.com/70'} alt={productTitle} />
+                                    </div>
                                     <div className="od-prod-info">
-                                        <div className="info-line-copyable"><h4>{productTitle}</h4><button className="copy-icon-btn-sm" onClick={() => handleCopy(productTitle, `title-${item.id}`)}>{copyState[`title-${item.id}`] ? <CheckCircle size={14}/> : <Copy size={14}/>}</button></div>
+                                        <div className="info-line-copyable">
+                                            <h4>{productTitle}</h4>
+                                            <button className="copy-icon-btn-sm" onClick={() => handleCopy(productTitle, `title-${item.id}`)}>
+                                                {copyState[`title-${item.id}`] ? <CheckCircle size={14}/> : <Copy size={14}/>}
+                                            </button>
+                                        </div>
                                         <div className="od-prod-meta">
-                                            <div className="info-line-copyable"><span>SKU: {productSKU}</span><button className="copy-icon-btn-sm" onClick={() => handleCopy(productSKU, `sku-${item.id}`)}>{copyState[`sku-${item.id}`] ? <CheckCircle size={14}/> : <Copy size={14}/>}</button></div>
+                                            <div className="info-line-copyable">
+                                                <span>SKU: {productSKU}</span>
+                                                <button className="copy-icon-btn-sm" onClick={() => handleCopy(productSKU, `sku-${item.id}`)}>
+                                                    {copyState[`sku-${item.id}`] ? <CheckCircle size={14}/> : <Copy size={14}/>}
+                                                </button>
+                                            </div>
                                             {Object.keys(options).length > 0 && Object.entries(options).map(([key, value]) => (
                                                 <span key={key}>{key.charAt(0).toUpperCase() + key.slice(1)}: <strong>{String(value)}</strong></span>
                                             ))}
@@ -218,23 +322,23 @@ const OrderDetailsPage = () => {
                         <div className="card-header"><BarChart2 size={20} className="icon-green"/><h3>Price Calculation</h3></div>
                         <div className="od-summary">
                             <div className="summary-row"><span>Product(s) Price</span><span>PKR {dbTotals.products.toLocaleString()}</span></div>
-                            
                             <div className="summary-row"><span>Delivery Fee</span><span>+ PKR {DB_DELIVERY_FEE.toLocaleString()}</span></div>
-                            
                             {dbTotals.profit > 0 && (
                                 <div className="summary-row profit"><span>User (Reseller) Profit</span><span>+ PKR {dbTotals.profit.toLocaleString()}</span></div>
                             )}
-
                             <div className="summary-row"><span>SJ10 Fee (Commission)</span><span>+ PKR {dbTotals.commission.toLocaleString()}</span></div>
-                            
                             <div className="summary-row total"><span>Customer Payable (Grand Total)</span><span>PKR {DB_GRAND_TOTAL.toLocaleString()}</span></div>
                         </div>
                     </div>
                 </div>
 
+                {/* RIGHT: SHIPPING & DISPATCH */}
                 <div className="od-col-side">
+                    
+                    {/* SHIPPING DETAILS CARD */}
                     <div className="od-card shipping-card-container">
                         <div className="card-header"><MapPin size={20} className="icon-purple"/><h3>Shipping Details</h3></div>
+                        
                         <div className={`shipping-content ${!showSensitiveDetails ? 'blurred' : ''}`}>
                             <div className="customer-info-box">
                                 <div className="info-line">
@@ -258,7 +362,17 @@ const OrderDetailsPage = () => {
                                 </div>
                             </div>
                         </div>
-                        {!showSensitiveDetails && (
+
+                        {/* Blurred Overlays */}
+                        {isPendingWhatsApp && (
+                            <div className="unconfirmed-shipping-overlay">
+                                <Clock size={26} color="#d97706" />
+                                <span>Awaiting WhatsApp Confirmation</span>
+                                <small>Address will be revealed once customer confirms order.</small>
+                            </div>
+                        )}
+
+                        {!isPendingWhatsApp && !showSensitiveDetails && (
                             <div className="unlock-overlay" onClick={() => setIsPaymentModalOpen(true)}>
                                 <Lock size={24} />
                                 <span>Unlock to View Address</span>
@@ -266,7 +380,18 @@ const OrderDetailsPage = () => {
                         )}
                     </div>
                     
-                    {isOrderProcessing && showSensitiveDetails && (
+                    {/* 🟢 DISPATCH FORM OR LOCKED DISPATCH STATE */}
+                    {isPendingWhatsApp ? (
+                        <div className="od-card dispatch-locked-card">
+                            <div className="card-header">
+                                <Clock size={20} color="#d97706"/>
+                                <h3>Dispatch on Hold</h3>
+                            </div>
+                            <div className="unconfirmed-dispatch-notice">
+                                <p>Customer has not confirmed this order via WhatsApp yet. You will be able to book courier and dispatch once confirmed.</p>
+                            </div>
+                        </div>
+                    ) : isOrderProcessing && showSensitiveDetails && (
                        <div className="od-card">
                            <div className="card-header"><Truck size={20} className="icon-green"/><h3>Dispatch This Order</h3></div>
                            <form onSubmit={handleDispatch} className="dispatch-form">
@@ -286,7 +411,8 @@ const OrderDetailsPage = () => {
                        </div>
                     )}
                     
-                    {!isOrderProcessing && shipment_details.tracking_number && (
+                    {/* TRACKING INFO (WHEN DISPATCHED) */}
+                    {!isOrderProcessing && !isOrderCancelled && shipment_details.tracking_number && (
                         <div className="od-card">
                            <div className="card-header"><Package size={20}/><h3>Tracking Information</h3></div>
                             <div className="tracking-display-modern">
@@ -306,7 +432,7 @@ const OrderDetailsPage = () => {
                                     </div>
                                 </div>
                                 {isTrackable && (
-                                   <button className="track-order-btn-detail" onClick={handleTrackOrder}>
+                                   <button className="track-order-btn-detail" onClick={() => navigate(`/orders/track/${orderId}`)}>
                                        <Truck size={16}/> Track Order
                                    </button>
                                 )}
@@ -315,7 +441,77 @@ const OrderDetailsPage = () => {
                     )}
                 </div>
             </div>
-            {isPaymentModalOpen && ( <PaymentModal amountDue={unpaid_commission || 0} closeModal={() => setIsPaymentModalOpen(false)} /> )}
+
+            {/* 🟢 SUPPLIER CANCEL ORDER MODAL */}
+            <AnimatePresence>
+                {isCancelModalOpen && (
+                    <div className="cancel-modal-overlay" onClick={() => setIsCancelModalOpen(false)}>
+                        <motion.div 
+                            className="cancel-modal-box"
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="cancel-modal-header">
+                                <div className="cancel-title-wrap">
+                                    <ShieldAlert size={22} color="#dc2626" />
+                                    <h3>Cancel Order</h3>
+                                </div>
+                                <button className="cancel-close-btn" onClick={() => setIsCancelModalOpen(false)}>
+                                    <X size={18} />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleCancelOrderSubmit}>
+                                <p className="cancel-modal-desc">
+                                    Please select a reason for cancelling Order <strong>#{order_details.id.substring(0,8).toUpperCase()}</strong>. The customer will be informed via WhatsApp.
+                                </p>
+
+                                <div className="form-input-group" style={{ marginBottom: '20px' }}>
+                                    <label>Cancellation Reason *</label>
+                                    <select 
+                                        value={selectedReason} 
+                                        onChange={e => setSelectedReason(e.target.value)}
+                                        className="cancel-reason-select"
+                                        required
+                                    >
+                                        {CANCEL_REASONS.map((r, i) => (
+                                            <option key={i} value={r}>{r}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="cancel-modal-actions">
+                                    <button 
+                                        type="button" 
+                                        className="btn-cancel-back" 
+                                        onClick={() => setIsCancelModalOpen(false)}
+                                        disabled={isCancelling}
+                                    >
+                                        Go Back
+                                    </button>
+                                    <button 
+                                        type="submit" 
+                                        className="btn-cancel-confirm"
+                                        disabled={isCancelling}
+                                    >
+                                        {isCancelling ? 'Cancelling...' : 'Confirm Cancellation'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* PAYMENT MODAL (FOR DEBT UNLOCK) */}
+            {isPaymentModalOpen && ( 
+                <PaymentModal 
+                    amountDue={unpaid_commission || 0} 
+                    closeModal={() => setIsPaymentModalOpen(false)} 
+                /> 
+            )}
         </motion.div>
     );
 };

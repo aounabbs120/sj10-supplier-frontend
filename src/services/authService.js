@@ -1,14 +1,17 @@
 // src/services/authService.js
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:4007';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://sj1osupplierbackend1.vercel.app';
 
-// 🟢 FIX: Added '/api/auth' to all routes
-const register = async (userData) => {
-    const response = await axios.post(`${API_BASE_URL}/api/auth/register`, userData);
+// 1. Register Supplier (Manual Signup)
+const register = async (formData) => {
+    const response = await axios.post(`${API_BASE_URL}/api/auth/register`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    });
     return response.data;
 };
 
+// 2. Login
 const login = async (credentials) => {
     const response = await axios.post(`${API_BASE_URL}/api/auth/login`, credentials);
     if (response.data.token) {
@@ -17,31 +20,21 @@ const login = async (credentials) => {
     return response.data;
 };
 
-const verifyEmail = async (email, otp) => {
-    // Backend ko dono cheezein chahiye: email aur otp
-    const response = await axios.post(`${API_BASE_URL}/api/auth/verify-email`, { email, otp });
-    return response.data;
-};
-
-
-const forgotPassword = async (email) => {
-    const response = await axios.post(`${API_BASE_URL}/api/auth/forgot-password`, { email });
-    return response.data;
-};
-
-const resetPassword = async (email, otp, newPassword) => {
-    // 🟢 Body-based request bhejni hai, URL param nahi
-    const response = await axios.post(`${API_BASE_URL}/api/auth/reset-password`, { 
+// 3. 🟢 VERIFY MANUAL SIGNUP (Supports Dual Email + WhatsApp OTP)
+const verifyEmail = async (email, emailOtp, whatsappOtp = null) => {
+    const response = await axios.post(`${API_BASE_URL}/api/auth/verify-email`, { 
         email, 
-        otp, 
-        newPassword 
+        emailOtp, 
+        whatsappOtp,
+        otp: emailOtp // fallback for legacy
     });
+    if (response.data.token) {
+        localStorage.setItem('supplierToken', response.data.token);
+    }
     return response.data;
 };
-const logout = () => {
-    localStorage.removeItem('supplierToken');
-};
 
+// 4. Google Login
 const googleLogin = async (accessToken) => {
     const response = await axios.post(`${API_BASE_URL}/api/auth/google`, { accessToken });
     if (response.data.token) {
@@ -50,24 +43,50 @@ const googleLogin = async (accessToken) => {
     return response.data;
 };
 
-const facebookLogin = async (accessToken, userID) => {
-    const response = await axios.post(`${API_BASE_URL}/api/auth/facebook`, { accessToken, userID });
-    if (response.data.token) {
-        localStorage.setItem('supplierToken', response.data.token);
-    }
-    return response.data;
-};
-
+// 5. Complete Profile (For Google users)
 const completeProfile = async (profileData) => {
-    const token = localStorage.getItem('supplierToken');
+    const token = localStorage.getItem('tempAuthToken');
     const response = await axios.post(`${API_BASE_URL}/api/auth/complete-profile`, profileData, {
         headers: { 'Authorization': `Bearer ${token}` }
     });
     return response.data;
 };
 
+// 6. 🟢 VERIFY GOOGLE PHONE WHATSAPP OTP
+const verifyPhoneOtp = async (otp) => {
+    const token = localStorage.getItem('tempAuthToken');
+    const response = await axios.post(`${API_BASE_URL}/api/auth/verify-phone-otp`, { otp }, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (response.data.token) {
+        localStorage.setItem('supplierToken', response.data.token);
+    }
+    return response.data;
+};
+
+// 7. Password Recovery
+const forgotPassword = async (email) => {
+    const response = await axios.post(`${API_BASE_URL}/api/auth/forgot-password`, { email });
+    return response.data;
+};
+
+const resetPassword = async (email, otp, newPassword) => {
+    const response = await axios.post(`${API_BASE_URL}/api/auth/reset-password`, { 
+        email, 
+        otp, 
+        newPassword 
+    });
+    return response.data;
+};
+
+const logout = () => {
+    localStorage.removeItem('supplierToken');
+    localStorage.removeItem('tempAuthToken');
+};
+
 const authService = {
-    register, login, verifyEmail, forgotPassword, resetPassword, googleLogin, facebookLogin, completeProfile, logout
+    register, login, verifyEmail, forgotPassword, resetPassword, 
+    googleLogin, completeProfile, verifyPhoneOtp, logout
 };
 
 export default authService;
