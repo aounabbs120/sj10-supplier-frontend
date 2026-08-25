@@ -11,7 +11,10 @@ import supplierService from '../services/supplierService';
 import PaymentModal from '../components/PaymentModal';
 import CourierDropdown from '../components/CourierDropdown';
 import { validateTrackingNumber, getCourierExample } from '../utils/trackingValidator';
+import axios from 'axios'; // 🟢 Import axios for safe fallback
 import './OrderDetailsPage.css';
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://sj1osupplierbackend1.vercel.app';
 
 const COURIER_LIST = [
     { code: 'leopards', name: 'Leopards Courier', logo: '/logos/leopards.png' },
@@ -39,7 +42,7 @@ const OrderDetailsPage = () => {
     const { orderId } = useParams();
     const navigate = useNavigate();
 
-    // SWR CACHING: Memory/LocalStorage instant load
+    // SWR CACHING
     const [order, setOrder] = useState(() => {
         const cached = localStorage.getItem(`swr_order_detail_${orderId}`);
         return cached ? JSON.parse(cached) : null;
@@ -54,25 +57,31 @@ const OrderDetailsPage = () => {
     const [trackingError, setTrackingError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // 🟢 CANCEL MODAL STATES
+    // 🟢 MAIN ORDER CANCEL MODAL STATES
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
     const [selectedReason, setSelectedReason] = useState(CANCEL_REASONS[0]);
     const [isCancelling, setIsCancelling] = useState(false);
+    
+    // 🟢 SINGLE ITEM CANCEL MODAL STATES
+    const [isItemCancelModalOpen, setIsItemCancelModalOpen] = useState(false);
+    const [selectedItemId, setSelectedItemId] = useState(null);
 
     // --- STRICT DB VALUE AGGREGATION ---
     const dbTotals = useMemo(() => {
         if (!order || !order.order_items) return { products: 0, profit: 0, commission: 0, supplierFixedFee: 0 };
         
         return order.order_items.reduce((acc, item) => {
-            acc.products += (parseFloat(item.price_at_purchase) || 0) * item.quantity;
-            acc.profit += parseFloat(item.profit) || 0; 
-            acc.commission += parseFloat(item.system_commission) || 0;
-            acc.supplierFixedFee += parseFloat(item.supplier_fixed_fee) || 0;
+            // Sirf active items ka total calculate karein
+            if (item.commission_status !== 'cancelled') {
+                acc.products += (parseFloat(item.price_at_purchase) || 0) * item.quantity;
+                acc.profit += parseFloat(item.profit) || 0; 
+                acc.commission += parseFloat(item.system_commission) || 0;
+                acc.supplierFixedFee += parseFloat(item.supplier_fixed_fee) || 0;
+            }
             return acc;
         }, { products: 0, profit: 0, commission: 0, supplierFixedFee: 0 });
     }, [order]);
 
-    // 🟢 RESOLVE UNCONFIRMED STATUS
     const isPendingWhatsApp = useMemo(() => {
         if (!order || !order.order_details) return false;
         return order.order_details.confirmation_status === 'pending_whatsapp' || 
@@ -160,25 +169,51 @@ const OrderDetailsPage = () => {
         setTrackingError(newTrackingNumber ? (validation.isValid ? '' : validation.message) : '');
     };
 
-    // 🟢 SUPPLIER CANCEL ORDER HANDLER
+    // 🟢 SUPPLIER CANCEL ORDER HANDLER (FULL PACKAGE)
     const handleCancelOrderSubmit = async (e) => {
         e.preventDefault();
         if (!selectedReason) return alert("Please select a cancellation reason.");
 
         setIsCancelling(true);
         try {
-            // Cancel API Call
             if (supplierService.cancelOrderBySupplier) {
                 await supplierService.cancelOrderBySupplier(orderId, selectedReason);
             } else {
-                await supplierService.genericGet(`/orders/${orderId}/cancel`); // fallback
+                await axios.put(`${API_BASE_URL}/api/orders/${orderId}/cancel`, { reason: selectedReason }, {
+                    headers: { Authorization: `Bearer ${localStorage.getItem('supplierToken')}` }
+                });
             }
-
             setIsCancelModalOpen(false);
             await fetchOrderDetails();
-            alert("Order has been cancelled. Inventory and customer have been updated.");
+            alert("Order package has been cancelled.");
         } catch (err) {
             alert(err.response?.data?.message || "Cancellation failed. Please try again.");
+        } finally {
+            setIsCancelling(false);
+        }
+    };
+
+    // 🟢 SUPPLIER CANCEL SINGLE ITEM HANDLER
+    const handleCancelItemSubmit = async (e) => {
+        e.preventDefault();
+        if (!selectedReason || !selectedItemId) return alert("Please select a cancellation reason.");
+
+        setIsCancelling(true);
+        try {
+            if (supplierService.cancelSingleItem) {
+                await supplierService.cancelSingleItem(orderId, selectedItemId, selectedReason);
+            } else {
+                // Direct Axios Fallback (In case service is missing)
+                await axios.put(`${API_BASE_URL}/api/orders/${orderId}/items/${selectedItemId}/cancel`, { reason: selectedReason }, {
+                    headers: { Authorization: `Bearer ${localStorage.getItem('supplierToken')}` }
+                });
+            }
+            setIsItemCancelModalOpen(false);
+            setSelectedItemId(null);
+            await fetchOrderDetails();
+            alert("Item has been successfully cancelled and your bill is updated.");
+        } catch (err) {
+            alert(err.response?.data?.message || "Item cancellation failed. Please try again.");
         } finally {
             setIsCancelling(false);
         }
@@ -207,6 +242,10 @@ const OrderDetailsPage = () => {
     const DB_DELIVERY_FEE = parseFloat(order_details.total_delivery_charge) || 0;
     const cancellationReason = shipment_details.cancellation_reason || order_details.cancellation_reason;
 
+    // 🟢 Active Items Count Logic (Checks if > 1 item is active)
+    const activeItemsCount = order_items.filter(item => item.commission_status !== 'cancelled').length;
+    const canShowItemCancelBtn = activeItemsCount > 1;
+
     const pageTransitionVariants = {
         initial: { opacity: 0, scale: 0.98, y: 15 },
         animate: { opacity: 1, scale: 1, y: 0, transition: { type: 'spring', stiffness: 100, damping: 15 } }
@@ -225,7 +264,7 @@ const OrderDetailsPage = () => {
                     <AlertCircle size={22} color="#dc2626" />
                     <div>
                         <strong>Order Cancelled</strong>
-                        <span>This order was cancelled. {cancellationReason ? `Reason: "${cancellationReason}"` : ''}</span>
+                        <span>This order package was cancelled. {cancellationReason ? `Reason: "${cancellationReason}"` : ''}</span>
                     </div>
                 </div>
             )}
@@ -260,8 +299,8 @@ const OrderDetailsPage = () => {
                             <Printer size={14}/> Print Invoice
                         </button>
 
-                        {/* 🟢 RED CANCEL ORDER BUTTON (Only for active un-dispatched orders) */}
-                        {!isOrderCancelled && (
+                        {/* 🟢 RED CANCEL ORDER BUTTON (For Full Package) */}
+                        {!isOrderCancelled && activeItemsCount > 0 && (
                             <button className="cancel-order-header-btn" onClick={() => setIsCancelModalOpen(true)}>
                                 <XCircle size={14}/> Cancel Order
                             </button>
@@ -281,37 +320,77 @@ const OrderDetailsPage = () => {
                             <h3>Ordered Items ({order_items.length})</h3>
                         </div>
                         <div className="product-list">
-                            {order_items.map(item => {
+                            {order_items.map((item) => {
                                 const options = (item.options && typeof item.options === 'string') ? JSON.parse(item.options) : item.options || {};
                                 const productTitle = item.product_details?.title || 'N/A';
                                 const productSKU = item.product_details?.sku || 'N/A';
+                                const isItemCancelled = item.commission_status === 'cancelled';
+                                
                                 return (
-                                <div key={item.id} className="od-product-item">
+                                <div 
+                                    key={item.id} 
+                                    className="od-product-item"
+                                    style={isItemCancelled ? { opacity: 0.5, filter: 'grayscale(100%)', background: '#f8fafc', padding: '10px', borderRadius: '12px', border: '1px dashed #cbd5e1' } : {}}
+                                >
                                     <div className="od-prod-img-box">
                                         <img src={item.product_details?.image || 'https://via.placeholder.com/70'} alt={productTitle} />
                                     </div>
                                     <div className="od-prod-info">
                                         <div className="info-line-copyable">
-                                            <h4>{productTitle}</h4>
-                                            <button className="copy-icon-btn-sm" onClick={() => handleCopy(productTitle, `title-${item.id}`)}>
-                                                {copyState[`title-${item.id}`] ? <CheckCircle size={14}/> : <Copy size={14}/>}
-                                            </button>
+                                            <h4 style={isItemCancelled ? { textDecoration: 'line-through', color: '#64748b' } : {}}>{productTitle}</h4>
+                                            {!isItemCancelled && (
+                                                <button className="copy-icon-btn-sm" onClick={() => handleCopy(productTitle, `title-${item.id}`)}>
+                                                    {copyState[`title-${item.id}`] ? <CheckCircle size={14}/> : <Copy size={14}/>}
+                                                </button>
+                                            )}
                                         </div>
                                         <div className="od-prod-meta">
                                             <div className="info-line-copyable">
                                                 <span>SKU: {productSKU}</span>
-                                                <button className="copy-icon-btn-sm" onClick={() => handleCopy(productSKU, `sku-${item.id}`)}>
-                                                    {copyState[`sku-${item.id}`] ? <CheckCircle size={14}/> : <Copy size={14}/>}
-                                                </button>
+                                                {!isItemCancelled && (
+                                                    <button className="copy-icon-btn-sm" onClick={() => handleCopy(productSKU, `sku-${item.id}`)}>
+                                                        {copyState[`sku-${item.id}`] ? <CheckCircle size={14}/> : <Copy size={14}/>}
+                                                    </button>
+                                                )}
                                             </div>
                                             {Object.keys(options).length > 0 && Object.entries(options).map(([key, value]) => (
                                                 <span key={key}>{key.charAt(0).toUpperCase() + key.slice(1)}: <strong>{String(value)}</strong></span>
                                             ))}
                                         </div>
+
+                                        {/* 🔴 ITEM CANCELLED BADGE */}
+                                        {isItemCancelled && (
+                                            <div style={{ marginTop: '6px', fontSize: '11px', color: '#dc2626', fontWeight: 800 }}>
+                                                ❌ ITEM CANCELLED
+                                            </div>
+                                        )}
                                     </div>
-                                    <div className="od-prod-pricing">
+                                    
+                                    <div className="od-prod-pricing" style={{ textAlign: 'right' }}>
                                         <div className="qty-badge">x {item.quantity}</div>
-                                        <span className="price">PKR {(item.price_at_purchase * item.quantity).toLocaleString()}</span>
+                                        <span 
+                                            className="price" 
+                                            style={isItemCancelled ? { textDecoration: 'line-through', color: '#94a3b8' } : {}}
+                                        >
+                                            PKR {(item.price_at_purchase * item.quantity).toLocaleString()}
+                                        </span>
+                                        
+                                        {/* 🟢 BEAUTIFUL ANIMATED CANCEL ITEM BUTTON (Only shows if >1 active items) */}
+                                        {!isOrderCancelled && !isItemCancelled && !isPendingWhatsApp && !['dispatched', 'in_transit', 'out_for_delivery', 'delivered'].includes(currentStatusLower) && canShowItemCancelBtn && (
+                                            <motion.button 
+                                                whileHover={{ scale: 1.05, backgroundColor: '#fca5a5', color: '#7f1d1d' }}
+                                                whileTap={{ scale: 0.95 }}
+                                                onClick={() => { setSelectedItemId(item.id); setIsItemCancelModalOpen(true); }}
+                                                style={{
+                                                    display: 'flex', alignItems: 'center', gap: '5px', marginTop: '10px',
+                                                    background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626',
+                                                    padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+                                                    transition: 'background 0.2s'
+                                                }}
+                                            >
+                                                <XCircle size={14} /> Cancel Item
+                                            </motion.button>
+                                        )}
                                     </div>
                                 </div>
                             )})}
@@ -442,7 +521,7 @@ const OrderDetailsPage = () => {
                 </div>
             </div>
 
-            {/* 🟢 SUPPLIER CANCEL ORDER MODAL */}
+            {/* 🟢 FULL ORDER CANCEL MODAL */}
             <AnimatePresence>
                 {isCancelModalOpen && (
                     <div className="cancel-modal-overlay" onClick={() => setIsCancelModalOpen(false)}>
@@ -456,7 +535,7 @@ const OrderDetailsPage = () => {
                             <div className="cancel-modal-header">
                                 <div className="cancel-title-wrap">
                                     <ShieldAlert size={22} color="#dc2626" />
-                                    <h3>Cancel Order</h3>
+                                    <h3>Cancel Entire Order</h3>
                                 </div>
                                 <button className="cancel-close-btn" onClick={() => setIsCancelModalOpen(false)}>
                                     <X size={18} />
@@ -498,6 +577,47 @@ const OrderDetailsPage = () => {
                                     >
                                         {isCancelling ? 'Cancelling...' : 'Confirm Cancellation'}
                                     </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* 🟢 SINGLE ITEM CANCEL MODAL */}
+            <AnimatePresence>
+                {isItemCancelModalOpen && (
+                    <div className="cancel-modal-overlay" onClick={() => setIsItemCancelModalOpen(false)}>
+                        <motion.div 
+                            className="cancel-modal-box"
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="cancel-modal-header">
+                                <div className="cancel-title-wrap">
+                                    <ShieldAlert size={22} color="#dc2626" />
+                                    <h3>Cancel Single Item</h3>
+                                </div>
+                                <button className="cancel-close-btn" onClick={() => setIsItemCancelModalOpen(false)}><X size={18} /></button>
+                            </div>
+
+                            <form onSubmit={handleCancelItemSubmit}>
+                                <p className="cancel-modal-desc">
+                                    Please select a reason for cancelling this specific item. Its price will be automatically deducted from the customer's total bill.
+                                </p>
+
+                                <div className="form-input-group" style={{ marginBottom: '20px' }}>
+                                    <label>Cancellation Reason *</label>
+                                    <select value={selectedReason} onChange={e => setSelectedReason(e.target.value)} className="cancel-reason-select" required>
+                                        {CANCEL_REASONS.map((r, i) => <option key={i} value={r}>{r}</option>)}
+                                    </select>
+                                </div>
+
+                                <div className="cancel-modal-actions">
+                                    <button type="button" className="btn-cancel-back" onClick={() => setIsItemCancelModalOpen(false)} disabled={isCancelling}>Go Back</button>
+                                    <button type="submit" className="btn-cancel-confirm" disabled={isCancelling}>{isCancelling ? 'Processing...' : 'Cancel Item'}</button>
                                 </div>
                             </form>
                         </motion.div>

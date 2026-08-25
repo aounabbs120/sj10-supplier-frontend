@@ -559,3 +559,13 @@
 .btn-cancel-confirm:hover {
     background: #b91c1c;
 }
+
+.item-cancelled-fade {
+    opacity: 0.5;
+    filter: grayscale(100%);
+    background-color: #f8fafc;
+}
+.price-strikethrough {
+    text-decoration: line-through;
+    color: #94a3b8 !important;
+}

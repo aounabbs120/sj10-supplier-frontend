@@ -85,6 +85,7 @@ const supplierService = {
     markOrderAsSeen: async (orderId) => (await api.put(`/orders/${orderId}/seen`)).data,
     // supplierService.js ke andar:
 cancelOrderBySupplier: async (orderId, reason) => (await api.put(`/orders/${orderId}/cancel`, { reason })).data,
+cancelSingleItem: async (orderId, itemId, reason) => (await api.put(`/orders/${orderId}/items/${itemId}/cancel`, { reason })).data,
 };
 
 export default supplierService;
